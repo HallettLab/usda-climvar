@@ -1,14 +1,15 @@
-library(plyr); library(dplyr)
-library(tidyr)
-library(ggplot2)
+library(tidyverse)
 
-shelterkey <- read.csv("Shelter_key.csv")
+## Set working directory
+setwd("~/Dropbox/ClimVar/DATA/Plant_composition_data")
+
+shelterkey <- read.csv("ANPP/ANPP_EnteredData/Shelter_key.csv")
 
 #########################
 ##### 2015 ANPP DATA ####
 #########################
 
-aprdat_2015 <-read.csv("ClimVar_ANPP_20150322.csv") %>%
+aprdat_2015 <- read.csv("ANPP/ANPP_EnteredData/ClimVar_ANPP_20150322.csv") %>%
   tbl_df() %>%
   filter(!is.na(subplot)) %>%
   filter(!is.na(plot)) %>%
@@ -27,7 +28,7 @@ aprdat_2015 <-read.csv("ClimVar_ANPP_20150322.csv") %>%
   select(year, date, harvest, plot, subplot, species, func, weight_g)
 
 
-maydat_2015 <- read.csv("ClimVar_ANPP_20150419.csv") %>%
+maydat_2015 <- read.csv("ANPP/ANPP_EnteredData/ClimVar_ANPP_20150419.csv") %>%
   tbl_df() %>%
   mutate(func="Forb", func=ifelse(species=="AVBA" | species=="AVFA" | species=="BRHO" | species=="HOMA" |
                                     species=="LOMU" | species== "TACA" | species == "BRADIS" | species == "CYDA" | 
@@ -69,7 +70,7 @@ ANPP_2015_withC <- ANPP_2015_byspp %>%
 ##### 2016 ANPP DATA ####
 #########################
 
-aprdat_2016 <- read.csv("ClimVar_ANPP_20160416.csv") %>%
+aprdat_2016 <- read.csv("ANPP/ANPP_EnteredData/ClimVar_ANPP_20160416.csv") %>%
   tbl_df() %>%
   mutate(weight_g = ifelse(is.na(Weight_g), 0, Weight_g)) %>%
   mutate(weight_g = weight_g*16, 
@@ -91,7 +92,7 @@ aprdat_2016 <- read.csv("ClimVar_ANPP_20160416.csv") %>%
          harvest = "First")
 
 
-maydat_2016 <- read.csv("ClimVar_ANPP_20160516.csv") %>%
+maydat_2016 <- read.csv("ANPP/ANPP_EnteredData/ClimVar_ANPP_20160516.csv") %>%
   tbl_df() %>%
   mutate(weight_g = ifelse(is.na(Weight_g), 0, Weight_g)) %>%
   mutate(weight_g = weight_g*16, 
@@ -112,18 +113,77 @@ ANPP_2016_byfunc <- merge(rbind(aprdat_2016, maydat_2016), shelterkey) %>%
   mutate(weight_g_m = weight_g) %>%
   select(-focal, -weight_g)
 
+
+
+#########################
+##### 2017 ANPP DATA ####
+#########################
+
+aprdat_2017 <- read.csv("ANPP/ANPP_EnteredData/ClimVar_ANPP_20170415.csv") %>%
+  tbl_df() %>%
+  mutate(weight_g = ifelse(is.na(wgt.g), 0, wgt.g)) %>%
+  mutate(weight_g = weight_g*16, 
+         func = group,
+         date = date.clipped) %>%
+  filter(!is.na(subplot),
+         subplot != "C",
+         subplot != "extra") %>%
+  mutate(subplot = as.character(subplot),
+         group = as.character(group)) %>%
+  mutate(group = ifelse(group == "F", "Forb", group),
+         group = ifelse(group == "N", "N-fixer", group),
+         group = ifelse(group == "G", "Grass", group)) %>%
+  mutate(focal= 0, focal=ifelse(subplot == "G" & func == "Grass", 1, focal),
+         focal= ifelse(subplot=="F" & func=="Forb", 1, focal),
+         focal= ifelse(subplot=="B" & (func=="Forb" | func=="Grass"), 1, focal)) %>%
+  select(date, subplot, func, plot, weight_g, focal) %>%
+  group_by(date, subplot, func, plot, focal) %>%
+  summarize(weight_g = sum(weight_g)) %>%
+  tbl_df() %>%
+  mutate(year = 2017,
+         harvest = "First")
+
+
+maydat_2017 <- read.csv("ANPP/ANPP_EnteredData/ClimVar_ANPP_20170512.csv") %>%
+  tbl_df() %>%
+  tbl_df() %>%
+  mutate(weight_g = ifelse(is.na(wgt.g), 0, wgt.g)) %>%
+  mutate(weight_g = weight_g*16, 
+         func = group,
+         date = date.clipped) %>%
+  mutate(subplot = as.character(subplot),
+         group = as.character(group)) %>%
+  mutate(group = ifelse(group == "F", "Forb", group),
+         group = ifelse(group == "N", "N-fixer", group),
+         group = ifelse(group == "G", "Grass", group)) %>%
+  mutate(focal=0, focal=ifelse(subplot=="G" & func=="Grass", 1, focal),
+         focal=ifelse(subplot=="F" & func=="Forb", 1, focal),
+         focal=ifelse(subplot=="B" & (func=="Forb" | func=="Grass"), 1, focal)) %>%
+  select(date, subplot, func, plot, weight_g, focal) %>%
+  mutate(year = 2017, harvest = "Second")
+
+
+ANPP_2017_byfunc <- merge(rbind(aprdat_2017, maydat_2017), shelterkey) %>%
+  tbl_df() %>%
+  filter(subplot != "Native" & subplot != "C") %>%
+  mutate(weight_g_m = weight_g) %>%
+  select(-focal, -weight_g)
+
+
+
 ###################################################################
 #### PUT THEM ALL TOGETHER: BY FUNCTIONAL GROUP IN B, G, F, XC ####
 ###################################################################
 
-ANPP_byfunc <- rbind(ANPP_2015_byfunc, ANPP_2016_byfunc) %>%
+ANPP_byfunc <- rbind(ANPP_2015_byfunc, ANPP_2016_byfunc, ANPP_2017_byfunc) %>%
   tbl_df() %>%
+  mutate(subplot = as.character(subplot)) %>%
   group_by(year, subplot, plot, treatment) %>%
   mutate(totweight = sum(weight_g_m), propweight = weight_g_m/totweight) %>%
   tbl_df() %>%
   mutate(treatment=ordered(treatment, levels = c(consistentDry="consistentDry", springDry="springDry", fallDry="fallDry", controlRain="controlRain"))) 
 
-write.csv(ANPP_byfunc, "ClimVar_MasterANPPbyfunc_1516.csv")
+write.csv(ANPP_byfunc, "ANPP/ANPP_CleanedData/ClimVar_ANPP-func-groups.csv", row.names = F)
 
 ############################################################
 #### PUT THEM ALL TOGETHER: MAY BIOMASS; ALL SUBPLOTS ####
@@ -143,20 +203,16 @@ maydat_2016_all <- left_join(shelterkey, maydat_2016) %>%
   select(-harvest)
 
 
-May_ANPP <- rbind(maydat_2015_all, maydat_2016_all) %>%
+maydat_2017_all <- left_join(shelterkey, maydat_2017) %>%
+  group_by(plot, year, date, harvest, subplot, treatment, shelterBlock, shelter) %>%
+  summarize(weight_g_m = sum(weight_g)) %>%
+  tbl_df()  %>%
+  filter(harvest != "First") %>%
+  select(-harvest)
+
+
+May_ANPP <- rbind(maydat_2015_all, maydat_2016_all, maydat_2017_all) %>%
   tbl_df() %>%
   filter(subplot != "L" & subplot != "Native")
 
-write.csv(May_ANPP, "ClimVar_PeakANPP_1516.csv", row.names = F)
-# ggplot(subset(May_ANPP, subplot == "C" |  subplot == "XC"), 
-#        aes(x=treatment, y=weight_g_m)) +
-#   geom_boxplot() + facet_wrap(~subplot)
-# 
-# l <- lm(weight_g_m ~ treatment, data = subset(May_ANPP, subplot == "XC"))
-# summary(l)
-
-# 
-# ggplot(ANPP_byfunc, aes(x=treatment, y=weight_g_m, fill=func)) + geom_boxplot() + facet_grid(harvest~year)
-#       
-# ggplot(ANPP_byfunc, aes(x=treatment, y=propweight, fill=as.factor(year))) + geom_boxplot() + facet_grid(func~subplot, scales ="free")
-# ggplot(ANPP_byfunc, aes(x=treatment, y=propweight, fill=as.factor(func))) + geom_boxplot() + facet_grid(subplot~year, scales ="free")
+write.csv(May_ANPP, "ANPP/ANPP_CleanedData/ClimVar_ANPP-peak.csv", row.names = F)
