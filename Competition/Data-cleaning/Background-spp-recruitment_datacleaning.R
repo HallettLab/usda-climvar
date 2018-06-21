@@ -2,7 +2,7 @@ require(gdata)
 library(tidyverse)
 
 # Read in data
-dat.background <-read.xls("~/Dropbox/ClimVar/Competition/Data/Competition_EnteredData/Dec2016ClimVar_rawdata_20161229.xlsx", sheet=2, header=T, na.strings="#N/A!")
+dat.background <-read.xls("~/Dropbox/ClimVar/Competition/Data/Competition_EnteredData/Competition_background_fallrecruitment_20161229.xlsx", sheet=2, header=T, na.strings="#N/A!")
 names(dat.background) = c("page", "recorder", "date", "plot", "subplot", "subplotname", "spptreatment",
                         "position", "todelete", "density5x5cm", "conversion", "notes", "QA", "todelete2")
 
