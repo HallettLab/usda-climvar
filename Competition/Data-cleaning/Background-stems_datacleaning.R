@@ -33,11 +33,11 @@ back_stems_clean <-left_join(back_stems_clean, seed.key) %>%
 ## Not exporting yet because there is something weird about Vulpia - a lot of NAs
 
 
-# Quick visual
-ggplot((back_stems_clean), aes(x=backgrounddensity, y = perPersist, fill=treatment)) + geom_boxplot() + 
-  facet_wrap( ~backgroundspp, scales = "free") #+ scale_y_log10()
-
-
-ggplot((back_stems_clean), aes(x=backgrounddensity, y = perPersist, fill=falltreatment)) + geom_boxplot() + 
-  facet_wrap( ~backgroundspp, scales = "free") #+ scale_y_log10()
+# # Quick visual
+# ggplot((back_stems_clean), aes(x=backgrounddensity, y = perPersist, fill=treatment)) + geom_boxplot() + 
+#   facet_wrap( ~backgroundspp, scales = "free") #+ scale_y_log10()
+# 
+# 
+# ggplot((back_stems_clean), aes(x=backgrounddensity, y = perPersist, fill=falltreatment)) + geom_boxplot() + 
+#   facet_wrap( ~backgroundspp, scales = "free") #+ scale_y_log10()
 

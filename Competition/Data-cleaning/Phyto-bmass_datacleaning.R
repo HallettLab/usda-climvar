@@ -6,6 +6,7 @@ library(tidyverse)
 phyto.dat <-read.xls("~/Dropbox/ClimVar/Competition/Data/Competition_EnteredData/Competition_phytometer_data_spring2017.xlsx", sheet=3, header=T, na.strings="#N/A!") %>%
   tbl_df() 
 
+# Get individual weights
 phyto.dat2 <- phyto.dat %>%
   mutate(drywgt.g = as.character(drywgt.g),
          drywgt.g = ifelse(drywgt.g == "NA", NA, drywgt.g),
@@ -24,27 +25,17 @@ phyto.dat2 <- phyto.dat %>%
 shelter.key <- read.csv("~/Dropbox/ClimVar/Competition/Data/Competition_EnteredData/Shelter_key.csv") %>%
   tbl_df()
 
+# Put it all together
 phyto.bmass <-left_join(phyto.dat2, shelter.key) %>%
   mutate(falltreatment = "wet",
-         falltreatment = ifelse(treatment == "fallDry" | treatment == "consistentDry", "dry", falltreatment))
+         falltreatment = ifelse(treatment == "fallDry" | treatment == "consistentDry", "dry", falltreatment)) %>%
+  mutate(backgroundspp = recode(backgroundspp, AVFA = "Avena", BRHO = "Bromus", LACA = "Lasthenia",
+                                ESCA = "Eschscholzia", TRHI = "Trifolium", VUMY = "Vulpia"),
+         phyto = recode(phyto, AVFA = "Avena", BRHO = "Bromus", LACA = "Lasthenia",
+                                ESCA = "Eschscholzia", TRHI = "Trifolium", VUMY = "Vulpia"),
+         backgrounddensity = recode(backgrounddensity, LO = "low", HI = "high")) 
 
-# Quick visuals; need to compare to background bmass performance
 
+write.csv(phyto.bmass, "~/Dropbox/ClimVar/Competition/Data/Competition_CleanedData/ClimVar_Comp_phytometer-biomass.csv", row.names = F) %>%
+  tbl_df()
 
-ggplot(subset(phyto.bmass, phyto == "BRHO" & !is.na(backgroundspp)), aes(x=falltreatment, y=ind.weight.g)) +
-  geom_boxplot() + facet_grid(backgrounddensity~backgroundspp, scales = "free")
-
-ggplot(subset(phyto.bmass, phyto == "LACA" & !is.na(backgroundspp)), aes(x=falltreatment, y=ind.weight.g)) +
-  geom_boxplot() + facet_grid(backgrounddensity~backgroundspp, scales = "free")
-
-ggplot(subset(phyto.bmass, phyto == "AVFA" & !is.na(backgroundspp)), aes(x=falltreatment, y=ind.weight.g)) +
-  geom_boxplot() + facet_grid(backgrounddensity~backgroundspp, scales = "free")
-
-ggplot(subset(phyto.bmass, phyto == "VUMY" & !is.na(backgroundspp)), aes(x=falltreatment, y=ind.weight.g)) +
-  geom_boxplot() + facet_grid(backgrounddensity~backgroundspp, scales = "free")
-
-ggplot(subset(phyto.bmass, phyto == "ESCA" & !is.na(backgroundspp)), aes(x=falltreatment, y=ind.weight.g)) +
-  geom_boxplot() + facet_grid(backgrounddensity~backgroundspp, scales = "free")
-
-ggplot(subset(phyto.bmass, phyto == "TRHI" & !is.na(backgroundspp)), aes(x=falltreatment, y=ind.weight.g)) +
-  geom_boxplot() + facet_grid(backgrounddensity~backgroundspp, scales = "free")
