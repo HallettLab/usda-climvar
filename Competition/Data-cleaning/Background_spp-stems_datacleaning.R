@@ -1,3 +1,7 @@
+require(gdata)
+library(tidyverse)
+
+
 # Read in data
 background_stems <-read.xls("~/Dropbox/ClimVar/Competition/Data/Competition_EnteredData/Competition_background_spring2017.xlsx", sheet=2, header=T, na.strings="#N/A!")
 

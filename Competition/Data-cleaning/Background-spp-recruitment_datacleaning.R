@@ -1,5 +1,6 @@
 require(gdata)
 library(tidyverse)
+library(nlme)
 
 # Read in data
 dat.background <-read.xls("~/Dropbox/ClimVar/Competition/Data/Competition_EnteredData/Competition_background_fallrecruitment_20161229.xlsx", sheet=2, header=T, na.strings="#N/A!")
