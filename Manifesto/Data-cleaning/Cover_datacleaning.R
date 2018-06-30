@@ -42,8 +42,10 @@ veg_2015 <- merge(veg0_2015, shelterkey) %>%
   mutate(species_name = as.character(species_name),
          species = as.character(species), 
          status = as.character(status),
-         species_name = ifelse(species_name == "Galium aparine", "Galium parisiense", species_name),
-         species = ifelse(species == "aparine", "parinsiense", species),
+         species_name = ifelse(species_name == "Galium aparine", "Galium parisiense", 
+                               ifelse(species_name == "Torilis nodosa", "Torilis arvensis", species_name)),
+         species = ifelse(species == "aparine", "parisiense", 
+                          ifelse(species == "nodosa", "arvensis",species)),
          status = ifelse(species_name == "Galium parisiense", "non-native", status))
 
 sort(unique(veg_2015$species_name))
@@ -78,7 +80,8 @@ vegkey_2016 <- read.csv("~/Dropbox/ClimVar/DATA/Plant_composition_data/Cover/Cov
   mutate(Plot = as.character(Plot), Plot2 = as.character(Plot2)) %>%
   mutate(Plot = ifelse(Plot2 != "", Plot2, Plot)) %>%
   select(-Plot2, -ToDelete) %>%
-  mutate(species_name = as.character(species_name))
+  mutate(species_name = as.character(species_name),
+         species = as.character(species))
 
 # merge data with species key
 veg0_2016 <- merge(covveg_2016, vegkey_2016, all.x=T)
@@ -93,8 +96,7 @@ veg_2016 <- merge(veg0_2016, shelterkey, all.x = T) %>%
   tbl_df() %>%
   filter(cover!="") %>%
   mutate(cover=as.numeric(cover)) %>%
-  mutate(year = 2016) %>%
-  mutate(species_name = ifelse(species_name == "Vulpia myorus", "Vulpia myuros", species_name))
+  mutate(year = 2016)
 
 sort(unique((veg_2016$species_name))) 
 
@@ -158,7 +160,7 @@ vegkey <- dat.cover %>%
   unique()
 
 # check for consistent names across years
-unique(dat.cover$species_name)
+sort(unique(dat.cover$species_name))
 
 # add in 0s for absent species
 zerokey <- expand.grid(unique(dat.cover$species_name), unique(dat.cover$plot), unique(dat.cover$subplot), unique(dat.cover$year))
