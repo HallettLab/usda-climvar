@@ -2,14 +2,13 @@ library(tidyverse)
 library(FD)
 library(readr)
 
-setwd("~/Dropbox/ClimVar/DATA/Plant_composition_data/")
 
 ## Read in trait data
-trts <- read.csv("Traits/Traits_GHscreening_Brad/Bradtraits_cleaned.csv") %>%
+trts <- read.csv("~/Dropbox/ClimVar/DATA/Plant_composition_data/Traits/Traits_GHscreening_Brad/Bradtraits_cleaned.csv") %>%
   tbl_df()
 
 ## Read in cover data
-veg <- read.csv("Cover/Cover_CleanedData/ClimVar_species-cover.csv") %>%
+veg <- read.csv("~/Dropbox/ClimVar/DATA/Plant_composition_data/Cover/Cover_CleanedData/ClimVar_species-cover.csv") %>%
   tbl_df() %>%
   mutate(species_name = as.character(species_name))
 
@@ -150,7 +149,7 @@ names(gf)[5:6] = c("forbCover", "grassCover")
 trtout2.5 <- left_join(trtout2, gf)
 
 ## add in ANPP
-anpp <- read.csv(("ANPP/ANPP_CleanedData/ClimVar_ANPP-Peak.csv")) %>%
+anpp <- read.csv(("~/Dropbox/ClimVar/DATA/Plant_composition_data/ANPP/ANPP_CleanedData/ClimVar_ANPP-Peak.csv")) %>%
   mutate(ANPPgm = weight_g_m) %>%
   select(-weight_g_m)
 trtout3 <- left_join(trtout2.5, anpp) %>%
@@ -158,4 +157,4 @@ trtout3 <- left_join(trtout2.5, anpp) %>%
   mutate(spring = as.factor(ifelse(treatment == "consistentDry" | treatment == "springDry", 0, 1)),
          fall = as.factor(ifelse(treatment == "consistentDry" | treatment == "fallDry", 0, 1)))
 
-write.csv(trtout3, "Traits/Traits_ProcessedData-GH/ClimVar_trait-diversity-GH.csv", row.names = F)
+write.csv(trtout3, "~/Dropbox/ClimVar/DATA/Plant_composition_data/Traits/Traits_ProcessedData-GH/ClimVar_trait-diversity-GH.csv", row.names = F)
