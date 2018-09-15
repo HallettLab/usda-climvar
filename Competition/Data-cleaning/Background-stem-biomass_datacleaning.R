@@ -7,7 +7,7 @@ background_stems <-read.xls("~/Dropbox/ClimVar/Competition/Data/Competition_Ente
   tbl_df()
 
 # Read in data
-background_bio <-read.xls("~/Dropbox/ClimVar/Competition/Data/Competition_EnteredData/Competition_background_spring2017.xlsx", sheet=5, header=T, na.strings="#N/A!") %>%
+background_bio <-read.xls("~/Dropbox/ClimVar/Competition/Data/Competition_EnteredData/Competition_background_spring2017.xlsx", sheet=3, header=T, na.strings="#N/A!") %>%
   tbl_df() 
 
 # Clean up biomass data
@@ -18,7 +18,7 @@ background_bio2 <- background_bio %>%
   mutate(flower_bcount = flowers,
          stems_clipped = stems,
          harvest = ifelse(clip_date == "April 2017", "April", "May")) %>%
-  dplyr::select(plot, background, plants_clipped, area_clipped_cm2, 
+  dplyr::select(plot, background, area_clipped_cm2, 
                 stems_clipped, dry_wgt_g, flower_bcount, harvest) %>%
   separate(background, c("backgroundspp", "backgrounddensity"), sep = "_") %>%
   mutate(backgroundspp = recode(backgroundspp, AVFA = "Avena", BRHO = "Bromus", LACA = "Lasthenia",
@@ -36,8 +36,8 @@ background_bio2 <- background_bio %>%
 # Clean up stem data
 background_stems2 <- background_stems %>%
   tbl_df() %>%
-  mutate(area_counted_cm2 = sample.area.cm2,
-         stems_counted = stems.5cm,
+  mutate(area_counted_cm2 = as.numeric(as.character(stems_area_cm2)),
+         stems_counted = stems,
          flowers_counted = flowers,
         stalks_counted = stalks) %>%
   separate(background, c("backgroundspp", "backgrounddensity"), sep = "_") %>%
@@ -45,24 +45,34 @@ background_stems2 <- background_stems %>%
 
 # put it all together
 tog <- left_join(background_bio2, background_stems2) %>%
-  mutate(stems_counted1 = ifelse(is.na(stems_counted), stems_clipped, stems_counted),
-         stems_clipped1 = ifelse(is.na(stems_clipped), plants_clipped, stems_clipped),
-         stems_clipped1 = ifelse(is.na(stems_clipped1) & area_counted_cm2 == 25, 
-                                       stems_counted, stems_clipped1)) %>%
-  mutate(ind_weight_g = dry_wgt_g/stems_clipped1) %>%
+  mutate(stems_clipped = as.numeric(as.character(stems_clipped)),
+         stems_counted = as.numeric(as.character(stems_counted)),
+         area_clipped_cm2 = as.numeric(as.character(area_clipped_cm2))) %>%
+  mutate(ind_weight_g = dry_wgt_g/stems_clipped) %>%
   ## density should be multiplied by 2500 for the full plot; but because the
   ## seeds were concentrated in the center i'm estimating that it was in fact a smaller area (1/4 that size)
-  mutate(density = stems_counted1/area_counted_cm2*625) %>%
+  mutate(density = stems_counted/area_counted_cm2*625) %>%
+         
+         # mutate(stems_counted1 = ifelse(is.na(stems_counted), stems_clipped, stems_counted),
+         # stems_clipped1 = ifelse(is.na(stems_clipped), plants_clipped, stems_clipped),
+         # stems_clipped1 = ifelse(is.na(stems_clipped1) & area_counted_cm2 == 25, 
+         #                               stems_counted, stems_clipped1)) %>%
+#  mutate(ind_weight_g = dry_wgt_g/stems_clipped1) %>%
+  ## density should be multiplied by 2500 for the full plot; but because the
+  ## seeds were concentrated in the center i'm estimating that it was in fact a smaller area (1/4 that size)
+  ## might make this an if/else if the plot is subsampled or completely sampled...
+#  mutate(density = stems_counted1/area_counted_cm2*625) %>%
+  mutate(tot_weight_g = ind_weight_g*density) %>%
   mutate(flowers = ifelse(is.na(flowers_counted), flower_bcount, flowers_counted),
-         ind_flower = flowers/stems_counted1) %>%
-  select(plot, backgroundspp, backgrounddensity, harvest, ind_weight_g, density, ind_flower)
+         ind_flower = flowers/stems_counted) %>%
+  select(plot, backgroundspp, backgrounddensity, harvest, ind_weight_g, density, tot_weight_g, ind_flower) 
 
 
 # Read in keys  
 shelter.key <- read.csv("~/Dropbox/ClimVar/Competition/Data/Competition_EnteredData/Shelter_key.csv") %>%
   tbl_df()
 
-seed.key <- read.csv("~/Dropbox/ClimVar/Competition/Data/Competition_EnteredData/CompExpt_seedingKey.csv") %>%
+seed.key <- read.csv("~/Dropbox/ClimVar/Competition/Data/Competition_EnteredData/Competition_seedingKey.csv") %>%
   tbl_df()
 
 # Join it all
@@ -76,10 +86,20 @@ background_clean <-left_join(background_clean, seed.key) %>%
 # Deal with the duplicate measures through averaging
 background <- background_clean %>%
   mutate(phyto = backgroundspp) %>%
-  select(plot, treatment:backgroundspp, backgrounddensity, phyto, falltreatment, ind_weight_g, density, seedsAdded) %>%
+  select(plot, treatment:backgroundspp, backgrounddensity, phyto, falltreatment, ind_weight_g, tot_weight_g, density, seedsAdded, ind_flower) %>%
   group_by(plot, treatment, backgroundspp, backgrounddensity, phyto, falltreatment, shelterBlock) %>%
-  summarize(ind_weight_g = mean(ind_weight_g), density = mean(density), seedsAdded = mean(seedsAdded))
+ # summarize(ind_weight_g = mean(ind_weight_g), density = mean(density), seedsAdded = mean(seedsAdded)) %>%
+  group_by(plot, treatment, backgroundspp, backgrounddensity, phyto, falltreatment, shelterBlock) %>%
+  mutate(maxval = max(ind_weight_g),
+         ismax = ifelse(ind_weight_g == maxval, 1, 0)) %>%
+  filter(ismax == 1 | is.na(ismax)) %>%
+  summarize(ind_weight_g = mean(ind_weight_g),
+            density = mean(density),
+            seedsAdded = mean(seedsAdded),
+            tot_weight_g = mean(tot_weight_g),
+            ind_flower = mean(ind_flower))
+  
 
-write.csv(background, "~/Dropbox/ClimVar/Competition/Data/Competition_CleanedData/ClimVar_Comp_background-biomass.csv", row.names = F) %>%
+write.csv(background, "~/Dropbox/ClimVar/Competition/Data/Competition_CleanedData/ClimVar_Comp_background-biomass-2.csv", row.names = F) %>%
   tbl_df()
 

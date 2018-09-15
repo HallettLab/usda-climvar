@@ -2,8 +2,8 @@
 # Either source Phyto-bmass_datacleaning and Background-stem-biomass_datacleaning
 
 # Or read it in:
-background <- read.csv("~/Dropbox/ClimVar/Competition/Data/Competition_CleanedData/ClimVar_Comp_background-biomass.csv")
-phyto.bmass <- read.csv("~/Dropbox/ClimVar/Competition/Data/Competition_CleanedData/ClimVar_Comp_phytometer-biomass.csv")
+background <- read.csv("~/Dropbox/ClimVar/Competition/Data/Competition_CleanedData/ClimVar_Comp_background-biomass-2.csv")
+phyto.bmass <- read.csv("~/Dropbox/ClimVar/Competition/Data/Competition_CleanedData/ClimVar_Comp_phytometer-biomass-2.csv")
 
 # focus on background weights
 background.phyto <- background %>%
