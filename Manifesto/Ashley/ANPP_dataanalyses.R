@@ -35,8 +35,13 @@ shapiro.test(residuals(m1))
 #normally distributed, continue
 LS1<-lsmeans(m1, ~treatment)
 contrast(LS1, "pairwise")
-#control rain is significantly greater than all the drought treatments, no surprise
+#control rain ANPP is significantly greater than all the drought treatments, no surprise
 #control rain is most similar to spring dry
+#let's see it
+ggplot(d=May_XC, aes(x=treatment, y=weight_g_m)) +
+  theme_linedraw()+
+  labs(x="rainfall treatment", y="ANPP g/m2")+
+  geom_boxplot(aes(y=weight_g_m), shape=16)
 
 ##2. Does seasonality of rainfall affect forage production (H1)?
 ##Expect peak ANPP to be highest when rainfall occurs during peak season or consistently
@@ -55,13 +60,18 @@ shapiro.test(residuals(m2))
 LS2<-lsmeans(m2, ~treatment)
 contrast(LS2, "pairwise")
 #no differences in total ANPP among drought treatments
+#same plot as above but removes control rain
+ggplot(d=May_XC_drought, aes(x=treatment, y=weight_g_m)) +
+  theme_linedraw()+
+  labs(x="rainfall treatment", y="ANPP g/m2")+
+  geom_boxplot(aes(y=weight_g_m), shape=16)
+
 
 #does variability in soil moisture affect variability in ANPP (H1: variability)?
 #NEED TO DO: regression model
 #SOIL MOISTURE DATA? ?DECAGON?? note that the below coefficient of variation calculation won't run yet
-CV <- function(x){(sd(x)/mean(x))*100}
-moistCV<-aggregate(moisture ~ plot*year, data= X, FUN = CV)
-
+#CV <- function(x){(sd(x)/mean(x))*100}
+#moistCV<-aggregate(moisture ~ plot*year, data= X, FUN = CV)
 
 
 #3. compensation (H2)
@@ -88,9 +98,13 @@ shapiro.test(residuals(m4))
 #barely normal
 LS4<-lsmeans(m4, ~subplot)
 contrast(LS4, "pairwise")
-#mixed plots have greater ANPP compared to forb-only, but not grass-only
-#no sig difference in ANPP between mixed plots and XC (no manipulation)
-
-
+#ANOVA: overall sign effect of subplot on ANPP
+#lsmeans: B (mixed plots) have greater ANPP compared to F (forb-only), but not G (grass-only)
+#no sig difference in ANPP between B (mixed plots) and XC (no manipulation)
+#plot the effect of species composition on ANPP:
+ggplot(d=May_ANPP_noC, aes(x=subplot, y=weight_g_m)) +
+  theme_linedraw()+
+  labs(x="composition treatment", y="ANPP g/m2")+
+  geom_boxplot(aes(y=weight_g_m), shape=16)
 
 
