@@ -195,7 +195,9 @@ smdat3 <- smdat2 %>%
 ggplot(subset(smdat3), aes(x=doy4, y=sm,  color = subplot, group = (subplot))) +
   geom_line(size = .5) + theme_bw() + facet_wrap(~treatment) # facet_grid(shelterBlock~treatment) 
 
-
+#create a plot showing sm data by treatment
+ggplot(subset(smdat3), aes(x=doy4, y=sm,  color = treatment, group = (treatment))) +
+  geom_line(size = .5) + theme_bw() # facet_wrap(~subplot) # facet_grid(shelterBlock~treatment) 
 
 #were the treatments effective? 
 #summarise by treatment
@@ -203,32 +205,51 @@ smdat %>%
   group_by(treatment) %>%
   summarize(meansm = mean(sm, na.rm=T))
 #looks like consistent dry has lowest sm
+ggplot(d=smdat, aes(x=treatment, y=sm)) +
+  theme_linedraw()+
+  labs(x="treatment", y="soil moisture")+
+  geom_boxplot(aes(y=sm), shape=16)
+
+
 
 #calculate coefficient of variation for soil moisture 
 CV <- function(x){(sd(x)/mean(x))*100}
 moistCV<-aggregate(sm ~ treatment*shelterBlock*subplot, data= smdat, FUN = CV)
 
-May_ANPP2<- merge(May_ANPP, moistCV)
-colnames(May_ANPP2)[colnames(May_ANPP2)=="sm"] <- "sm_cv"
+colnames(moistCV)[colnames(moistCV)=="sm"] <- "sm_cv"
+May_ANPP2<-May_ANPP %>% group_by(treatment,shelterBlock,subplot)%>%summarise(meanANPP=mean(weight_g_m))
+
+May_ANPP2<- merge(May_ANPP2, moistCV)
+
+ggplot(d=May_ANPP2, aes(x=treatment, y=sm_cv)) +
+  theme_linedraw()+
+  labs(x="treatment", y="soil moisture CV")+
+  geom_boxplot(aes(y=sm_cv), shape=16)
 
 sm_mean<-aggregate(sm~treatment*shelterBlock*subplot, data=smdat, FUN=mean)
 May_ANPP2<- merge(May_ANPP2, sm_mean)
 
 May_ANPP2_noC<-filter(May_ANPP2, subplot!='C')
 
+#how does sm vary by treatment?
+ggplot(d=May_ANPP2_noC, aes(x=treatment, y=sm)) +
+  theme_linedraw()+
+  labs(x="treatment", y="soil moisture")+
+  geom_boxplot(aes(y=sm), shape=16)
+
 #regression
 #how does ANPP relate to soil moisture?
-m5<-lme(weight_g_m ~ sm, random=~1|shelterBlock/subplot, data=May_ANPP2_noC, na.action=na.exclude)
+m5<-lme(meanANPP ~ sm, random=~1|shelterBlock/subplot, data=May_ANPP2_noC, na.action=na.exclude)
 summary(m5)
 anova(m5)
-r.squaredGLMM(m5) #2% of variation explained by fixed effects, 7% by whole model 
+r.squaredGLMM(m5) #9% of variation explained by fixed effects, 29% by whole model 
 qqnorm(residuals(m5))
 qqline(residuals(m5))
 shapiro.test(residuals(m5))
 #normally distributed, continue
 
 
-ggplot(May_ANPP2_noC, aes(x=sm, y=weight_g_m))+
+ggplot(May_ANPP2_noC, aes(x=sm, y=meanANPP))+
   geom_smooth(method='lm')+
   labs(x="Soil Moisture", y="ANPP g/m2")
 #ANPP increases with soil moisture, no surprise there
@@ -237,17 +258,18 @@ ggplot(May_ANPP2_noC, aes(x=sm, y=weight_g_m))+
 m6<-lme(sm ~ shelterBlock, random=~1|treatment, data=May_ANPP2_noC, na.action=na.exclude)
 summary(m6)
 anova(m6) #treatment is significant
-r.squaredGLMM(m6) #43% of variation explained by fixed effects, 60% by whole model 
+r.squaredGLMM(m6) #12% of variation explained by fixed effects, 62% by whole model 
 qqnorm(residuals(m6))
 qqline(residuals(m6))
 shapiro.test(residuals(m6))
-#not normally distributed
+#normal
 LS6<-lsmeans(m6, ~shelterBlock)
 contrast(LS6, "pairwise")
 #B is different from the rest
 
 ggplot(May_ANPP2_noC, aes(x=shelterBlock, y=sm))+
   geom_boxplot(aes(y=sm))+
+  theme_linedraw()+
   labs(x="Block", y="Soil Moisture")
 #block B has higher sm
 
@@ -255,11 +277,12 @@ ggplot(May_ANPP2_noC, aes(x=shelterBlock, y=sm))+
 m7<-lme(sm ~ treatment, random=~1|shelterBlock, data=May_ANPP2_noC, na.action=na.exclude)
 summary(m7)
 anova(m7) #treatment is significant
-r.squaredGLMM(m7) #43% of variation explained by fixed effects, 60% by whole model 
+r.squaredGLMM(m7) #42% of variation explained by fixed effects, 58% by whole model 
 qqnorm(residuals(m7))
 qqline(residuals(m7))
 shapiro.test(residuals(m7))
-#not normally distributed
+#normal
+
 LS7<-lsmeans(m7, ~treatment)
 contrast(LS7, "pairwise")
 #sm sign different between all combinations except falldry-springdry
@@ -277,44 +300,45 @@ ggplot(May_ANPP2_noC, aes(x=treatment, y=sm))+
 #treatments not as effective in Block C?
 
 #how does sm affect ANPP by treatment?
-ggplot(May_ANPP2_noC, aes(x=sm, y=weight_g_m, color = treatment, group= (treatment)))+
+ggplot(May_ANPP2_noC, aes(x=sm, y=meanANPP, color = treatment, group= (treatment)))+
   geom_smooth(method='lm')+
   geom_point()+
   labs(x="Soil Moisture", y="ANPP g/m2")
 
-ggplot(May_ANPP2_noC, aes(x=sm, y=weight_g_m, color = subplot, group= (subplot)))+
+ggplot(May_ANPP2_noC, aes(x=sm, y=meanANPP, color = subplot, group= (subplot)))+
   geom_smooth(method='lm')+
   geom_point()+
   labs(x="Soil Moisture", y="ANPP g/m2")
 
-ggplot(May_ANPP2_noC, aes(x=sm, y=weight_g_m, color = subplot, group= (subplot)))+
+ggplot(May_ANPP2_noC, aes(x=sm, y=meanANPP, color = subplot, group= (subplot)))+
   geom_smooth(method='lm')+
   facet_wrap(~treatment)+
   labs(x="Soil Moisture", y="ANPP g/m2") 
 
 #how does ANPP relate to variation in soil moisture
-ggplot(May_ANPP2_noC, aes(x=sm_cv, y=weight_g_m))+
+ggplot(May_ANPP2_noC, aes(x=sm_cv, y=meanANPP))+
   geom_smooth(method='lm')+
   labs(x="Soil Moisture CV", y="ANPP g/m2")
 
-ggplot(May_ANPP2_noC, aes(x=sm_cv, y=weight_g_m, color = treatment, group= (treatment)))+
+ggplot(May_ANPP2_noC, aes(x=sm_cv, y=meanANPP, color = treatment, group= (treatment)))+
   geom_smooth(method='lm')+
   labs(x="Soil Moisture CV", y="ANPP g/m2")
 
-ggplot(May_ANPP2_noC, aes(x=sm_cv, y=weight_g_m, color = subplot, group= (subplot)))+
+ggplot(May_ANPP2_noC, aes(x=sm_cv, y=meanANPP, color = subplot, group= (subplot)))+
   geom_smooth(method='lm')+
   labs(x="Soil Moisture CV", y="ANPP g/m2")
   
-ggplot(May_ANPP2_noC, aes(x=sm_cv, y=weight_g_m, color = subplot, group= (subplot)))+
+ggplot(May_ANPP2_noC, aes(x=sm_cv, y=meanANPP, color = subplot, group= (subplot)))+
   geom_smooth(method='lm')+
   facet_wrap(~treatment)+
   labs(x="Soil Moisture CV", y="ANPP g/m2") 
 
 #how does variation in ANPP relate to variation in soil moisture?
 #calculate coefficient of variation for ANPP
-anppCV<-aggregate(weight_g_m ~ treatment*shelterBlock*subplot, data= May_ANPP2_noC, FUN = CV)
+anppCV<-aggregate(weight_g_m ~ treatment*shelterBlock*subplot, data= May_ANPP, FUN = CV)
 colnames(anppCV)[colnames(anppCV)=="weight_g_m"] <- "ANPP_cv"
-May_ANPP3_noC<- merge(May_ANPP2_noC, anppCV)
+anppCV_noC<-filter(anppCV, subplot!='C')
+May_ANPP3_noC<- merge(May_ANPP2_noC, anppCV_noC)
 
 ggplot(May_ANPP3_noC, aes(x=sm_cv, y=ANPP_cv))+
   geom_smooth(method='lm')+
@@ -451,13 +475,13 @@ shapiro.test(residuals(m13))
 #not normally distributed, try log transform
 m14<-lme(log(weight_g_m+1) ~treatment*subplot, random=~1|year/shelterBlock, Func_ANPP3_F, na.action=na.exclude)
 summary(m14)
-anova(m14)
-r.squaredGLMM(m14)#14% of variation explained by fixed effects, 55% explained by entire model 
+anova(m14)#significant effects of subplot
+r.squaredGLMM(m14)#15% of variation explained by fixed effects, 55% explained by entire model 
 qqnorm(residuals(m14))
 qqline(residuals(m14))
 shapiro.test(residuals(m14))
 #better
-LS14<-lsmeans(m14, ~subplot*treatment)
+LS14<-lsmeans(m14, ~subplot)
 contrast(LS14, "pairwise")
 #ANOVA: overall sign effect of subplot on Forb ANPP
 #no shock there... there are is sign. greater forb biomass in the forb treatment
@@ -481,6 +505,8 @@ qqnorm(residuals(m16))
 qqline(residuals(m16))
 shapiro.test(residuals(m16))
 #normal
+LS16<-lsmeans(m16, ~treatment)
+contrast(LS16, "pairwise")
 
 ggplot(Func_ANPP4_F, aes(x=treatment, y=weight_g_m, color = treatment, group= (treatment)))+
   geom_boxplot()+
@@ -488,7 +514,6 @@ ggplot(Func_ANPP4_F, aes(x=treatment, y=weight_g_m, color = treatment, group= (t
   labs(x="Treatment", y="Forb ANPP")
 
 #try with proportion
-Func_ANPP4_F <-filter(Func_ANPP3_F, subplot=='XC')
 m17<-lme(propweight ~treatment, random=~1|year/shelterBlock, data=Func_ANPP4_F, na.action=na.exclude)
 summary(m17)
 anova(m17)
@@ -514,34 +539,50 @@ ggplot(Func_ANPP4_F, aes(x=treatment, y=propweight, color = treatment, group= (t
 
 ###################################################################
 #now let's look at soil moisture effects on functional group ANPP
-Func_ANPP2<- merge(Func_ANPP1, moistCV)
-colnames(Func_ANPP2)[colnames(Func_ANPP2)=="sm"] <- "sm_cv"
+Func_ANPP2<-Func_ANPP1 %>% group_by(func,treatment,shelterBlock,subplot)%>%summarise(meanANPP=mean(weight_g_m)) 
+Func_ANPP2<- merge(Func_ANPP2, moistCV)
 Func_ANPP2<- merge(Func_ANPP2, sm_mean)
+
 FanppCV<-aggregate(weight_g_m ~ treatment*shelterBlock*subplot*func, data= Func_ANPP2, FUN = CV)
 colnames(FanppCV)[colnames(FanppCV)=="weight_g_m"] <- "ANPP_cv"
-Func_ANPP3<- merge(Func_ANPP2, FanppCV)
+Func_ANPP4<- merge(Func_ANPP2, FanppCV)
 
 
-func_summ<-aggregate(weight_g_m ~ func*treatment*subplot*sm, Func_ANPP3, function(x) c(M = mean(x), SE = sd(x)/sqrt(length(x))))
-pd <- position_dodge(0.1) # move them .05 to the left and right
 #how does ANPP of functional groups relate to soil moisture?
-ggplot(func_summ, aes(x=sm, y=weight_g_m, color=func, group=treatment))+
-  geom_errorbar(aes(ymin=weight_g_m-SE, ymax=weight_g_m+SE), width=1, position=pd)+
+MeanFunc<-Func_ANPP1 %>% group_by(func,treatment)%>%summarise(meanANPP=mean(weight_g_m))
+SE <- function(x){(sd(x)/sqrt(length(x)))}
+ANPPse<-aggregate(weight_g_m ~ func*treatment, data= Func_ANPP1, FUN = SE)
+colnames(ANPPse)[colnames(ANPPse)=="weight_g_m"] <- "ANPP.SE"
+MeanFunc<- merge(MeanFunc, ANPPse)
+FanppCV2<-aggregate(weight_g_m ~ treatment*func, data= Func_ANPP1, FUN = CV)
+colnames(FanppCV2)[colnames(FanppCV2)=="weight_g_m"] <- "ANPP_cv"
+MeanFunc<- merge(MeanFunc, FanppCV2)
+sm_mean2<-aggregate(sm~treatment, data=smdat, FUN=mean)
+smCV2<-aggregate(sm ~ treatment, data=smdat, FUN = CV)
+colnames(smCV2)[colnames(smCV2)=="sm"] <- "sm_cv"
+sm2<- merge(sm_mean2, smCV2)
+MeanFunc<- merge(MeanFunc, sm2)
+
+pd <- position_dodge(0.1) # move points .05 to the left and right
+
+ggplot(MeanFunc, aes(x=sm_cv, y=meanANPP, color=func, shape=treatment))+
+  geom_errorbar(aes(ymin=meanANPP-ANPP.SE, ymax=meanANPP+ANPP.SE), width=1, position=pd)+
   geom_point(position=pd)+
-  labs(x="Soil Moisture", y="ANPP g/m2")
+  geom_smooth(method='lm')+
+  labs(x="Soil Moisture CV", y="ANPP g/m2")
 
-ggplot(tgc, aes(x=dose, y=len, colour=supp)) + 
-  geom_errorbar(aes(ymin=len-se, ymax=len+se), width=.1, position=pd) +
-  geom_line(position=pd) +
-  geom_point(position=pd)
+ggplot(MeanFunc, aes(x=sm_cv, y=ANPP_cv, color=func, shape=treatment))+
+  #geom_errorbar(aes(ymin=meanANPP-ANPP.SE, ymax=meanANPP+ANPP.SE), width=1, position=pd)+
+  geom_point(position=pd)+
+  geom_smooth(method='lm')+
+  labs(x="Soil Moisture CV", y="ANPP CV")
 
-
-ggplot(Func_ANPP3, aes(x=sm_cv, y=ANPP_cv, color=func, group=func))+
+ggplot(Func_ANPP4, aes(x=sm_cv, y=ANPP_cv, color=func, group=func))+
   geom_point()+
   geom_smooth(method='lm')+
   labs(x="Soil Moisture CV", y="ANPP CV")
 
-ggplot(Func_ANPP3, aes(x=sm_cv, y=ANPP_cv, color=func, group=func))+
+ggplot(Func_ANPP4, aes(x=sm_cv, y=ANPP_cv, color=func, group=func))+
   geom_point()+
   geom_smooth(method='lm')+
   facet_wrap(~treatment)
