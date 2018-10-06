@@ -164,6 +164,7 @@ dkey2 <- merge(dkey1, shelterkey[c("plot", "treatment", "shelterBlock")])%>%
 smdat <- merge(dkey2, dat2) %>%
   tbl_df() 
 
+
 # pull out focal plots, an
 #AS: updated subplot names
 smdat2 <- smdat %>%
@@ -178,6 +179,10 @@ smdat2 <- smdat %>%
 
 smdat2 %>%
   group_by(treatment, subplot) %>%
+  summarize(meansm = mean(sm, na.rm=T))
+
+smdat2 %>%
+  group_by(treatment, year) %>%
   summarize(meansm = mean(sm, na.rm=T))
 
 ggplot(subset(smdat2), aes(x=doy4, y=sm,  color = subplot, group = interaction(subplot, plot))) +
@@ -348,6 +353,11 @@ ggplot(May_ANPP3_noC, aes(x=sm_cv, y=ANPP_cv, color=treatment, group=treatment))
   geom_smooth(method='lm')+
   labs(x="Soil Moisture CV", y="ANPP CV")
 
+ggplot(May_ANPP3_noC, aes(x=subplot, y=ANPP_cv, color=subplot, group=subplot))+
+  geom_boxplot()+
+  facet_grid(~treatment)+
+  labs(x="treatment", y="ANPP CV")
+
 ggplot(May_ANPP3_noC, aes(x=sm_cv, y=ANPP_cv, color = subplot, group= (subplot)))+
   geom_smooth(method='lm') +
   labs(x="Soil Moisture CV", y="ANPP CV")
@@ -460,6 +470,23 @@ ggplot(Func_ANPP2_XC, aes(x=func, y=propweight, color = func, group= (func)))+
   labs(x="Functional Group", y="Relative ANPP")
 #site B is grassier? A is 'forbier'?
 
+#does grass ANPP differ by treatment?
+Func_ANPP2_G <- Func_ANPP2 %>% filter(func=="G") %>% filter(subplot!="F")
+m14<-lme(weight_g_m ~treatment, random=~1|year/shelterBlock, Func_ANPP2_G, na.action=na.exclude)
+summary(m14)
+anova(m14)
+r.squaredGLMM(m14) #2% of variation explained by fixed effects, 42% by whole model 
+qqnorm(residuals(m14))
+qqline(residuals(m14))
+shapiro.test(residuals(m14))#normal
+LS14<-lsmeans(m14, ~treatment)
+contrast(LS14, "pairwise")
+
+ggplot(Func_ANPP2_G, aes(x=year, y=weight_g_m, color=treatment))+
+  geom_boxplot()+
+  labs(x="year",y="Grass ANPP")
+
+
 # compensation (H2)
 #H2 will be confirmed if mixed plots have greater ANPP compared to grass only or forb only
 #Does forb biomass increase with fall drought?
@@ -536,6 +563,29 @@ ggplot(Func_ANPP4_F, aes(x=treatment, y=propweight, color = treatment, group= (t
   #facet_grid(~shelterBlock)+
   labs(x="Treatment", y="Prop Forb ANPP")
 
+#does forb ANPP increase in the dry year (2015) for XC only?
+mf1<-lme(weight_g_m ~year, random=~1|treatment/shelterBlock, data=Func_ANPP4_F, na.action=na.exclude)
+summary(mf1)
+anova(mf1)
+r.squaredGLMM(mf1)
+qqnorm(residuals(mf1))
+qqline(residuals(mf1))
+shapiro.test(residuals(mf1))
+#not normally distributed, try log transform
+mf2<-lme(log(weight_g_m+1) ~year, random=~1|treatment/shelterBlock, Func_ANPP4_F, na.action=na.exclude)
+summary(mf2)
+anova(mf2)
+r.squaredGLMM(mf2)#21% of variation explained by fixed effects, 64% explained by entire model
+qqnorm(residuals(mf2))
+qqline(residuals(mf2))
+shapiro.test(residuals(mf2))
+#better
+LSf2<-lsmeans(mf2, ~year)
+contrast(LSf2, "pairwise")
+
+ggplot(Func_ANPP4_F, aes(x=year,y=weight_g_m))+
+  geom_boxplot()+
+  labs(x="Year", y="Forb ANPP")
 
 ###################################################################
 #now let's look at soil moisture effects on functional group ANPP
@@ -568,7 +618,14 @@ pd <- position_dodge(0.1) # move points .05 to the left and right
 ggplot(MeanFunc, aes(x=sm_cv, y=meanANPP, color=func, shape=treatment))+
   geom_errorbar(aes(ymin=meanANPP-ANPP.SE, ymax=meanANPP+ANPP.SE), width=1, position=pd)+
   geom_point(position=pd)+
-  geom_smooth(method='lm')+
+  xlim(55,65)+
+  labs(x="Soil Moisture CV", y="ANPP g/m2")
+
+ggplot(MeanFunc, aes(x=sm_cv, y=meanANPP, color=func))+
+  geom_errorbar(aes(ymin=meanANPP-ANPP.SE, ymax=meanANPP+ANPP.SE), width=1, position=pd)+
+  geom_point(position=pd)+
+  geom_smooth(data=MeanFunc, method='lm', se=FALSE)+
+  xlim(55,65)+
   labs(x="Soil Moisture CV", y="ANPP g/m2")
 
 ggplot(MeanFunc, aes(x=sm_cv, y=ANPP_cv, color=func, shape=treatment))+
