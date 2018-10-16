@@ -28,8 +28,8 @@ excelfilenames<-as.matrix(subset(allfilenames, grepl(".xls", allfilenames)==T))
 #no master (in separate folder)
 
 #remove Mar 25 2017 files from the list until after we talk to Caitlin about the dates & data
-excelfilenames<- excelfilenames %>% subset(excelfilenames[,1]!="PLOT1 25Mar17-0135.xls")%>% 
-  subset(excelfilenames[,1]!="PLOT10 25Mar17-0124.xls")
+excelfilenames<- excelfilenames %>% subset(excelfilenames[,1]!="PLOT1 25Mar17-0135.xls") 
+excelfilenames<- excelfilenames %>%subset(excelfilenames[,1]!="PLOT10 25Mar17-0124.xls")
 excelfilenames<- excelfilenames %>% subset(excelfilenames[,1]!="PLOT11 25Mar17-0122.xls")
   excelfilenames<- excelfilenames %>%subset(excelfilenames[,1]!="PLOT12 25Mar17-0120.xls") 
   excelfilenames<- excelfilenames %>%subset(excelfilenames[,1]!="PLOT13 25Mar17-0120.xls") 
@@ -49,13 +49,11 @@ excelfilenames<- excelfilenames %>% subset(excelfilenames[,1]!="PLOT11 25Mar17-0
 myupdates_list<-apply(excelfilenames, 1, cleanDecagon)
 #create a single data frame of new files
 myupdates_df <- tbl_df(do.call("rbind", myupdates_list))
-names(myupdates_df)[6]="XC"
 
 
 ##FORMAT FOR R##
 #tidy myupdates_df
 dat<-myupdates_df
-names(dat)[6]="XC"
 dat<-dat%>%
   gather(subplot, sm, B:XC)
 key<-read.csv("Shelter_key.csv")
@@ -65,10 +63,10 @@ dat2$sm<-as.numeric(dat2$sm)
 
 #check for duplicate records
 duplicated(dat2)
-duplicates2<-dat2[duplicated(dat2),]
-duplicates2$year<-as.factor(as.character(duplicates2$year))
-levels(duplicates2$year)
-#there seems to be a problem with plot 10 from Mar 24 2017 data. For some reason, data coded as year 2000 and 2044. I will remove these remove duplicates
+duplicates<-dat2[duplicated(dat2),]
+duplicates$year<-as.factor(as.character(duplicates$year))
+levels(duplicates$year)
+#there seems to be a problem with plot 10 from Mar 24 2017 data. For some reason, data coded as year 2000 and 2044. I will remove these & remove duplicates
 dat2<- unique(dat2)
 #remove year 2000 and 2044 from record
 dat2<-dat2 %>% filter(year!="2000")%>%filter(year!="2044")
@@ -112,7 +110,7 @@ smdat2 <- dat2 %>%
          doy4 = year + doy3) 
 
 smdat2 %>%
-  group_by(treatment, subplot) %>%
+  group_by(treatment, shelterBlock) %>%
   summarize(meansm = mean(sm, na.rm=T))
 
 getOption("device")
@@ -143,6 +141,26 @@ ggplot(subset(smdat2), aes(x=doy4, y=sm,  color = subplot, group = (subplot))) +
   geom_line(size = .5) + theme_bw() + facet_wrap(subplot~plot) # facet_grid(shelterBlock~treatment) 
 
 #really weird data in plot 10, subplot B - did a sensor malfunction? remove plot 10, subplot B, year 2016 from the dataset
+smdat4<-smdat2 %>% 
+  mutate_all(.funs = function(x) replace(x, which(x < 0 ), NA))
 
+smdat5 <- smdat4 %>%
+  group_by(subplot, treatment, year, doy4, doy3) %>%
+  summarize(sm = mean(sm, na.rm=T))
+
+#create a plot showing sm data by treatment
+ggplot(subset(smdat5), aes(x=doy4, y=sm,  color = treatment, group = (treatment))) +
+  geom_line(size = .5) + theme_bw() # facet_wrap(~subplot) # facet_grid(shelterBlock~treatment) 
+
+smdat4 %>%
+  group_by(treatment) %>%
+  summarize(meansm = mean(sm, na.rm=T))
+
+#create a new variable for growing season?
+smdat4<-smdat4 %>% mutate( season=ifelse(doy4 %in% 2014:2015.5, "one", ifelse(doy4 %in% 2015.8:2016.5, "two", ifelse(doy4 %in% 2016.8:2017.5, "three", "summer"))))
+
+CV <- function(x){(sd(x)/mean(x))*100}
+moistCV<-aggregate(sm ~ treatment*shelterBlock*subplot*year, data= smdat4, FUN = CV)
+colnames(moistCV)[colnames(moistCV)=="sm"] <- "sm_cv"
 
 
