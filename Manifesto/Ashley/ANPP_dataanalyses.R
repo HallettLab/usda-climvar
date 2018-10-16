@@ -219,10 +219,10 @@ ggplot(d=smdat, aes(x=treatment, y=sm)) +
 
 #calculate coefficient of variation for soil moisture 
 CV <- function(x){(sd(x)/mean(x))*100}
-moistCV<-aggregate(sm ~ treatment*shelterBlock*subplot, data= smdat, FUN = CV)
+moistCV<-aggregate(sm ~ treatment*shelterBlock*subplot*year, data= smdat4, FUN = CV)
 
 colnames(moistCV)[colnames(moistCV)=="sm"] <- "sm_cv"
-May_ANPP2<-May_ANPP %>% group_by(treatment,shelterBlock,subplot)%>%summarise(meanANPP=mean(weight_g_m))
+May_ANPP2<-May_ANPP %>% group_by(treatment,shelterBlock,subplot,year)%>%summarise(meanANPP=mean(weight_g_m))
 
 May_ANPP2<- merge(May_ANPP2, moistCV)
 
@@ -231,7 +231,7 @@ ggplot(d=May_ANPP2, aes(x=treatment, y=sm_cv)) +
   labs(x="treatment", y="soil moisture CV")+
   geom_boxplot(aes(y=sm_cv), shape=16)
 
-sm_mean<-aggregate(sm~treatment*shelterBlock*subplot, data=smdat, FUN=mean)
+sm_mean<-aggregate(sm~treatment*shelterBlock*subplot*year, data=smdat4, FUN=mean)
 May_ANPP2<- merge(May_ANPP2, sm_mean)
 
 May_ANPP2_noC<-filter(May_ANPP2, subplot!='C')
@@ -247,7 +247,7 @@ ggplot(d=May_ANPP2_noC, aes(x=treatment, y=sm)) +
 m5<-lme(meanANPP ~ sm, random=~1|shelterBlock/subplot, data=May_ANPP2_noC, na.action=na.exclude)
 summary(m5)
 anova(m5)
-r.squaredGLMM(m5) #9% of variation explained by fixed effects, 29% by whole model 
+r.squaredGLMM(m5) #19% of variation explained by fixed effects, 24% by whole model 
 qqnorm(residuals(m5))
 qqline(residuals(m5))
 shapiro.test(residuals(m5))
@@ -340,7 +340,7 @@ ggplot(May_ANPP2_noC, aes(x=sm_cv, y=meanANPP, color = subplot, group= (subplot)
 
 #how does variation in ANPP relate to variation in soil moisture?
 #calculate coefficient of variation for ANPP
-anppCV<-aggregate(weight_g_m ~ treatment*shelterBlock*subplot, data= May_ANPP, FUN = CV)
+anppCV<-aggregate(weight_g_m ~ treatment*shelterBlock*subplot*year, data= May_ANPP, FUN = CV)
 colnames(anppCV)[colnames(anppCV)=="weight_g_m"] <- "ANPP_cv"
 anppCV_noC<-filter(anppCV, subplot!='C')
 May_ANPP3_noC<- merge(May_ANPP2_noC, anppCV_noC)
