@@ -13,6 +13,7 @@ levels(May_ANPP$subplot)
 levels(May_ANPP$treatment)
 levels(May_ANPP$shelter)
 levels(May_ANPP$shelterBlock)
+head(May_ANPP)
 
 #change plots, years, shelter to factors
 May_ANPP[,'plot'] <- as.factor(as.character(May_ANPP[,'plot']))
