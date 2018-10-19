@@ -25,6 +25,8 @@ ggplot(comp.dat2, aes(x=backgrounddensity, y = mean_weight, color = falltreatmen
 ggplot(subset(comp.dat2, backgrounddensity != "none"), aes(x=falltreatment, y = mean_weight, color = backgroundspp, group = backgroundspp)) + geom_point() +
   geom_line() + 
   facet_grid(phyto~backgrounddensity, scales = "free")
+ggsave("~/Dropbox/ClimVar/Competition/Figures/Exploratory/all-competition.pdf", width = 8, height = 10)
+
 
 grass.dat <- comp.dat2 %>%
   filter(backgroundspp%in%c("Avena", "Bromus", "Vulpia"),
