@@ -1,5 +1,7 @@
 ## Combine the background and phytometer data
 # Either source Phyto-bmass_datacleaning and Background-stem-biomass_datacleaning
+library(gdata)
+library(tidyverse)
 
 # Or read it in:
 background <- read.csv("~/Dropbox/ClimVar/Competition/Data/Competition_CleanedData/ClimVar_Comp_background-biomass-2.csv")
@@ -7,7 +9,7 @@ phyto.bmass <- read.csv("~/Dropbox/ClimVar/Competition/Data/Competition_CleanedD
 
 # focus on background weights
 background.phyto <- background %>%
-  select(-density) %>%
+  select(-density, -ind_flower, -seedsAdded, - tot_weight_g) %>%
   tbl_df()
 
 # focus on background densities
@@ -17,20 +19,25 @@ background.density = background %>%
 
 # clean up phytometer format
 phyto <- phyto.bmass %>%
+  tbl_df() %>%
   mutate(ind_weight_g = ind.weight.g) %>%
-  select(-ind.weight.g, -c(chomped:rain_disturbed), -shelter) %>%
+  select(-ind.weight.g,  -shelter, -disturbed) %>%
   mutate(backgroundspp = as.character(backgroundspp),
+        backgrounddensity = as.character(backgrounddensity),
          phyto = as.character(phyto)) %>%
   mutate(backgroundspp = ifelse(is.na(backgroundspp), phyto, backgroundspp),
          backgrounddensity = ifelse(is.na(backgrounddensity), "none", backgrounddensity))
 
-# make a file of disturbed plots
+# # make a file of disturbed plots
 disturbed <- phyto.bmass %>%
-  select(plot, backgroundspp, backgrounddensity, chomped:rain_disturbed) %>%
-  gather(category, disturbance, chomped:rain_disturbed) %>%
-  mutate(disturbance = ifelse(disturbance != "", category, NA)) %>%
-  select(-category) %>%
-  filter(!is.na(disturbance))
+  select(plot, backgroundspp, backgrounddensity, disturbed) %>%
+  unique()
+# disturbed <- phyto.bmass %>%
+#   select(plot, backgroundspp, backgrounddensity, chomped:rain_disturbed) %>%
+#   gather(category, disturbance, chomped:rain_disturbed) %>%
+#   mutate(disturbance = ifelse(disturbance != "", category, NA)) %>%
+#   select(-category) %>%
+#   filter(!is.na(disturbance))
 
 # put it all together
 comp.dat0 <- left_join(rbind(phyto, background.phyto), disturbed) 
@@ -40,8 +47,8 @@ comp.dat <- left_join(comp.dat0, background.density) %>%
   mutate(competitor_density = density) %>%
   select(-density)
 
-write.csv(comp.dat, "~/Dropbox/ClimVar/Competition/Data/Competition_CleanedData/ClimVar_Comp_combined-biomass.csv", row.names = F) %>%
-  tbl_df()
+# write.csv(comp.dat, "~/Dropbox/ClimVar/Competition/Data/Competition_CleanedData/ClimVar_Comp_combined-biomass-2.csv", row.names = F) %>%
+#   tbl_df()
 
 ## QUICK VISUALS
 
