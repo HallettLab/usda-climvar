@@ -536,21 +536,19 @@ ordirgl (spp.mds4)
 help(vegan3d)
 
 ######################
-#4. Principle coordinates analysis
+#Principle coordinates analysis
 # ="Metric multidimensional scaling"
 # = "Classic multidimensional scaling"
 ######################
 help(cmdscale)
-spp.cmd<-cmdscale(spp.bcd2,eig=T)
-spp.cmd
+spp.cmd4<-cmdscale(spp.bcd4,eig=T)
+spp.cmd4
 #cmdscale does not calculate species scores automatically
 #so we need to do this manually using wascores()
 #will not handle NA values
-spp.cmd.spscores<-wascores(spp.cmd$points,cover.Bio2)
+spp.cmd.spscores4<-wascores(spp.cmd4$points,cover.Bio4)
 
 #create plot
-#consider using package LabDSV if you plan to work a lot with PCoA
-#otherwise stick with brute force as here
-plot(spp.cmd$points[,1],spp.cmd$points[,2],pch=1,col="blue",xlab="Axis1",ylab="Axis2")
-points(spp.cmd.spscores,cex=0.7, pch=3, col="red")
-text(spp.cmd.spscores,rownames(spp.cmd.spscores), cex=0.7, col="red") 
+plot(spp.cmd4$points[,1],spp.cmd4$points[,2],pch=1,col="blue",xlab="Axis1",ylab="Axis2")
+points(spp.cmd.spscores4,cex=0.7, pch=3, col="red")
+text(spp.cmd.spscores4,rownames(spp.cmd.spscores4), cex=0.7, col="red") 
