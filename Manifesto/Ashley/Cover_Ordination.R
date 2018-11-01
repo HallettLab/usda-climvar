@@ -18,6 +18,9 @@ data <- tibble::rowid_to_column(data, "subplot")
 
 ######################
 #0. Create objects needed for ordination
+#This first round is for full dataset (all subplots)... 
+#I will do XC only next
+#And then composition treatments
 ######################
 
 ###some code to load and manipulate env variables (for later)
@@ -42,13 +45,11 @@ rownames(cover.Bio)<-plotnames
 cover.Biodrop<-cover.Bio[rowSums(cover.Bio[, (1:58)]) ==0, ] #no empty rows, next step not needed
 # remove empty rows cover.Biodrop<-cover.Bio[rowSums(cover.Bio[, (1:58)])  >0, ]
 
-
 cover.rowsums <- rowSums(cover.Bio [1:58])
 cover.relrow <- data.frame(cover.Bio /cover.rowsums)
 cover.colmax<-sapply(cover.Bio ,max)
 cover.relcolmax <- data.frame(sweep(cover.Bio ,2,cover.colmax,'/'))
 cover.pa <- cover.Bio %>% mutate_each(funs(ifelse(.>0,1,0)), 1:58)
-
 
 ######################
 #2. NMS
@@ -142,7 +143,7 @@ permanova3
 #plot(envvec.nms.rotelev) 
 
 ####################
-#repeat ordination for control subplots only
+#repeat ordination for control (XC) subplots only
 ##################
 
 data2<- cover %>% dplyr::select(-X, -species, -genus, -status, -func, -func2) %>% 
@@ -162,11 +163,11 @@ data2$TB<-paste(data2$treatment,data2$shelterBlock,sep=".")
 ###standardize the environmental variables (scale function converts to z-scores)
 #LTM.env.z <- data.frame(scale(LTM.env2))
 TB<-as.factor(data2[,66])
-Treatment<-data2[,4]
-Year<-data2[,3]
-plotnames<-data2[,65]
+Treatment2<-data2[,4]
+Year2<-data2[,3]
+plotnames2<-data2[,65]
 cover.Bio2<- data2 %>% dplyr::select(-c(1:6), -ID, -TB, -Unknown)
-rownames(cover.Bio2)<-plotnames
+rownames(cover.Bio2)<-plotnames2
 #check for empty rows
 cover.Biodrop2<-cover.Bio2[rowSums(cover.Bio2[, (1:57)]) ==0, ] #no empty rows, next step not needed
 # remove empty rows: cover.Biodrop<-cover.Bio[rowSums(cover.Bio[, (1:58)])  >0, ]
@@ -181,9 +182,9 @@ spp.bcd2 <- vegdist(cover.relrow2)
 spp.pa.bcd2<-vegdist(cover.pa2, binary=T) #this calcs distances based on presence/absence
 
 #run NMS ordination
-spp.mds0 <-isoMDS(spp.bcd2) #runs nms only once
-spp.mds0  #by default 2 dimensions returned
-ordiplot(spp.mds0)
+spp.mds0_2 <-isoMDS(spp.bcd2) #runs nms only once
+spp.mds0_2  #by default 2 dimensions returned
+ordiplot(spp.mds0_2)
 
 #prefer to run multiple NMS ordinations
 #with different starting configurations, and choose the best
@@ -204,64 +205,64 @@ summary(spp.mds2)
 #plot results
 stressplot(spp.mds2, spp.bcd2) #stressplot
 ordiplot(spp.mds2)
-spscores1<-scores(spp.mds2,display="sites",choices=1)
+spscores1_2<-scores(spp.mds2,display="sites",choices=1)
 spscores2<-scores(spp.mds2,display="sites",choices=2)
-tplots<-data2[,66]
-tplots<-as.factor(tplots)
-tplot_levels<-levels(tplots)
-spscoresall<-data.frame(tplots,spscores1,spscores2)
+tplots2<-data2[,66]
+tplots2<-as.factor(tplots2)
+tplot_levels2<-levels(tplots2)
+spscoresall_2<-data.frame(tplots2,spscores1_2,spscores2_2)
 
 #plots colored based on treatment
-bio.plot <- ordiplot(spp.mds2,choices=c(1,2), type = "none")   #Set up the plot
+xc.plot <- ordiplot(spp.mds2,choices=c(1,2), type = "none")   #Set up the plot
 cols <- rep(c("Red","Orange","purple", "black"), each = 12) #color based on drought treatment
 cols1 <- rep(c("Red","Orange","purple", "black"))
 shapes <- rep(c(15, 8, 17 ), each=1) #shapes on year
-points(spscoresall$NMDS1,spscoresall$NMDS2,col=cols,pch=shapes) 
-text(spp.mds, display = "species", cex=0.7, col="black") #label species
+points(spscoresall_2$NMDS1,spscoresall_2$NMDS2,col=cols,pch=shapes) 
+text(spp.mds2, display = "species", cex=0.7, col="black") #label species
 # add legend for treatment
-legend("bottomright",legend=levels(Treatment), col=cols1, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
+legend("bottomright",legend=levels(Treatment2), col=cols1, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
 # add legend for year
-legend("topright",legend=levels(as.factor(as.character(Year))), col="black", pch=shapes, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
+legend("topright",legend=levels(as.factor(as.character(Year2))), col="black", pch=shapes, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
 help(ordiplot)
 
 #plots colored based on year
-bio.plot2 <- ordiplot(spp.mds2,choices=c(1,2), type = "none")   #Set up the plot
+xc.plot2 <- ordiplot(spp.mds2,choices=c(1,2), type = "none")   #Set up the plot
 cols <- rep(c("black","cyan","orange"), each = 1) 
-points(spscoresall$NMDS1,spscoresall$NMDS2,col=cols,pch=20, cex=2) 
+points(spscoresall_2$NMDS1,spscoresall_2$NMDS2,col=cols,pch=20, cex=2) 
 #ordiellipse(spp.mds, groups=Year, fill=cols)
 text(spp.mds2, display = "species", cex=0.8, col="black") #label species 
-legend("topright",legend=levels(as.factor(as.character(Year))), col=cols, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
+legend("topright",legend=levels(as.factor(as.character(Year2))), col=cols, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
 
 #plots colored based on block
-bio.plot3 <- ordiplot(spp.mds2,choices=c(1,2), type = "none")   #Set up the plot
+xc.plot3 <- ordiplot(spp.mds2,choices=c(1,2), type = "none")   #Set up the plot
 cols <- rep(c("grey", "magenta", "yellow", "navy"), each = 3) 
 cols1 <- c("grey", "magenta", "yellow", "navy") 
-points(spscoresall$NMDS1,spscoresall$NMDS2,col=cols,pch=20, cex=2) 
+points(spscoresall_2$NMDS1,spscoresall_2$NMDS2,col=cols,pch=20, cex=2) 
 text(spp.mds2, display = "species", cex=0.8, col="black") #label species 
 legend("bottomright",legend=levels(data2$shelterBlock), col=cols1, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
 
-permanova1 <- adonis(spp.bcd2~tplots, perm=100, method="bray")
-permanova1
+permanova1_2 <- adonis(spp.bcd2~tplots2, perm=100, method="bray")
+permanova1_2
 
-permanova2 <- adonis(spp.bcd2~Year, perm=100, method="bray")
-permanova2
+permanova2_2 <- adonis(spp.bcd2~Year2, perm=100, method="bray")
+permanova2_2
 
-permanova3 <- adonis(spp.bcd2~Treatment, perm=999, method="bray")
-permanova3
+permanova3_2 <- adonis(spp.bcd2~Treatment2, perm=999, method="bray")
+permanova3_2
 
 
 ##Creating an ordination plot with succession vectors
 
-cover.plot <- ordiplot(spp.mds2,choices=c(1,2), type = "none")   #Set up the plot
+xc.plot4 <- ordiplot(spp.mds2,choices=c(1,2), type = "none")   #Set up the plot
 cols <- rep(c("Red","Black","Orange", "Pink"), each = 12) 
 cols1 <- rep(c("Red","Black","Orange", "Pink"), each = 1) 
 cols2 <- rep(c("Red","Black","Orange", "Pink"), each = 4) 
 shapes <- rep(c(15, 3, 17, 19), each=3) #shapes on block
 shapes1 <- rep(c(15, 3, 17, 19), each=1) #shapes on block
-points(spscoresall$NMDS1,spscoresall$NMDS2,col=cols,pch=shapes, cex=1)#Plot the ordination points 
+points(spscoresall_2$NMDS1,spscoresall_2$NMDS2,col=cols,pch=shapes, cex=1)#Plot the ordination points 
 text(spp.mds2, display = "species", cex=0.5, col="black") #label species
-ordiarrows(spp.mds2, groups=TB, order.by=Year, label=F, col=cols2)
-legend("bottomright",legend=levels(Treatment), col=cols1, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
+ordiarrows(spp.mds2, groups=TB, order.by=Year2, label=F, col=cols2)
+legend("bottomright",legend=levels(Treatment2), col=cols1, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
 legend("bottomleft",legend=levels(data2$shelterBlock), col="black", pch=shapes1, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
 
 ##Make a 3 dimensional plot of the ordination
@@ -311,9 +312,9 @@ spp.bcd3 <- vegdist(cover.relrow3)
 spp.pa.bcd3<-vegdist(cover.pa3, binary=T) #this calcs distances based on presence/absence
 
 #run NMS ordination
-spp.mds0 <-isoMDS(spp.bcd3) #runs nms only once
-spp.mds0  #by default 2 dimensions returned
-ordiplot(spp.mds0)
+spp.mds0_3 <-isoMDS(spp.bcd3) #runs nms only once
+spp.mds0_3  #by default 2 dimensions returned
+ordiplot(spp.mds0_3)
 
 #prefer to run multiple NMS ordinations
 #with different starting configurations, and choose the best
@@ -350,9 +351,9 @@ shapes1 <- rep(c(15, 8, 17, 1 ), each=1)
 points(spscoresall_3$NMDS1,spscoresall_3$NMDS2,col=cols,pch=shapes) 
 text(spp.mds3, display = "species", cex=0.7, col="black") #label species
 # add legend for subplot
-legend("topleft",legend=levels(subplot), col=cols1, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
+legend("topleft",legend=levels(subplot3), col=cols1, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
 # add legend for drought treatment
-legend("topright",legend=levels(as.factor(as.character(Treatment))), col="black", pch=shapes1, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
+legend("topright",legend=levels(as.factor(as.character(Treatment3))), col="black", pch=shapes1, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
 help(ordiplot)
 
 #plots colored based on year
@@ -361,7 +362,7 @@ cols <- rep(c("black","cyan","orange"), each = 1)
 points(spscoresall_3$NMDS1,spscoresall_3$NMDS2,col=cols,pch=20, cex=2) 
 #ordiellipse(spp.mds, groups=Year, fill=cols)
 text(spp.mds3, display = "species", cex=0.8, col="black") #label species 
-legend("topright",legend=levels(as.factor(as.character(Year))), col=cols, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
+legend("topright",legend=levels(as.factor(as.character(Year3))), col=cols, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
 
 #plots colored based on block
 comp.plot3 <- ordiplot(spp.mds3,choices=c(1,2), type = "none")   #Set up the plot
@@ -371,14 +372,14 @@ points(spscoresall_3$NMDS1,spscoresall_3$NMDS2,col=cols,pch=20, cex=2)
 text(spp.mds3, display = "species", cex=0.8, col="black") #label species 
 legend("topright",legend=levels(data3$shelterBlock), col=cols1, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
 
-permanova1 <- adonis(spp.bcd3~tplots, perm=100, method="bray")
-permanova1
+permanova1_3 <- adonis(spp.bcd3~tplots3, perm=100, method="bray")
+permanova1_3
 
-permanova2 <- adonis(spp.bcd3~Year, perm=100, method="bray")
-permanova2
+permanova2_3 <- adonis(spp.bcd3~Year3, perm=100, method="bray")
+permanova2_3
 
-permanova3 <- adonis(spp.bcd3~Treatment, perm=999, method="bray")
-permanova3
+permanova3_3 <- adonis(spp.bcd3~Treatment3, perm=999, method="bray")
+permanova3_3
 
 
 ##Creating an ordination plot with succession vectors
@@ -392,19 +393,18 @@ shapes1 <- rep(c("B", "F", "G"), each=1) #shapes on block
 points(spscoresall_3$NMDS1,spscoresall_3$NMDS2,col=cols,pch=shapes, cex=1)#Plot the ordination points 
 text(spp.mds3, display = "species", cex=0.5, col="black") #label species
 ordiarrows(spp.mds3, groups=SB3, order.by=Year3, label=F, col=cols2)
-legend("topleft",legend=levels(Treatment), col=cols1, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
-legend("topright",legend=levels(subplot), col=cols3, pch=shapes1, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
+legend("topleft",legend=levels(Treatment3), col=cols1, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
+legend("topright",legend=levels(subplot3), col=cols3, pch=shapes1, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
 
 ##Make a 3 dimensional plot of the ordination
 library (vegan3d)
 ordirgl (spp.mds3)
 help(vegan3d)
 
-
 #############
-#look at composition but group by block first
+#another look at composition but group by block first
+#everything seems to be converging towards Avena dominated communities?
 ###############
-
 ################################
 ###NMDS to compare grass-forb-both treatments
 ################################
@@ -493,9 +493,9 @@ points(spscoresall_4$NMDS1,spscoresall_4$NMDS2,col=cols,pch=shapes)
 text(spp.mds4, display = "species", selectcex=0.7, col="black") #label species
 ordiarrows(spp.mds4, groups=SB4, order.by=Year4, label=F, col=cols1)
 # add legend for subplot
-legend("topleft",legend=levels(subplot), col=cols1, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=1,x.intersp=1.5,pt.cex=2)
+legend("topleft",legend=levels(Subplot4), col=cols1, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=1,x.intersp=1.5,pt.cex=2)
 # add legend for drought treatment
-legend("topright",legend=levels(as.factor(as.character(Treatment))), col="black", pch=shapes1, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
+legend("topright",legend=levels(as.factor(as.character(Treatment4))), col="black", pch=shapes1, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
 help(ordiplot)
 
 #plots colored based on year
@@ -504,17 +504,17 @@ cols <- rep(c("black","cyan","orange"), each = 1)
 points(spscoresall_4$NMDS1,spscoresall_4$NMDS2,col=cols,pch=20, cex=2) 
 #ordiellipse(spp.mds, groups=Year, fill=cols)
 text(spp.mds3, display = "species", cex=0.8, col="black") #label species 
-legend("topright",legend=levels(as.factor(as.character(Year))), col=cols, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
+legend("topright",legend=levels(as.factor(as.character(Year4))), col=cols, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
 
 
-permanova1 <- adonis(spp.bcd3~tplots, perm=100, method="bray")
-permanova1
+permanova1_4 <- adonis(spp.bcd3~tplots4, perm=100, method="bray")
+permanova1_4
 
-permanova2 <- adonis(spp.bcd4~Year4, perm=100, method="bray")
-permanova2
+permanova2_4 <- adonis(spp.bcd4~Year4, perm=100, method="bray")
+permanova2_4
 
-permanova3 <- adonis(spp.bcd4~Treatment4, perm=999, method="bray")
-permanova3
+permanova3_4 <- adonis(spp.bcd4~Treatment4, perm=999, method="bray")
+permanova3_4
 
 
 ##Creating an ordination plot with succession vectors
@@ -528,8 +528,8 @@ shapes1 <- rep(c("B", "F", "G"), each=1) #shapes on block
 points(spscoresall_4$NMDS1,spscoresall_4$NMDS2,col=cols,pch=shapes, cex=1)#Plot the ordination points 
 text(spp.mds4, display = "species", cex=0.5, col="black") #label species
 ordiarrows(spp.mds4, groups=(as.factor(data4$SB)), order.by=(data4$year), label=F, col=cols2)
-legend("topleft",legend=levels(Treatment), col=cols1, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
-legend("topright",legend=levels(subplot), col="black", pch=shapes1, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
+legend("topleft",legend=levels(Treatment4), col=cols1, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
+legend("topright",legend=levels(Subplot4), col="black", pch=shapes1, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
 
 ##Make a 3 dimensional plot of the ordination
 ordirgl (spp.mds4)
