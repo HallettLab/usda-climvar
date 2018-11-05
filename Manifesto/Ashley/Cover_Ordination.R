@@ -267,8 +267,8 @@ shapes1 <- rep(c(15, 3, 17, 19), each=1) #shapes on block
 points(spscoresall_2$NMDS1,spscoresall_2$NMDS2,col=cols,pch=shapes, cex=1)#Plot the ordination points 
 text(spp.mds2, display = "species", cex=0.5, col="grey30") #label species
 ordiarrows(spp.mds2, groups=TB, order.by=Year2, label=F, col=cols2)
-legend("bottomright",legend=levels(Treatment2), col=cols1, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
-legend("bottomleft",legend=levels(data2$shelterBlock), col="black", pch=shapes1, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
+legend("topright",legend=levels(Treatment2), col=cols1, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
+legend("topleft",legend=levels(data2$shelterBlock), col="black", pch=shapes1, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
 
 ##Make a 3 dimensional plot of this ordination
 library (vegan3d)
@@ -501,9 +501,9 @@ points(spscoresall_4$NMDS1,spscoresall_4$NMDS2,col=cols,pch=shapes)
 text(spp.mds4, display = "species", cex=0.6, col="grey30") #label species
 ordiarrows(spp.mds4, groups=SB4, order.by=Year4, label=F, col=cols1)
 # add legend for subplot
-legend("bottomleft",legend=levels(Subplot4), col=cols1, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=1,x.intersp=1.5,pt.cex=2)
+legend("topleft",legend=levels(Subplot4), col=cols1, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=1,x.intersp=1.5,pt.cex=2)
 # add legend for drought treatment
-legend("bottomright",legend=levels(as.factor(as.character(Treatment4))), col="black", pch=shapes1, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
+legend("topright",legend=levels(as.factor(as.character(Treatment4))), col="black", pch=shapes1, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
 help(ordiplot)
 
 #plots colored based on year
