@@ -5,21 +5,40 @@ setwd("C:/Users/Lina/Dropbox/ClimVar/DATA/Plant_composition_data/BNPP/BNPP_Clean
 #load the dataset
 BNPP0 <- read.csv("BNPP_MayHarvest_2015.csv", header = TRUE)
 
-#load package "tidyverse"
-library("tidyverse")
+setwd("C:/Users/Lina/Dropbox/ClimVar/DATA/Plant_composition_data/ANPP/ANPP_CleanedData")
+ANPP0 <- read.csv("ClimVar_ANPP-peak.csv", header = TRUE)
+
 #set data as a tibble
+
+library("tidyverse")
+
 BNPP <- as.tibble(BNPP0)
-BNPP
-levels(BNPP$treatment)
+str(BNPP)
+
+ANPP <- as.tibble(ANPP0)
+str(ANPP)
 
 #replace entry "20-Oct" to "10-20" in depth column
 BNPP$depth <- as.character(BNPP$depth)
 BNPP <- BNPP %>%
   mutate(depth = replace(depth, depth == "20-Oct", "10-20"))
 
+#calculate total BNPP 
+BNPP1 <- BNPP %>%
+  group_by(plot, subplot, treatment, shelterBlock, shelter, fall, spring) %>%
+  summarise(agg_BNPP = sum(bmass_g_m2))
+
+#calculate root:shoot ratio
+joined <- ANPP %>%
+  filter(year == 2015) %>%
+  filter(subplot == "F" | subplot == "B" | subplot == "G") %>%
+  inner_join(BNPP1, by = c( "plot", "subplot", "treatment", "shelterBlock")) %>%
+  mutate(root_shoot = agg_BNPP/weight_g_m)
+
 ####DATA VISUALIZATION
 
 library(ggplot2)
+library(ggpubr)
 
 #subset the data by depth
 Top10 <- BNPP %>%
@@ -49,7 +68,6 @@ ggplot(BNPP, aes(x=treatment, y=bmass_g_m2, fill=depth, color=depth)) +
   theme_classic()
 
 #plot biomass vs. treatment (group by functional group)
-library(ggpubr)
 Top10_plot <- ggplot(Top10, aes(x=treatment, y=bmass_g_m2, fill=subplot, color=subplot)) +
   geom_boxplot() +
   theme_classic()
@@ -67,8 +85,19 @@ ggarrange(Top10_plot, Mid10_plot, Bottom10_plot,
           ncol = 1,
           nrow = 3)
 
-####ANOVA 
+#plot aggregated biomass vs. treatment by functional group
+total_biomass <- ggplot(BNPP1, aes(x=treatment, y=agg_BNPP, fill = subplot)) +
+  geom_boxplot() +
+  theme_classic()
 
+#plot root:shoot ratio vs. treatment by functional group 
+root_shoot_plot <- ggplot(joined, aes(x=treatment, y=root_shoot, fill = subplot)) +
+  geom_boxplot() +
+  theme_classic()
+
+####ANALYSIS
+
+library(nlme) 
 library(multcomp)
 
 ###One way ANOVA biomass ~ treatment
@@ -83,7 +112,7 @@ summary(Bottom10ANOVA)
 
 ###Randomized block ANOVA biomass ~ functional group * treatment (block as random)
 #check assumptions for randomized block ANOVA
-library(nlme) 
+
 #Normality of the response variable at each level of the factor
 BNPP.agg <- with(BNPP, aggregate(data.frame(bmass_g_m2), 
                                     by = list(A = treatment, B = subplot), mean))
@@ -112,5 +141,16 @@ anova(Bottom10.lme)
 summary(Bottom10.lme)
 plot(resid(Bottom10.lme) ~fitted(Bottom10.lme))
 
+total.lme <- lme(data = joined, agg_BNPP ~ treatment * subplot, random = ~1| shelterBlock)
+anova(total.lme)
+summary(total.lme)
 
+#subset dataset
+Both <- joined %>%
+  filter(subplot == "B")
+Grass <- joined %>%
+  filter(subplot == "G")
+Forb <- joined %>%
+  filter(subplot == "F")
 
+#
