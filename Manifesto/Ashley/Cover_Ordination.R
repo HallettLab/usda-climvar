@@ -7,7 +7,7 @@ library(dplyr)
 setwd("~/Dropbox/ClimVar/DATA/Plant_composition_data")
 cover<-read.csv("Cover/Cover_CleanedData/ClimVar_species-cover.csv")
 data<- cover %>% dplyr::select(-X, -species, -genus, -status, -func, -func2) %>% spread(species_name, cover)
-
+data<-data %>% dplyr::select(-Unknown)
 levels(cover$plot)
 str(data)
 levels(data$treatment)
@@ -35,19 +35,19 @@ data <- tibble::rowid_to_column(data, "subplot")
 Treatment<-data[,4]
 Year<-data[,3]
 data$ID <- seq.int(nrow(data))
-plotnames<-data[,65]
+plotnames<-data[,64]
 cover.Bio<- data %>% dplyr::select(-c(1:6), -ID)
 rownames(cover.Bio)<-plotnames
 #check for empty rows
-cover.Biodrop<-cover.Bio[rowSums(cover.Bio[, (1:58)]) ==0, ] #no empty rows, next step not needed
+cover.Biodrop<-cover.Bio[rowSums(cover.Bio[, (1:57)]) ==0, ] #no empty rows, next step not needed
 # remove empty rows cover.Biodrop<-cover.Bio[rowSums(cover.Bio[, (1:58)])  >0, ]
 
 
-cover.rowsums <- rowSums(cover.Bio [1:58])
+cover.rowsums <- rowSums(cover.Bio [1:57])
 cover.relrow <- data.frame(cover.Bio /cover.rowsums)
 cover.colmax<-sapply(cover.Bio ,max)
 cover.relcolmax <- data.frame(sweep(cover.Bio ,2,cover.colmax,'/'))
-cover.pa <- cover.Bio %>% mutate_each(funs(ifelse(.>0,1,0)), 1:58)
+cover.pa <- cover.Bio %>% mutate_each(funs(ifelse(.>0,1,0)), 1:57)
 
 
 ######################
@@ -97,24 +97,24 @@ bio.plot <- ordiplot(spp.mds,choices=c(1,2), type = "none")   #Set up the plot
 cols <- rep(c("Red","Orange","purple", "black"), each = 15) #color based on drought treatment
 shapes <- rep(c(15, 3, 17, 19, 5), each=3) #shapes on subplot
 points(spscoresall$NMDS1,spscoresall$NMDS2,col=cols,pch=shapes) 
-text(spp.mds, display = "species", cex=0.7, col="black") #label species 
-help(ordiplot)
+text(spp.mds, display = "species", cex=0.5, col="grey30") #label species 
+#help(ordiplot)
 
 #plots colored based on year
 bio.plot2 <- ordiplot(spp.mds,choices=c(1,2), type = "none")   #Set up the plot
 cols <- rep(c("black","cyan","orange"), each = 1) 
 points(spscoresall$NMDS1,spscoresall$NMDS2,col=cols,pch=20) 
 #ordiellipse(spp.mds, groups=Year, fill=cols)
-text(spp.mds, display = "species", cex=0.8, col="black") #label species 
+text(spp.mds, display = "species", cex=0.6, col="grey30") #label species 
 
 #plots colored based on block
 bio.plot3 <- ordiplot(spp.mds,choices=c(1,2), type = "none")   #Set up the plot
 cols <- rep(c("grey", "magenta", "yellow", "navy"), each = 60) 
 points(spscoresall$NMDS1,spscoresall$NMDS2,col=cols,pch=20) 
 text(spp.mds, display = "species", cex=0.8, col="black") #label species 
+#seems to be different based on block?
 
-
-permanova1 <- adonis(spp.bcd~tplots, perm=100, method="bray")
+permanova1 <- adonis(spp.bcd~data$shelterBlock, perm=100, method="bray")
 permanova1
 
 permanova2 <- adonis(spp.bcd~Year, perm=100, method="bray")
@@ -149,6 +149,7 @@ data2<- cover %>% dplyr::select(-X, -species, -genus, -status, -func, -func2) %>
   filter(subplot=="XC") %>% spread(species_name, cover) %>% arrange(treatment) 
 data2$ID <- seq.int(nrow(data2))
 data2$TB<-paste(data2$treatment,data2$shelterBlock,sep=".")
+data2<-data2 %>% dplyr::select(-Unknown)
 
 ###some code to load and manipulate env variables (for later)
 #LTM_env<-data %>% select(-c(18:51))
@@ -160,19 +161,20 @@ data2$TB<-paste(data2$treatment,data2$shelterBlock,sep=".")
 #LTM.env2 <-LTM.env[,-c(1:16)]
 ###standardize the environmental variables (scale function converts to z-scores)
 #LTM.env.z <- data.frame(scale(LTM.env2))
-TB<-as.factor(data2[,66])
+TB<-as.factor(data2[,65])
 Treatment<-data2[,4]
 Year<-data2[,3]
-plotnames<-data2[,65]
+year<-as.factor(Year)
+plotnames<-data2[,64]
 cover.Bio2<- data2 %>% dplyr::select(-c(1:6), -ID, -TB)
 rownames(cover.Bio2)<-plotnames
 #check for empty rows
-cover.Biodrop2<-cover.Bio2[rowSums(cover.Bio2[, (1:58)]) ==0, ] #no empty rows, next step not needed
+cover.Biodrop2<-cover.Bio2[rowSums(cover.Bio2[, (1:57)]) ==0, ] #no empty rows, next step not needed
 # remove empty rows: cover.Biodrop<-cover.Bio[rowSums(cover.Bio[, (1:58)])  >0, ]
 
-cover.rowsums2 <- rowSums(cover.Bio2 [1:58])
+cover.rowsums2 <- rowSums(cover.Bio2 [1:57])
 cover.relrow2 <- data.frame(cover.Bio2 /cover.rowsums2)
-cover.pa2 <- cover.Bio2 %>% mutate_each(funs(ifelse(.>0,1,0)), 1:58)
+cover.pa2 <- cover.Bio2 %>% mutate_each(funs(ifelse(.>0,1,0)), 1:57)
 
 #make bray-curtis dissimilarity matrix for controls
 spp.bcd2 <- vegdist(cover.relrow2)
@@ -194,7 +196,7 @@ ordiplot(spp.mds0)
 #rotation of axes to maximize variance of site scores on axis 1
 #calculate species scores based on weighted averaging
 
-spp.mds<-metaMDS(cover.relrow2, trace = T, autotransform=F, trymax=100, k=3) #runs several with different starting configurations
+spp.mds<-metaMDS(cover.relrow2, trace = T, autotransform=F, trymax=999, k=3, wascores=T) #runs several with different starting configurations
 #trace= TRUE will give output for step by step what its doing
 #default is 2 dimensions, can put k=4 for 4 dimensions
 spp.mds #note if solution converges or not
@@ -205,10 +207,14 @@ stressplot(spp.mds, spp.bcd) #stressplot
 ordiplot(spp.mds)
 spscores1<-scores(spp.mds,display="sites",choices=1)
 spscores2<-scores(spp.mds,display="sites",choices=2)
-tplots<-data2[,66]
+tplots<-data2[,65]
 tplots<-as.factor(tplots)
 tplot_levels<-levels(tplots)
 spscoresall<-data.frame(tplots,spscores1,spscores2)
+
+library(goeveg)
+## Select the 30% most frequent species with 50% best axis fit
+limited <- ordiselect(cover.relrow2, spp.mds, ablim = 0.3, fitlim=0.5, method="axes")
 
 #plots colored based on treatment
 bio.plot <- ordiplot(spp.mds,choices=c(1,2), type = "none")   #Set up the plot
@@ -229,6 +235,7 @@ cols <- rep(c("black","cyan","orange"), each = 1)
 points(spscoresall$NMDS1,spscoresall$NMDS2,col=cols,pch=20) 
 #ordiellipse(spp.mds, groups=Year, fill=cols)
 text(spp.mds, display = "species", cex=0.8, col="black") #label species 
+legend("bottomright",legend=levels(year), col=cols, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
 
 #plots colored based on block
 bio.plot3 <- ordiplot(spp.mds,choices=c(1,2), type = "none")   #Set up the plot
@@ -244,20 +251,19 @@ permanova1
 permanova2 <- adonis(spp.bcd2~Year, perm=100, method="bray")
 permanova2
 
-permanova3 <- adonis(spp.bcd2~Treatment, perm=999, method="bray")
+permanova3 <- adonis(spp.bcd2~Treatment*Year*data2$shelterBlock, perm=999, method="bray")
 permanova3
 
 
-##Creating an ordination plot with succession vectors
-
+##Create an ordination plot with succession vectors over years for treatment*block 
 cover.plot <- ordiplot(spp.mds,choices=c(1,2), type = "none")   #Set up the plot
 cols <- rep(c("Red","Orange","purple", "black"), each = 12) 
 cols1 <- rep(c("Red","Orange","purple", "black"), each = 1) 
 cols2 <- rep(c("Red","Orange","purple", "black"), each = 4) 
-shapes <- rep(c(15, 3, 17, 19), each=3) #shapes on block
-shapes1 <- rep(c(15, 3, 17, 19), each=1) #shapes on block
+shapes <- rep(c(15, 3, 17, 1), each=3) #shapes on block
+shapes1 <- rep(c(15, 3, 17, 1), each=1) #shapes on block
 points(spscoresall$NMDS1,spscoresall$NMDS2,col=cols,pch=shapes)#Plot the ordination points 
-text(spp.mds, display = "species", cex=0.5, col="black") #label species
+text(spp.mds, display = "species", cex=0.8, col="grey30") #label species
 ordiarrows(spp.mds, groups=TB, order.by=Year, label=F, col=cols2)
 legend("bottomright",legend=levels(Treatment), col=cols1, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
 legend("topright",legend=levels(data2$shelterBlock), col="black", pch=shapes1, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
