@@ -2,7 +2,7 @@ library(vegan)
 library(MASS)
 library(tidyverse)
 library(dplyr)
-
+library (vegan3d)
 # Import csv file, transform to wide data, call it data
 setwd("~/Dropbox/ClimVar/DATA/Plant_composition_data")
 cover<-read.csv("Cover/Cover_CleanedData/ClimVar_species-cover.csv")
@@ -104,15 +104,15 @@ text(spp.mds, display = "species", cex=0.5, col="grey30") #label species
 
 #plots colored based on year
 bio.plot2 <- ordiplot(spp.mds,choices=c(1,2), type = "none")   #Set up the plot
-cols <- rep(c("black","cyan","orange"), each = 1) 
-points(spscoresall$NMDS1,spscoresall$NMDS2,col=cols,pch=20) 
-#ordiellipse(spp.mds, groups=Year, fill=cols)
+colyr1 <- rep(c("black","cyan","orange"), each = 1) 
+points(spscoresall$NMDS1,spscoresall$NMDS2,col=colyr,pch=20) 
+#ordiellipse(spp.mds, groups=Year, fill=colyr)
 text(spp.mds, display = "species", cex=0.6, col="grey30") #label species 
 
 #plots colored based on block
 bio.plot3 <- ordiplot(spp.mds,choices=c(1,2), type = "none")   #Set up the plot
-cols <- rep(c("grey", "magenta", "yellow", "navy"), each = 60) 
-points(spscoresall$NMDS1,spscoresall$NMDS2,col=cols,pch=20) 
+colb1 <- rep(c("grey", "magenta", "yellow", "navy"), each = 60) 
+points(spscoresall$NMDS1,spscoresall$NMDS2,col=colb1,pch=20) 
 text(spp.mds, display = "species", cex=0.8, col="black") #label species 
 #seems to be different based on block?
 
@@ -142,6 +142,12 @@ permanova4 #everything is significant, need model selection
 #ordiplot(spp.mds.rotelev)
 #text(spp.mds.rotelev, display = "species", cex=0.7, col="red") 
 #plot(envvec.nms.rotelev) 
+
+##Make a 3 dimensional plot of this ordination 
+#color based on year
+ordirgl (spp.mds, col=colyr1)
+#color based on block
+ordirgl (spp.mds, col=colb1)
 
 ####################
 #repeat ordination for control (XC) subplots only
@@ -223,10 +229,10 @@ limited <- ordiselect(cover.relrow2, spp.mds, ablim = 0.3, fitlim=0.5, method="a
 
 #plots colored based on treatment
 xc.plot <- ordiplot(spp.mds2,choices=c(1,2), type = "none")   #Set up the plot
-cols <- rep(c("Red","Blue","Orange", "Pink"), each = 12) #color based on drought treatment
+colsT2 <- rep(c("Red","Blue","Orange", "Pink"), each = 12) #color based on drought treatment
 cols1 <- rep(c("Red","Blue","Orange", "Pink"))
 shapes <- rep(c(15, 8, 17 ), each=1) #shapes on year
-points(spscoresall_2$NMDS1,spscoresall_2$NMDS2,col=cols,pch=shapes) 
+points(spscoresall_2$NMDS1,spscoresall_2$NMDS2,col=colsT2,pch=shapes) 
 text(spp.mds2, display = "species", cex=0.5, col="grey30") #label species
 # add legend for treatment
 legend("bottomright",legend=levels(Treatment2), col=cols1, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
@@ -281,8 +287,8 @@ legend("topright",legend=levels(Treatment2), col=cols1, pch=19, cex=0.9,inset=0.
 legend("topleft",legend=levels(data2$shelterBlock), col="black", pch=shapes1, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
 
 ##Make a 3 dimensional plot of this ordination
-library (vegan3d)
-ordirgl (spp.mds2)
+##color based on treatment
+ordirgl (spp.mds2, col=colsT2, pch=shapes)
 help(vegan3d)
 
 ################################
@@ -553,7 +559,8 @@ legend("topleft",legend=levels(Treatment4), col=cols1, pch=19, cex=0.9,inset=0.1
 legend("topright",legend=levels(Subplot4), col="black", pch=shapes1, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
 
 ##Make a 3 dimensional plot of the ordination
-ordirgl (spp.mds4)
+compM3d<-ordirgl (spp.mds4, col=cols, ax.col= "lightblue")
+orgltext(spp.mds4, text, display = "species", adj = 0.5, col = "black")
 help(vegan3d)
 
 ######################
