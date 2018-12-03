@@ -279,16 +279,6 @@ cv_all <- joined %>%
   summarise(cv_BNPP = cv(mean = mean(agg_BNPP),sd = sd(agg_BNPP)), 
                 cv_root_shoot = cv(mean= mean(root_shoot), sd = sd(root_shoot)))
 
-###One way ANOVA biomass ~ treatment
-Top10ANOVA <- aov(Top10_biomass ~ Top10_trt)
-summary(Top10ANOVA)
-
-Mid10ANOVA <- aov(Mid10_biomass ~ Mid10_trt)
-summary(Mid10ANOVA)
-
-Bottom10ANOVA <- aov(Bottom10_biomass ~ Bottom10_trt)
-summary(Bottom10ANOVA)
-
 ###Randomized block ANOVA biomass ~ functional group * treatment (block as random)
 #check assumptions for randomized block ANOVA
 
