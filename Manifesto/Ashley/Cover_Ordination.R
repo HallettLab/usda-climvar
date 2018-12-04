@@ -96,25 +96,41 @@ spscoresall<-data.frame(tplots,spscores1,spscores2)
 
 #plots colored based on treatment
 bio.plot <- ordiplot(spp.mds,choices=c(1,2), type = "none")   #Set up the plot
-cols <- rep(c("Red","Orange","purple", "black"), each = 15) #color based on drought treatment
+colsT1 <- rep(c("Red","Orange","purple", "black"), each = 15) #color based on drought treatment
+Lcols <- rep(c("Red", "Orange", "purple", "black"))
 shapes <- rep(c(15, 3, 17, 19, 5), each=3) #shapes on subplot
-points(spscoresall$NMDS1,spscoresall$NMDS2,col=cols,pch=shapes) 
-text(spp.mds, display = "species", cex=0.5, col="grey30") #label species 
+Lshapes <- rep(c(15,3,17,19,5))
+points(spscoresall$NMDS1,spscoresall$NMDS2,col=colsT1,pch=shapes) 
+text(spp.mds, display = "species", cex=0.5, col="grey30") #label species
+legend("bottomright",legend=levels(Treatment), col=Lcols, pch=15, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
+# add legend for treatment
+legend("topright",legend=levels(data$subplot), col="black", pch=Lshapes, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
 #help(ordiplot)
 
 #plots colored based on year
 bio.plot2 <- ordiplot(spp.mds,choices=c(1,2), type = "none")   #Set up the plot
 colyr1 <- rep(c("black","cyan","orange"), each = 1) 
-points(spscoresall$NMDS1,spscoresall$NMDS2,col=colyr,pch=20) 
+points(spscoresall$NMDS1,spscoresall$NMDS2,col=colyr1,pch=20) 
 #ordiellipse(spp.mds, groups=Year, fill=colyr)
-text(spp.mds, display = "species", cex=0.6, col="grey30") #label species 
+text(spp.mds, display = "species", cex=0.6, col="grey30") #label species
+legend("bottomright",legend=levels(as.factor(Year)), col=colyr1, pch=15, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
+# add legend for year
 
 #plots colored based on block
 bio.plot3 <- ordiplot(spp.mds,choices=c(1,2), type = "none")   #Set up the plot
 colb1 <- rep(c("grey", "magenta", "yellow", "navy"), each = 60) 
+colb1L<- rep(c("grey", "magenta", "yellow", "navy"))
 points(spscoresall$NMDS1,spscoresall$NMDS2,col=colb1,pch=20) 
-text(spp.mds, display = "species", cex=0.8, col="black") #label species 
+text(spp.mds, display = "species", cex=0.4, col="black") #label species 
+legend("bottomright",legend=levels(as.factor(data$shelterBlock)), col=colb1L, pch=15, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
+# add legend for year
 #seems to be different based on block?
+
+#plots with plant species colored on functional group: red= forb, green = grass, blue = medusahead, and pink=n-fixer
+colspec<- rep(c("red", "red", "green", "green", "green", "green", "green", "green", "green", "green", "green", "red", "red", "red", "red","red", "green", "green", "red", "red", "red", "red", "red", "red", "red", "green", "green", "green", "red", "red", "green", "red", "red", "red", "green", "red", "red", "red", "red", "red", "red", "red", "red", "red", "blue", "red", "pink", "pink", "pink", "pink", "pink", "pink", "red", "pink", "green","green", "red"))
+bio.plot4 <- ordiplot(spp.mds,choices=c(1,2), type = "none")   #Set up the plot
+points(spscoresall$NMDS1,spscoresall$NMDS2,col="grey30",pch=20) 
+text(spp.mds, display = "species", cex=0.8, col=colspec) #label species 
 
 permanova1 <- adonis(spp.bcd~data$shelterBlock, perm=100, method="bray")
 permanova1
@@ -144,6 +160,8 @@ permanova4 #everything is significant, need model selection
 #plot(envvec.nms.rotelev) 
 
 ##Make a 3 dimensional plot of this ordination 
+#color based on treatment
+ordirgl (spp.mds, col=colsT1)
 #color based on year
 ordirgl (spp.mds, col=colyr1)
 #color based on block
@@ -233,7 +251,7 @@ colsT2 <- rep(c("Red","Blue","Orange", "Pink"), each = 12) #color based on droug
 cols1 <- rep(c("Red","Blue","Orange", "Pink"))
 shapes <- rep(c(15, 8, 17 ), each=1) #shapes on year
 points(spscoresall_2$NMDS1,spscoresall_2$NMDS2,col=colsT2,pch=shapes) 
-text(spp.mds2, display = "species", cex=0.5, col="grey30") #label species
+text(spp.mds2, display = "species", cex=0.5, col=colspec) #label species
 # add legend for treatment
 legend("bottomright",legend=levels(Treatment2), col=cols1, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
 # add legend for year
@@ -245,7 +263,7 @@ xc.plot2 <- ordiplot(spp.mds2,choices=c(1,2), type = "none")   #Set up the plot
 cols <- rep(c("black","cyan","orange"), each = 1) 
 points(spscoresall_2$NMDS1,spscoresall_2$NMDS2,col=cols,pch=20, cex=2) 
 #ordiellipse(spp.mds, groups=Year, fill=cols)
-text(spp.mds2, display = "species", cex=0.6, col="grey30") #label species 
+text(spp.mds2, display = "species", cex=0.6, col=colspec) #label species 
 legend("topright",legend=levels(as.factor(as.character(Year2))), col=cols, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
 
 
@@ -254,7 +272,7 @@ xc.plot3 <- ordiplot(spp.mds2,choices=c(1,2), type = "none")   #Set up the plot
 cols <- rep(c("grey", "magenta", "yellow", "navy"), each = 3) 
 cols1 <- c("grey", "magenta", "yellow", "navy") 
 points(spscoresall_2$NMDS1,spscoresall_2$NMDS2,col=cols,pch=20, cex=2) 
-text(spp.mds2, display = "species", cex=0.6, col="grey30") #label species 
+text(spp.mds2, display = "species", cex=0.6, col=colspec) #label species 
 legend("bottomright",legend=levels(data2$shelterBlock), col=cols1, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
 
 permanova1_2 <- adonis(spp.bcd2~tplots2, perm=100, method="bray")
