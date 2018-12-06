@@ -54,7 +54,8 @@ ggplot(subset(vegabund, func=="grass" & (subplot=="XC" | subplot=="G" | subplot=
   theme_bw() + 
   labs(x="Treatment", y="Percent cover", fill="Functional
        group") +
-  theme(text = element_text(size=20))
+  theme(text = element_text(size=20))+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 ggplot(subset(vegabund, func=="forb" & (subplot=="XC" | subplot=="F" | subplot=="B")), aes(x=treatment, y=cover, fill=genus)) + 
   geom_bar(stat="identity", position="dodge") + 
@@ -62,7 +63,8 @@ ggplot(subset(vegabund, func=="forb" & (subplot=="XC" | subplot=="F" | subplot==
   theme_bw() + 
   labs(x="Treatment", y="Percent cover", fill="Functional
        group") +
-  theme(text = element_text(size=20))
+  theme(text = element_text(size=20))+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 ###ALL GRASSES AND FORBS
 gf<-cover_noC %>%
@@ -88,7 +90,8 @@ ggplot(gf_graphic, aes(x=treatment, y=meancover, fill=func)) +
   geom_errorbar(aes(ymax = meancover+secover, ymin = meancover-secover), width=.25, position=position_dodge(width=0.9)) + 
   labs(x="Treatment", y="Percent cover", fill="Functional
        group") +
-  theme(text = element_text(size=20))
+  theme(text = element_text(size=20))+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 ggplot((gfproportion), aes(x=treatment, y = percentForb)) + 
   geom_boxplot()
