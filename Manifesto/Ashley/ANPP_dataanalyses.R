@@ -22,7 +22,7 @@ May_ANPP[,'shelter'] <- as.factor(as.character(May_ANPP[,'shelter']))
 
 
 ##1. Does variability of rainfall affect forage production (H1)?
-#Using a mixed model to examine the effects of rainfall timing (fixed effect) with shelterbloc nested within year as random effect
+#Using a mixed model to examine the effects of rainfall timing (fixed effect) with shelterblock nested within year as random effect
 
 #create subset with no species manipulations (control community) only
 May_XC<-filter(May_ANPP, subplot=='XC')
@@ -90,17 +90,17 @@ qqnorm(residuals(m4))
 qqline(residuals(m4))
 shapiro.test(residuals(m4))
 #barely normal
-LS4<-lsmeans(m4, ~subplot)
+LS4<-lsmeans(m4, ~treatment)
 contrast(LS4, "pairwise")
 #ANOVA: overall sign effect of subplot on ANPP
 #lsmeans: B (mixed plots) have greater ANPP compared to F (forb-only), but not G (grass-only)
 #no sig difference in ANPP between B (mixed plots) and XC (no manipulation)
 #plot the effect of species composition on ANPP:
-ggplot(d=May_ANPP_noC, aes(x=subplot, y=weight_g_m)) +
+ggplot(d=May_ANPP_noC, aes(x=treatment, y=weight_g_m, fill=subplot)) +
+  facet_wrap(~year)+
   theme_linedraw()+
   labs(x="composition treatment", y="ANPP g/m2")+
   geom_boxplot(aes(y=weight_g_m), shape=16)
-
 
 
 #4. Does variability in soil moisture affect variability in ANPP (H1: variability)?
