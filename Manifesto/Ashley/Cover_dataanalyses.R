@@ -160,7 +160,7 @@ vegLol <- gf2 %>%
   filter(species_name == "Lolium multiflorum") %>%
   dplyr::select(-func,-species_name,-cover, -genus, -species, -status, -func2, -totcover, -X)
 
-#proportion lolium
+#proportion medusahead
 vegTae <- gf2 %>%
   group_by(plot, subplot, treatment, shelterBlock, year)%>%
   mutate(totcover=sum(cover))%>%
