@@ -229,8 +229,8 @@ ANPP_fall_noA <-
   scale_y_continuous(labels = NULL, name = NULL, limits = c(100, 800)) + #remove y-axis label
   #scale_x_discrete(limits=c(1,0)) + #change order of discrete x scale 
   annotate("text", x= 1.5, y = 600, label = "Mixed", color = "#999999", angle = -40) +
-  annotate("text", x= 1.5, y = 445, label = "Grass", color = "#56B4E9", angle = 55) +
-  annotate("text", x= 1.5, y = 515, label = "Control", color = "Red", angle = -45) +
+  annotate("text", x= 1.35, y = 435, label = "Grass", color = "#56B4E9", angle = 55) +
+  annotate("text", x= 1.5, y = 500, label = "Control", color = "Red", angle = -45) +
   annotate("text", x= 1.5, y = 325, label = "Forb", color = "#E69F00", angle = 15)
 
 ANPP_fall_noA
@@ -245,10 +245,10 @@ ANPP_spring_noA <- ggplot(summary_ANPP_spring_noA, aes(x = treatment, y = mean, 
   scale_color_manual(values = c("#999999","#E69F00","#56B4E9", "Red"), labels = c("Mixed", "Forb dominant", "Grass dominant")) + #legend colors and labels 
   theme(legend.position = "none") + #remove the legend
   scale_y_continuous(labels = NULL, name = NULL, limits = c(100, 800)) + #remove y-axis label
-  annotate("text", x= 1.5, y = 650, label = "Mixed", color = "#999999", angle = 45) +
-  annotate("text", x= 1.5, y = 425, label = "Grass", color = "#56B4E9", angle = 3) +
-  #annotate("text", x= 1.5, y = 485, label = "Control", color = "Red", angle = -15) +
-  annotate("text", x= 1.5, y = 365, label = "Forb", color = "#E69F00", angle = 30)
+  annotate("text", x= 1.5, y = 695, label = "Mixed", color = "#999999", angle = 45) +
+  annotate("text", x= 1.5, y = 405, label = "Grass", color = "#56B4E9", angle = 30) +
+  annotate("text", x= 1.5, y = 522, label = "Control", color = "Red", angle = -40) +
+  annotate("text", x= 1.5, y = 340, label = "Forb", color = "#E69F00", angle = 30)
 ANPP_spring_noA
 
 #compile interaction plots 
