@@ -1,10 +1,12 @@
-####DATA SET UP
+####DATA SET UP######
 
 #load data
-setwd("C:/Users/Lina/Dropbox/ClimVar/DATA/Plant_composition_data/BNPP/BNPP_CleanedData")
+setwd("~/Dropbox/ClimVar/DATA/Plant_composition_data/BNPP/BNPP_CleanedData")
+setwd("./Dropbox/ClimVar/DATA/Plant_composition_data/BNPP/BNPP_CleanedData")
 BNPP0 <- read.csv("BNPP_MayHarvest_2015.csv", header = TRUE)
 
-setwd("C:/Users/Lina/Dropbox/ClimVar/DATA/Plant_composition_data/ANPP/ANPP_CleanedData")
+setwd("~/Dropbox/ClimVar/DATA/Plant_composition_data/ANPP/ANPP_CleanedData")
+setwd("./Dropbox/ClimVar/DATA/Plant_composition_data/ANPP/ANPP_CleanedData")
 ANPP0 <- read.csv("ClimVar_ANPP-peak.csv", header = TRUE)
 
 #load packages
@@ -15,6 +17,7 @@ library(gridExtra)
 library(ggrepel)
 library(nlme) 
 library(multcomp)
+library(MuMIn)
 
 #inital QCQC
 ANPP <- ANPP0 %>%
@@ -55,7 +58,7 @@ joined <- ANPP %>%
   inner_join(BNPP1, by = c( "plot", "subplot", "treatment", "shelterBlock")) %>% #Join datasets
   mutate(root_shoot = agg_BNPP/weight_g_m)  #Calculate the root:shoot ratio
 
-####DATA VISUALIZATION
+####DATA VISUALIZATION####
 
 #subset the data by depth
 Top10 <- BNPP %>%
@@ -122,6 +125,12 @@ total_biomass <- ggplot(BNPP1, aes(x=treatment, y=agg_BNPP, fill = subplot)) +
 block_biomass <- ggplot(BNPP1, aes(x=treatment, y=agg_BNPP, fill = shelterBlock)) +
   geom_boxplot()
 
+block_biomass1 <- ggplot(BNPP1, aes(x=shelterBlock, y=agg_BNPP))+
+  geom_boxplot()
+
+block_biomass2 <- ggplot(BNPP1, aes(x=shelterBlock, y=agg_BNPP, fill = treatment))+
+  geom_boxplot()
+
 #plot root:shoot ratio vs. treatment by functional group 
 root_shoot_plot <- ggplot(joined, aes(x=treatment, y=root_shoot, fill = subplot)) +
   geom_boxplot() +
@@ -133,7 +142,7 @@ root_shoot_plot <- ggplot(joined, aes(x=treatment, y=root_shoot, fill = subplot)
 block_root_shoot <- ggplot(joined, aes(x=treatment, y=root_shoot, fill = shelterBlock)) +
   geom_boxplot()
 
-####ANALYSIS
+####ANALYSIS####
 #Calculate mean and standard error of aggregated BNPP by treatment
 se <- function(x) sqrt(var(x)/length(x)) #create a function for SE
 summary_BNPP_shelter <- BNPP1 %>%
@@ -279,6 +288,149 @@ cv_all <- joined %>%
   summarise(cv_BNPP = cv(mean = mean(agg_BNPP),sd = sd(agg_BNPP)), 
                 cv_root_shoot = cv(mean= mean(root_shoot), sd = sd(root_shoot)))
 
+#Remove Block A and reproduce the interaction plots
+BNPP2 <- BNPP1 %>%
+  filter(shelterBlock != "A")
+  
+summary_BNPP_shelter_minusA <- BNPP2 %>%
+  filter(treatment == "consistentDry" | treatment == "controlRain") %>%
+  group_by(shelter, subplot) %>% #group by shelter and functional groups
+  summarise(mean = mean(agg_BNPP), #summarise by mean and SE
+            SE = se(agg_BNPP))
+
+summary_BNPP_fall_minusA <- BNPP2 %>%
+  filter(treatment == "controlRain" | treatment == "fallDry") %>%
+  group_by(fall, subplot) %>% #group by fall rain treatment and functional groups
+  summarise(mean = mean(agg_BNPP), #summarise by mean and SE
+            SE = se(agg_BNPP))
+
+summary_BNPP_spring_minusA <- BNPP2 %>%
+  filter(treatment == "controlRain" | treatment == "springDry") %>%
+  group_by(spring, subplot) %>% #gropu by spring rain treatment and functional groups
+  summarise(mean = mean(agg_BNPP), #summarise by mean and SE
+            SE = se(agg_BNPP))
+
+
+##Calculate mean and standard error of root:shoot by treatment
+joined1 <- joined %>%
+  filter(shelterBlock != "A")
+
+summary_RS_shelter_minusA <- joined1 %>%
+  filter(treatment == "consistentDry" | treatment == "controlRain") %>%
+  group_by(shelter.y, subplot) %>% #group by shelter and functional groups
+  summarise(mean = mean(root_shoot), #summarise by mean and SE
+            SE = se(root_shoot))
+
+summary_RS_fall_minusA <- joined1 %>%
+  filter(treatment == "controlRain" | treatment == "fallDry") %>%
+  group_by(fall, subplot) %>% #group by fall rain treatment and functional groups
+  summarise(mean = mean(root_shoot), #summarise by mean and SE
+            SE = se(root_shoot))
+
+summary_RS_spring_minusA <- joined1 %>%
+  filter(treatment == "controlRain" | treatment == "springDry") %>%
+  group_by(spring, subplot) %>% #gropu by spring rain treatment and functional groups
+  summarise(mean = mean(root_shoot), #summarise by mean and SE
+            SE = se(root_shoot))
+
+#interaction plot of shelter treatment and functional groups minus Block A
+aggBNPP_shelter_minusA <- ggplot(summary_BNPP_shelter_minusA, aes(x = as.factor(shelter), y = mean, group = subplot, color = subplot)) +
+  geom_line(size = 1.0) + #add lines
+  geom_point(size = 2.0) + #add points
+  geom_errorbar(aes(ymin = mean-SE, ymax = mean+SE), width = 0.1, size = 1.0) + #add error bars
+  theme_classic() + #simple, classic theme 
+  labs(x = "Shelter", y = expression(paste("Aggregated BNPP (g/m"^2,") in soil depth 0-30 cm"))) + #label the axis
+  scale_color_manual(values = c("#999999","#E69F00","#56B4E9")) + #specify color 
+  theme(legend.position = "none") + #remove the legend 
+  scale_y_continuous(limits = c(100, 610)) +
+  annotate("text", x= 1.5, y = 358, label = "Mixed", color = "#999999", angle = -43) +
+  annotate("text", x= 1.5, y = 255, label = "Grass", color = "#56B4E9", angle = -39) +
+  annotate("text", x= 1.5, y = 205, label = "Forb", color = "#E69F00", angle = -38)
+
+#interaction plot of fall rain treatment and functional groups minus Block A
+summary_BNPP_fall_minusA$fall <- factor(summary_BNPP_fall_minusA$fall, levels = c(1,0))
+aggBNPP_fall_minusA <- 
+  ggplot(summary_BNPP_fall_minusA, aes(x = factor(fall), y = mean, group = subplot, color = subplot)) +
+  geom_line(size = 1.0) + #add lines
+  geom_point(size = 2.0) + #add points
+  geom_errorbar(aes(ymin = mean-SE, ymax = mean+SE), width = 0.1, size = 1.0) + #add error bars
+  theme_classic() + #simple, classic theme 
+  labs(x = "Fall Rain") + #label the axis
+  scale_color_manual(values = c("#999999","#E69F00","#56B4E9")) + #specify color
+  theme(legend.position = "none") + #remove the legend
+  scale_y_continuous(labels = NULL, name = NULL, limits = c(100, 610)) + #remove y-axis label
+  #scale_x_discrete(limits=c(1,0)) + #change order of discrete x scale 
+  annotate("text", x= 1.5, y = 355, label = "Mixed", color = "#999999", angle = -51) +
+  annotate("text", x= 1.5, y = 310, label = "Grass", color = "#56B4E9", angle = 20) +
+  annotate("text", x= 1.5, y = 225, label = "Forb", color = "#E69F00", angle = -20)
+
+#interaction plot of spring rain treatment and functional groups minus Block A
+summary_BNPP_spring_minusA$spring <- factor(summary_BNPP_spring_minusA$spring, levels = c(1,0))
+aggBNPP_spring_minusA <- ggplot(summary_BNPP_spring_minusA, aes(x = factor(spring), y = mean, group = subplot, color = subplot)) +
+  geom_line(size = 1.0) + #add lines
+  geom_point(size = 2.0) + #add points
+  geom_errorbar(aes(ymin = mean-SE, ymax = mean+SE), width = 0.1, size = 1.0) + #add error bars
+  theme_classic() + #simple, classic theme 
+  labs(x = "Spring Rain", y = expression(paste("Aggregated BNPP (g/m"^2,") in soil depth 0-30 cm"))) + #label the axis
+  scale_color_manual(values = c("#999999","#E69F00","#56B4E9"), labels = c("Mixed", "Forb dominant", "Grass dominant")) + #legend colors and labels 
+  theme(legend.position = "none") + #remove the legend
+  scale_y_continuous(labels = NULL, name = NULL, limits = c(100, 610)) + #remove y-axis label
+  annotate("text", x= 1.5, y = 382, label = "Mixed", color = "#999999", angle = -12) +
+  annotate("text", x= 1.5, y = 247, label = "Grass", color = "#56B4E9", angle = -47) +
+  annotate("text", x= 1.3, y = 234, label = "Forb", color = "#E69F00", angle = -10)
+
+#compile interaction plots (agg BNPP) minus Block A
+grid.arrange(aggBNPP_shelter_minusA, aggBNPP_fall_minusA, aggBNPP_spring_minusA, ncol = 3, widths = c(1.5,1.2,1.2))
+
+#interaction plot of shelter treatment and functional groups minus Block A
+RS_shelter_minusA <- ggplot(summary_RS_shelter_minusA, aes(x = as.factor(shelter.y), y = mean, group = subplot, color = subplot)) +
+  geom_line(size = 1.0) + #add lines
+  geom_point(size = 2.0) + #add points
+  geom_errorbar(aes(ymin = mean-SE, ymax = mean+SE), width = 0.1, size = 1.0) + #add error bars
+  theme_classic() + #simple, classic theme 
+  labs(x = "Shelter", y = expression(paste("Root: shoot ratio"))) + #label the axis
+  scale_color_manual(values = c("#999999","#E69F00","#56B4E9")) + #specify color 
+  theme(legend.position = "none") + #remove the legend 
+  scale_y_continuous(limits = c(0.3, 1.8)) +
+  annotate("text", x= 1.5, y = 0.62, label = "Mixed", color = "#999999", angle = 15) +
+  annotate("text", x= 1.2, y = 0.73, label = "Grass", color = "#56B4E9", angle = -52) +
+  annotate("text", x= 1.5, y = 0.75, label = "Forb", color = "#E69F00", angle = -50)
+
+#interaction plot of fall rain treatment and functional groups minus Block A
+summary_RS_fall_minusA$fall <- factor(summary_RS_fall_minusA$fall, levels = c(1,0))
+RS_fall_minusA <- ggplot(summary_RS_fall_minusA, aes(x = factor(fall), y = mean, group = subplot, color = subplot)) +
+  geom_line(size = 1.0) + #add lines
+  geom_point(size = 2.0) + #add points
+  geom_errorbar(aes(ymin = mean-SE, ymax = mean+SE), width = 0.1, size = 1.0) + #add error bars
+  theme_classic() + #simple, classic theme 
+  labs(x = "Fall Rain") + #label the axis
+  scale_color_manual(values = c("#999999","#E69F00","#56B4E9")) + #specify color
+  theme(legend.position = "none") + #remove the legend
+  scale_y_continuous(labels = NULL, name = NULL, limits = c(0.3, 1.8)) + #remove y-axis label
+  annotate("text", x= 1.5, y = 0.67, label = "Mixed", color = "#999999", angle = 30) +
+  annotate("text", x= 1.2, y = 0.80, label = "Grass", color = "#56B4E9", angle = -40) +
+  annotate("text", x= 1.7, y = 0.80, label = "Forb", color = "#E69F00", angle = -30)
+
+
+#interaction plot of spring rain treatment and functional groups minus Block A
+summary_RS_spring_minusA$spring <- factor(summary_RS_spring_minusA$spring, levels = c(1,0))
+RS_spring_minusA <- ggplot(summary_RS_spring_minusA, aes(x = factor(spring), y = mean, group = subplot, color = subplot)) +
+  geom_line(size = 1.0) + #add lines
+  geom_point(size = 2.0) + #add points
+  geom_errorbar(aes(ymin = mean-SE, ymax = mean+SE), width = 0.1, size = 1.0) + #add error bars
+  theme_classic() + #simple, classic theme 
+  labs(x = "Spring Rain", y = expression(paste("Aggregated BNPP (g/m"^2,") in soil depth 0-30 cm"))) + #label the axis
+  scale_color_manual(values = c("#999999","#E69F00","#56B4E9"), labels = c("Mixed", "Forb dominant", "Grass dominant")) + #legend colors and labels 
+  theme(legend.position = "none") + #remove the legend
+  scale_y_continuous(labels = NULL, name = NULL, limits = c(0.3, 1.8)) + #remove y-axis label
+  annotate("text", x= 1.2, y = 0.65, label = "Mixed", color = "#999999", angle = 35) +
+  annotate("text", x= 1.5, y = 0.73, label = "Grass", color = "#56B4E9", angle = -55) +
+  annotate("text", x= 1.5, y = 0.98, label = "Forb", color = "#E69F00", angle = 27)
+
+#compile interaction plots (Root:shoot ratio) minus Block A
+grid.arrange(RS_shelter_minusA, RS_fall_minusA, RS_spring_minusA, ncol = 3, widths = c(1.5,1.2,1.2))
+
+
 ###Randomized block ANOVA biomass ~ functional group * treatment (block as random)
 #check assumptions for randomized block ANOVA
 
@@ -313,7 +465,21 @@ plot(resid(Bottom10.lme) ~fitted(Bottom10.lme))
 total.lme <- lme(data = joined, agg_BNPP ~ treatment * subplot, random = ~1| shelterBlock)
 anova(total.lme)
 summary(total.lme)
+r.squaredGLMM(total.lme) #30% of variation explained by fixed effects, 30% of variation explained by whole model
+qqnorm(residuals(total.lme))
+qqline(residuals(total.lme))
+shapiro.test(residuals(total.lme)) #normally distributed
 
+###Randomized block ANOVA root:shoot ~ functional group * treatment (block as random)
+root_shoot.lme <- lme(data = joined, root_shoot ~ treatment * subplot, random = ~1| shelterBlock)
+anova(root_shoot.lme)
+summary(root_shoot.lme)
+r.squaredGLMM(root_shoot.lme) #9% of variation explained by fixed effects, 10% of variation explained by whole model
+qqnorm(residuals(root_shoot.lme))
+qqline(residuals(root_shoot.lme))
+shapiro.test(residuals(root_shoot.lme)) #not normally distributed
+
+###Interaction of treatment and functional groups
 #interaction aggBNPP shelter
 ft1 <- aov(data= joined, agg_BNPP ~ subplot * shelter.y + Error(shelterBlock))
 summary(ft1) 
@@ -329,10 +495,6 @@ ft3 <- aov(data= joined, agg_BNPP ~ subplot * spring + Error(shelterBlock))
 summary(ft3) 
 TukeyHSD(aov(data= joined, agg_BNPP ~ subplot * spring))
 
-#fit mixed model on root_shoot
-RS_lme <- lme(data = joined, root_shoot ~ treatment * subplot, random = ~1| shelterBlock)
-anova(RS_lme)
-
 #interaction root_shoot shelter
 ft4 <- aov(data= joined, root_shoot ~ subplot * shelter.y + Error(shelterBlock))
 summary(ft4) 
@@ -347,4 +509,38 @@ TukeyHSD(aov(data= joined, root_shoot  ~ subplot * fall))
 ft6 <- aov(data= joined, root_shoot  ~ subplot * spring + Error(shelterBlock))
 summary(ft6)
 TukeyHSD(aov(data= joined, root_shoot ~ subplot * spring))
+
+#subset data by treatment
+Amount_rain <- joined %>%
+  filter(treatment == "consistentDry" | treatment == "controlRain")
+Fall_rain <- joined %>%
+  filter(treatment == "controlRain" | treatment == "fallDry")
+Spring_rain <- joined %>%
+  filter(treatment == "controlRain" | treatment == "springDry")
+
+#aggBNPP controlRain vs. consistentlyDry
+ft7 <- aov(data = Amount_rain, agg_BNPP ~ subplot * shelter.y + Error(shelterBlock))
+summary(ft7)
+
+#root_shoot controlRain vs. consistentDry
+ft8 <- aov(data = Amount_rain, root_shoot ~ subplot * shelter.y + Error(shelterBlock))
+summary(ft8)
+
+#aggBNPP controlRain vs. fallDry
+ft9 <- aov(data = Fall_rain, agg_BNPP ~ subplot * fall + Error(shelterBlock))
+summary(ft9)
+
+#root_shoot controlRain vs. fallDry
+ft10 <- aov(data = Fall_rain, root_shoot ~ subplot * fall + Error(shelterBlock))
+summary(ft10)
+
+#aggBNPP controlRain vs. springDry
+ft11 <- aov(data = Spring_rain, agg_BNPP ~ subplot * spring + Error(shelterBlock))
+summary(ft11)
+
+#root_shoot controlRain vs. springDry
+ft12 <- aov(data = Spring_rain, root_shoot ~ subplot * spring + Error(shelterBlock))
+summary(ft12)
+
+
 
