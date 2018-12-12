@@ -212,6 +212,10 @@ gf5_2015 <- gf3_2015 %>%
   #filter(percentCov>0.10)%>%
   tbl_df()
 
+gf2_graph_2015 <- gf4_2015 %>%
+  group_by(treatment,shelterBlock,genus,func2)%>%
+  summarise(cover=mean(percentCov), secover=sd(percentCov)/sqrt(length(percentCov)))
+  
 gf3_graph_2015 <- gf4_2015 %>%
   group_by(treatment,genus, func2) %>%
   summarise(cover=mean(percentCov), secover=sd(percentCov)/sqrt(length(percentCov)))
@@ -220,11 +224,30 @@ gf5_graph_2015 <- gf5_2015 %>%
   group_by(treatment, subplot, genus, func2)%>%
   summarise(cover=mean(percentCov), secover=sd(percentCov)/sqrt(length(percentCov)))
 
-#create a stacked bar plot
+#create a stacked bar plot for XC
 ggplot(gf3_graph_2015, aes(fill=genus, y=cover, x=treatment)) +
   geom_bar( stat="identity")
 
-#now for control only using genera with > 1% cover
+gf2_graph_2015 <- gf2_graph_2015 %>% arrange(func2, genus) %>% filter(cover>0.01, genus!="NA")
+gf2_graph_2015$func2 <- factor(gf2_graph_2015$func2, c("forb","Nfixer","grass"))
+gf2_graph_2015$genus<- factor(gf2_graph_2015$genus, c("Centaurea", "Convolvulus", "Erodium","Hypochaeris","Senecio", "Vicia","Avena","Bromus","Cynodon","Hordeum","Lolium", "Taeniatherum"))
+ggplot(gf2_graph_2015, aes(fill=genus, y=cover, x=treatment, color=func2)) +
+  #geom_bar( stat="identity")+
+  theme_bw()+
+  scale_fill_manual(values = c("orange", "orangered", "firebrick","indianred4","indianred", "green4", "lightblue", "skyblue2", "skyblue4", "dodgerblue3", "royalblue3","navy"))+
+  geom_bar( stat="identity", position='stack')+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  facet_wrap(~shelterBlock)
+
+ggplot(gf2_graph_2015, aes(fill=genus, y=cover, x=shelterBlock, color=func2)) +
+  geom_bar( stat="identity")+
+  theme_bw()+
+  scale_fill_manual(values = c("orange", "orangered", "firebrick","indianred4","indianred", "green4", "lightblue", "skyblue2", "skyblue4", "dodgerblue3", "royalblue3","navy"))+
+  geom_bar( stat="identity", position='stack')+
+  theme(axis.text.x = element_text(hjust = 0.5))
+  
+
+#now for control only using genera with > 1% cover for XC
 gf3_graph_2015 <- gf3_graph_2015 %>% arrange(func2, genus) %>% filter(cover>0.01)
 levels(gf3_graph_2015$genus)
 gf3_graph_2015$func2 <- factor(gf3_graph_2015$func2, c("forb","Nfixer","grass"))
@@ -236,7 +259,7 @@ ggplot(gf3_graph_2015, aes(fill=genus, colour=func2,  y=cover, x=treatment:func2
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 #lets look at cover for the composition treatments
-gf5_graph_2015 <- gf5_graph_2015 %>% arrange(func2, genus) %>% filter(cover>0.01) %>%filter(genus!="NA")
+gf5_graph_2015 <- gf5_graph_2015 %>% arrange(func2, genus) %>% filter(cover>0.01) %>% filter(genus!="NA")
 levels(gf5_graph_2015$genus)
 gf5_graph_2015$func2 <- factor(gf5_graph_2015$func2, c("forb","Nfixer","grass"))
 gf5_graph_2015$genus<- factor(gf5_graph_2015$genus, c("Anagalis", "Centaurea","Cerastium", "Convolvulus", "Erodium","Hypochaeris", "Rumex","Sherardia","Silene", "Trifolium","Vicia","Avena","Bromus","Cynodon","Hordeum","Lolium", "Taeniatherum", "Vulpia"))
@@ -277,14 +300,7 @@ ggscatterhist(gfprop_noF, x = "AvCover", y = "TaeCover",
               color = "treatment", size = 3, alpha = 0.6,
               margin.params = list(fill = "treatment", color = "black", size = 0.2))
 
-#does grass cover increase with wet fall (springdry)? driven by avena?
-ggscatterhist(gfprop_noF_wetyr, x = "AvCover", y = "percentGrass",
-              color = "treatment", size = 3, alpha = 0.6,
-              margin.params = list(fill = "treatment", color = "black", size = 0.2))
 
-ggplot(gfprop_noF_2015, aes(x=year, y=percentGrass, color=treatment))+
-  geom_boxplot()+
-  labs(x="year",y="Grass Cover")
 
 
 
@@ -335,7 +351,7 @@ shapiro.test(residuals(g7))
 g8<-lme(log(LolCover+1) ~treatment, random=~1|shelterBlock, gfprop_noF_2015, na.action=na.exclude)
 summary(g8)
 anova(g8)
-r.squaredGLMM(g8) #13% of variation explained by fixed effects, 60% by whole model (spacial variation?)
+r.squaredGLMM(g8) #13% of variation explained by fixed effects, 60% by whole model (spatial variation?)
 qqnorm(residuals(g8))
 qqline(residuals(g8))
 shapiro.test(residuals(g8))
@@ -366,7 +382,7 @@ contrast(gLS6w, "pairwise") #differences in consistent/fall dry and spring dry
 ggplot(gfprop_noF_2015, aes(x=treatment, y=TaeCover))+
   geom_boxplot()
 
-#medusahead released from competition in fall dry?
+#medusahead released from competition in consistent dry and fall dry?
 
 
 gfprop_noF_season_2015 <- gfprop_graph_2015 %>% filter(treatment!="consistentDry") %>% filter(treatment!="controlRain") %>% filter(subplot!="F")
@@ -382,13 +398,7 @@ ggplot(gfprop_noF_season_graph_2015, aes(x=treatment, y=meancover, color=func, g
   geom_errorbar(aes(ymin=meancover-secover, ymax=meancover+secover), width=.2,position=position_dodge(0.05))+
   labs(x="Treatment", y="Mean Cover (%)")
 
-
-
-
-#is cover specific to site (XC and control rain)?
-
-
-
-
 #does functional diversity/evenness/richness change with precipitation variability (drought vs. control) or seasonability (drought treatments)?
+#how does functional diversity differ by block?
+#does functional diversity stabilize the community?
 #how does functional diversity relate to coefficient of variation for soil moisture?
