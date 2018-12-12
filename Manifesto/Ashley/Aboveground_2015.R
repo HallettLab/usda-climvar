@@ -23,7 +23,7 @@ May_2015_XC<-filter(May_ANPP_2015, subplot=='XC')
 m1a<-lme(weight_g_m ~treatment, random=~1|shelterBlock, May_2015_XC, na.action=na.exclude)
 summary(m1a)
 anova(m1a)
-r.squaredGLMM(m1a) #6% of variation explained by fixed effects, 35% by whole model (interannual variation?)
+r.squaredGLMM(m1a) #6% of variation explained by fixed effects, 35% by whole model (spatial variation?)
 qqnorm(residuals(m1a))
 qqline(residuals(m1a))
 shapiro.test(residuals(m1a))
@@ -34,6 +34,7 @@ contrast(LS1, "pairwise")
 #let's see it
 ggplot(d=May_2015_XC, aes(x=treatment, y=weight_g_m)) +
   theme_linedraw()+
+  facet_wrap(~shelterBlock)+
   labs(x="rainfall treatment", y="ANPP g/m2")+
   geom_boxplot(aes(y=weight_g_m), shape=16)
 
@@ -46,7 +47,7 @@ May_2015_drought<-filter(May_2015_XC, treatment!='controlRain')
 m2a<-lme(weight_g_m ~treatment, random=~1|shelterBlock, May_2015_drought, na.action=na.exclude)
 summary(m2a)
 anova(m2a)
-r.squaredGLMM(m2a) #only 2% of variation explained by fixed effects, 28% explained by whole model (interannual variation?)
+r.squaredGLMM(m2a) #only 2% of variation explained by fixed effects, 28% explained by whole model (spatial variation?)
 qqnorm(residuals(m2a))
 qqline(residuals(m2a))
 shapiro.test(residuals(m2a))
@@ -168,7 +169,7 @@ qqnorm(residuals(m4a))
 qqline(residuals(m4a))
 shapiro.test(residuals(m4a)) #normal
 LS4a<-lsmeans(m4a, ~subplot)
-contrast(LS4a, "pairwise") #mixed plots have greater biomass than grass or forb plots
+contrast(LS4a, "pairwise") #mixed plots have greater biomass forb plots and marginally greater than grass
 
 ggplot(d=May_ANPP_2015_noA, aes(x=treatment, y=weight_g_m, fill=subplot)) +
   theme_linedraw()+
@@ -209,7 +210,7 @@ ANPP_shelter_noA <- ggplot(summary_ANPP_shelter_noA, aes(x = as.factor(shelter),
   labs(x = "Shelter", y = expression(paste("ANPP (g/m"^2,")"))) + #label the axis
   scale_color_manual(values = c("#999999","#E69F00","#56B4E9", "Red")) + #specify color 
   theme(legend.position = "none") + #remove the legend 
-  scale_y_continuous(limits = c(100, 800)) +
+  scale_y_continuous(limits = c(100, 1000)) +
   annotate("text", x= 1.5, y = 600, label = "Mixed", color = "#999999", angle = -40) +
   annotate("text", x= 1.35, y = 440, label = "Grass", color = "#56B4E9", angle = 60) +
   annotate("text", x= 1.5, y = 518, label = "Control", color = "Red", angle = -40) +
@@ -226,7 +227,7 @@ ANPP_fall_noA <-
   labs(x = "Fall Rain") + #label the axis
   scale_color_manual(values = c("#999999","#E69F00","#56B4E9", "Red")) + #specify color
   theme(legend.position = "none") + #remove the legend
-  scale_y_continuous(labels = NULL, name = NULL, limits = c(100, 800)) + #remove y-axis label
+  scale_y_continuous(labels = NULL, name = NULL, limits = c(100, 1000)) + #remove y-axis label
   #scale_x_discrete(limits=c(1,0)) + #change order of discrete x scale 
   annotate("text", x= 1.5, y = 600, label = "Mixed", color = "#999999", angle = -40) +
   annotate("text", x= 1.35, y = 435, label = "Grass", color = "#56B4E9", angle = 55) +
@@ -244,7 +245,7 @@ ANPP_spring_noA <- ggplot(summary_ANPP_spring_noA, aes(x = treatment, y = mean, 
   labs(x = "Spring Rain", y = expression(paste("Aggregated BNPP (g/m"^2,") in soil depth 0-30 cm"))) + #label the axis
   scale_color_manual(values = c("#999999","#E69F00","#56B4E9", "Red"), labels = c("Mixed", "Forb dominant", "Grass dominant")) + #legend colors and labels 
   theme(legend.position = "none") + #remove the legend
-  scale_y_continuous(labels = NULL, name = NULL, limits = c(100, 800)) + #remove y-axis label
+  scale_y_continuous(labels = NULL, name = NULL, limits = c(100, 1000)) + #remove y-axis label
   annotate("text", x= 1.5, y = 695, label = "Mixed", color = "#999999", angle = 45) +
   annotate("text", x= 1.5, y = 405, label = "Grass", color = "#56B4E9", angle = 30) +
   annotate("text", x= 1.5, y = 522, label = "Control", color = "Red", angle = -40) +
