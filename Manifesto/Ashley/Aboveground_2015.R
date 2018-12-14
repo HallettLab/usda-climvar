@@ -34,7 +34,7 @@ contrast(LS1, "pairwise")
 #let's see it
 ggplot(d=May_2015_XC, aes(x=treatment, y=weight_g_m)) +
   theme_linedraw()+
-  facet_wrap(~shelterBlock)+
+  #facet_wrap(~shelterBlock)+
   labs(x="rainfall treatment", y="ANPP g/m2")+
   geom_boxplot(aes(y=weight_g_m), shape=16)
 
@@ -74,7 +74,7 @@ shapiro.test(residuals(m3a)) #normal
 LS3a<-lsmeans(m3a, ~subplot)
 contrast(LS3a, "pairwise") #mixed plots have greater biomass than forb, but not grass
 
-ggplot(d=May_ANPP_2015_noXC, aes(x=treatment, y=weight_g_m, fill=subplot)) +
+ggplot(d=May_ANPP_2015_noXC, aes(x=subplot, y=weight_g_m, fill = treatment)) +
   theme_linedraw()+
   labs(x="composition treatment", y="ANPP g/m2")+
   geom_boxplot(aes(y=weight_g_m), shape=16)
@@ -160,7 +160,7 @@ grid.arrange(ANPP_shelter, ANPP_fall, ANPP_spring, ncol = 3, widths = c(1.5,1.2,
 ##redo analyses with block A removed
 #3. compensation (H2)
 #H2 will be confirmed if mixed plots have greater ANPP compared to grass only or forb only
-May_ANPP_2015_noA<-filter(May_ANPP_2015, shelterBlock !="A")
+May_ANPP_2015_noA<-filter(May_ANPP_2015, shelterBlock !="A", subplot!="XC")
 m4a<-lme(weight_g_m ~treatment*subplot, random=~1|shelterBlock, May_ANPP_2015_noA, na.action=na.exclude)
 summary(m4a)
 anova(m4a) #subplot significant
@@ -179,6 +179,30 @@ ggplot(d=May_ANPP_2015_noA, aes(x=treatment, y=weight_g_m, fill=subplot)) +
 ggplot(d=May_ANPP_2015_noA, aes(x=subplot, y=weight_g_m, fill=subplot)) +
   theme_linedraw()+
   labs(x="composition treatment", y="ANPP g/m2")+
+  geom_boxplot(aes(y=weight_g_m), shape=16)
+
+##1. Does variability of rainfall affect forage production (H1)?
+#Using a mixed model to examine the effects of rainfall timing (fixed effect) with shelterbloc nested within year as random effect
+
+#create subset with no species manipulations (control community) only
+May_2015_XC_noA<-filter(May_ANPP_2015_noA, subplot=='XC')
+
+m1A<-lme(weight_g_m ~treatment, random=~1|shelterBlock, May_2015_XC_noA, na.action=na.exclude)
+summary(m1A)
+anova(m1A)
+r.squaredGLMM(m1A) #17% of variation explained by fixed effects, 33% by whole model (spatial variation?)
+qqnorm(residuals(m1A))
+qqline(residuals(m1A))
+shapiro.test(residuals(m1A))
+#normally distributed, continue
+LS1<-lsmeans(m1a, ~treatment)
+contrast(LS1, "pairwise")
+#no differences in ANPP for XC subplots across rainfall treatments
+#let's see it
+ggplot(d=May_2015_XC_noA, aes(x=treatment, y=weight_g_m)) +
+  theme_linedraw()+
+  #facet_wrap(~shelterBlock)+
+  labs(x="rainfall treatment", y="ANPP g/m2")+
   geom_boxplot(aes(y=weight_g_m), shape=16)
 
 #make plots to match Lina's BNPP plots
