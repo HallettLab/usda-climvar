@@ -99,8 +99,11 @@ ggplot((gfproportion_2015), aes(x=treatment, y = percentForb)) +
 a<-lme(percentForb ~ treatment, random=~1|shelterBlock/subplot, data=gfproportion_2015,
        contrasts=list(treatment=contr.treatment))
 
-summary(a)        
+summary(a) 
+anova(a)
+r.squaredGLMM(a)
 summary(glht(a,linfct=mcp(treatment="Tukey")), alternative="Bonferonni")
+
 
 gfproportion_graph_2015 <- gfproportion_2015 %>%
   group_by(treatment) %>%
@@ -128,6 +131,15 @@ gfproportionG_2015 <- gf_2015 %>%
   mutate(percentGrass = (cover/totcover)*100) %>%
   filter(func == "grass") %>%
   dplyr::select(-func)
+
+b<-lme(percentGrass ~ treatment, random=~1|shelterBlock/subplot, data=gfproportionG_2015,
+       contrasts=list(treatment=contr.treatment))
+
+summary(b) 
+anova(b)
+r.squaredGLMM(b)
+summary(glht(b,linfct=mcp(treatment="Tukey")), alternative="Bonferonni")
+
 
 #calc prop forb
 gfproportionF_2015 <- gf_2015 %>%
@@ -342,15 +354,15 @@ ggplot(gfprop_noF_2015, aes(x=treatment, y=AvCover))+
 ggplot(gfprop_noF_2015, aes(x=treatment, y=LolCover))+
   geom_boxplot()
 
-g7<-lme(LolCover ~ treatment, random=~1|shelterBlock, gfprop_noF_2015, na.action=na.exclude)
+g7<-lme(LolCover ~ treatment, random=~1|subplot/shelterBlock, gfprop_noF_2015, na.action=na.exclude)
 summary(g7)
 anova(g7) 
-r.squaredGLMM(g7) #18% of variation explained by fixed effects, 36% by whole model (spacial variation?)
+r.squaredGLMM(g7) #19% of variation explained by fixed effects, 31% by whole model (spacial variation?)
 qqnorm(residuals(g7))
 qqline(residuals(g7))
 shapiro.test(residuals(g7))
 #not normally distributed, try log transformation
-g8<-lme(log(LolCover+1) ~treatment, random=~1|shelterBlock, gfprop_noF_2015, na.action=na.exclude)
+g8<-lme(log(LolCover+1) ~treatment, random=~1|subplot/shelterBlock, gfprop_noF_2015, na.action=na.exclude)
 summary(g8)
 anova(g8)
 r.squaredGLMM(g8) #17% of variation explained by fixed effects, 48% by whole model (spatial variation?)
@@ -362,22 +374,22 @@ gLS8<-lsmeans(g8, ~treatment)
 contrast(gLS8, "pairwise") #differences between fall dry and spring dry, control rain and spring dry
 
 #does treatment affect medusahead
-g5w<-lme(TaeCover ~ treatment, random=~1|shelterBlock, gfprop_noF_2015, na.action=na.exclude)
+g5w<-lme(TaeCover ~ treatment, random=~1|subplot/shelterBlock, gfprop_noF_2015, na.action=na.exclude)
 summary(g5w)
 anova(g5w)
-r.squaredGLMM(g5w) #14% of variation explained by fixed effects, 20% by whole model (interannual variation?)
+r.squaredGLMM(g5w) #14% of variation explained by fixed effects, 25% by whole model (interannual variation?)
 qqnorm(residuals(g5w))
 qqline(residuals(g5w))
 shapiro.test(residuals(g5w))
 #not normally distributed, try log transformation
-g6w<-lme(log(TaeCover+1) ~treatment, random=~1|shelterBlock, gfprop_noF_2015, na.action=na.exclude)
+g6w<-lme(log(TaeCover+1) ~treatment, random=~1|subplot/shelterBlock, gfprop_noF_2015, na.action=na.exclude)
 summary(g6w)
 anova(g6w)
-r.squaredGLMM(g6w) #17% of variation explained by fixed effects, 33% by whole model (interannual variation?)
+r.squaredGLMM(g6w) #16% of variation explained by fixed effects, 41% by whole model (interannual variation?)
 qqnorm(residuals(g6w))
 qqline(residuals(g6w))
 shapiro.test(residuals(g6w))
-#still not normal, but better
+#normal
 gLS6w<-lsmeans(g6w, ~treatment)
 contrast(gLS6w, "pairwise") #differences in consistent/fall dry and spring dry
 #treatment is signifiant, more medusahead in fall dry and consistent dry
@@ -385,6 +397,27 @@ ggplot(gfprop_noF_2015, aes(x=treatment, y=TaeCover))+
   geom_boxplot()
 #medusahead released from competition in consistent dry and fall dry?
 
+#does treatment affect avena
+av<-lme(AvCover ~ treatment, random=~1|subplot/shelterBlock, gfprop_noF_2015, na.action=na.exclude)
+summary(av)
+anova(av)
+r.squaredGLMM(av) #14% of variation explained by fixed effects, 25% by whole model (interannual variation?)
+qqnorm(residuals(av))
+qqline(residuals(av))
+shapiro.test(residuals(av))
+#not normally distributed, try log transformation
+av2<-lme(log(AvCover+1) ~treatment, random=~1|subplot/shelterBlock, gfprop_noF_2015, na.action=na.exclude)
+summary(av2)
+anova(av2)
+r.squaredGLMM(av2) #16% of variation explained by fixed effects, 41% by whole model (interannual variation?)
+qqnorm(residuals(av2))
+qqline(residuals(av2))
+shapiro.test(residuals(av2))
+#normal
+LSav<-lsmeans(av2, ~treatment)
+contrast(LSav, "pairwise") #no differences for avena
+ggplot(gfprop_noF_2015, aes(x=treatment, y=AvCover))+
+  geom_boxplot()
 
 gfprop_noF_season_2015 <- gfprop_graph_2015 %>% filter(treatment!="consistentDry") %>% filter(treatment!="controlRain") %>% filter(subplot!="F")
 gfprop_noF_season_graph_2015 <- gfprop_noF_season_2015 %>%
@@ -514,10 +547,10 @@ cover.relrow <- data.frame(cover.Bio /cover.rowsums)
 cover.colmax<-sapply(cover.Bio ,max)
 cover.relcolmax <- data.frame(sweep(cover.Bio ,2,cover.colmax,'/'))
 cover.pa <- cover.Bio %>% mutate_each(funs(ifelse(.>0,1,0)), 1:57)
-#calculate shannon
+#calculate shannon-weiner
 May_2015$H <- diversity(cover.Bio)
 #calculate pielou's J
-May_2015$J <- H/log(specnumber(cover.Bio))
+May_2015$J <- May_2015$H/log(specnumber(cover.Bio))
 
 #make bray-curtis dissimilarity matrix
 spp.bcd <- vegdist(cover.relrow)
@@ -570,7 +603,7 @@ legend("topright",legend=levels(Treatment), col=cols1, pch=19, cex=0.9,inset=0.1
 # add legend for year
 legend("topleft",legend=levels(as.factor(as.character(data2$subplot))), col="black", pch=shapes, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
 
-permanova1 <- adonis(spp.bcd~data2$treatment, perm=100, method="bray")
+permanova1 <- adonis(spp.bcd~data2$treatment*data2$shelterBlock*data2$subplot, perm=100, method="bray")
 permanova1
 #treatment does not significantly drive communities
 
@@ -586,8 +619,8 @@ shapiro.test(residuals(Hm))
 hLS<-lsmeans(Hm, ~subplot)
 contrast(hLS, "pairwise") #forb is more diverse
 
-ggplot(May_2015, aes(x=subplot, y=H, color=subplot))+
-  facet_wrap(~treatment)+
+ggplot(May_2015, aes(x=subplot, y=H, color=treatment))+
+  #facet_wrap(~treatment)+
   geom_boxplot()
   #geom_smooth(method = "lm", se=FALSE)
 
@@ -662,7 +695,7 @@ ggplot(May_all_XC, aes(x=shelterBlock, y=FDis))+
 
 
 
-ggplot(May_all_XC, aes(x=treatment, y=R, color=treatment))+
+ggplot(May_all_XC, aes(x=treatment, y=RaoQ, color=treatment))+
   facet_wrap(~year)+
   geom_boxplot()+
   geom_smooth(method="lm", se=F)
