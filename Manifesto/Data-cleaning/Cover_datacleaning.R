@@ -23,7 +23,7 @@ covdat_2015 <- left_join(covdat_2015_0, covdat_compost_2015) %>%
 #extract notes
 covdat_notes_2015 <- covdat_2015[1,] %>%
   gather(plot, notes, X1B:X16C) %>%
-  select(-Plot)
+  dplyr::select(-Plot)
 
 #extract vegetation data
 covveg_2015 <- covdat_2015[-c(1:8),] %>% 
@@ -79,7 +79,7 @@ vegkey_2016 <- read.csv("~/Dropbox/ClimVar/DATA/Plant_composition_data/Cover/Cov
   tbl_df() %>%
   mutate(Plot = as.character(Plot), Plot2 = as.character(Plot2)) %>%
   mutate(Plot = ifelse(Plot2 != "", Plot2, Plot)) %>%
-  select(-Plot2, -ToDelete) %>%
+  dplyr::select(-Plot2, -ToDelete) %>%
   mutate(species_name = as.character(species_name),
          species = as.character(species))
 
@@ -124,7 +124,7 @@ vegkey_2017 <- read.csv("~/Dropbox/ClimVar/DATA/Plant_composition_data/Cover/Cov
   tbl_df() %>%
   mutate(Plot = as.character(Plot), Plot2 = as.character(Plot2)) %>%
   mutate(Plot = ifelse(Plot2 != "", Plot2, Plot)) %>%
-  select(-Plot2, -ToDelete) %>%
+  dplyr::select(-Plot2, -ToDelete) %>%
   mutate(species_name = as.character(species_name))
 
 # merge data with species key
@@ -153,10 +153,10 @@ rm(vegkey_2017, veg0_2017, covdat_2017)
 
 dat.cover <- rbind(veg_2015, veg_2016, veg_2017) %>%
   tbl_df() %>%
-  select(-Plot)
+  dplyr::select(-Plot)
 
 vegkey <- dat.cover %>%
-  select(species_name, genus, species, func, status) %>%
+  dplyr::select(species_name, genus, species, func, status) %>%
   unique()
 
 # check for consistent names across years
@@ -172,7 +172,7 @@ names(zerokey) =c("species_name", "plot", "subplot", "year")
 
 
 dat.cover_with0 <- merge(fullmat2, dat.cover, all.x = T) %>%
-  select(-plotname) %>%
+  dplyr::select(-plotname) %>%
   mutate(cover = ifelse(is.na(cover), 0, cover)) %>%
   tbl_df()  %>%
   mutate(func2 = as.character(func),
