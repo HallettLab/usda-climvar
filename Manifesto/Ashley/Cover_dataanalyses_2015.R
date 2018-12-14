@@ -5,6 +5,8 @@ library(dplyr)
 library(multcomp)
 library(lsmeans)
 library(MuMIn)
+library(vegan)
+library(RColorBrewer)
 
 setwd("~/Dropbox/ClimVar/DATA/Plant_composition_data")
 cover<-read.csv("Cover/Cover_CleanedData/ClimVar_species-cover.csv")
@@ -239,7 +241,7 @@ ggplot(gf2_graph_2015, aes(fill=genus, y=cover, x=treatment, color=func2)) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1))+
   facet_wrap(~shelterBlock)
 
-ggplot(gf2_graph_2015, aes(fill=genus, y=cover, x=shelterBlock, color=func2)) +
+ggplot(gf2_graph_2015, aes(fill=genus, y=cover, x=shelterBlock)) +
   geom_bar( stat="identity")+
   theme_bw()+
   scale_fill_manual(values = c("orange", "orangered", "firebrick","indianred4","indianred", "green4", "lightblue", "skyblue2", "skyblue4", "dodgerblue3", "royalblue3","navy"))+
@@ -296,7 +298,7 @@ ggscatterhist(gfprop_noF_2015, x = "AvCover", y = "LolCover",
               color = "treatment", size = 3, alpha = 0.6,
               margin.params = list(fill = "treatment", color = "black", size = 0.2))
 
-ggscatterhist(gfprop_noF, x = "AvCover", y = "TaeCover",
+ggscatterhist(gfprop_noF_2015, x = "AvCover", y = "TaeCover",
               color = "treatment", size = 3, alpha = 0.6,
               margin.params = list(fill = "treatment", color = "black", size = 0.2))
 
@@ -342,8 +344,8 @@ ggplot(gfprop_noF_2015, aes(x=treatment, y=LolCover))+
 
 g7<-lme(LolCover ~ treatment, random=~1|shelterBlock, gfprop_noF_2015, na.action=na.exclude)
 summary(g7)
-anova(g7)
-r.squaredGLMM(g7) #16% of variation explained by fixed effects, 40% by whole model (spacial variation?)
+anova(g7) 
+r.squaredGLMM(g7) #18% of variation explained by fixed effects, 36% by whole model (spacial variation?)
 qqnorm(residuals(g7))
 qqline(residuals(g7))
 shapiro.test(residuals(g7))
@@ -351,19 +353,19 @@ shapiro.test(residuals(g7))
 g8<-lme(log(LolCover+1) ~treatment, random=~1|shelterBlock, gfprop_noF_2015, na.action=na.exclude)
 summary(g8)
 anova(g8)
-r.squaredGLMM(g8) #13% of variation explained by fixed effects, 60% by whole model (spatial variation?)
+r.squaredGLMM(g8) #17% of variation explained by fixed effects, 48% by whole model (spatial variation?)
 qqnorm(residuals(g8))
 qqline(residuals(g8))
 shapiro.test(residuals(g8))
 #normal
 gLS8<-lsmeans(g8, ~treatment)
-contrast(gLS8, "pairwise") #differences between fall dry and spring dry
+contrast(gLS8, "pairwise") #differences between fall dry and spring dry, control rain and spring dry
 
 #does treatment affect medusahead
 g5w<-lme(TaeCover ~ treatment, random=~1|shelterBlock, gfprop_noF_2015, na.action=na.exclude)
 summary(g5w)
 anova(g5w)
-r.squaredGLMM(g5w) #15% of variation explained by fixed effects, 22% by whole model (interannual variation?)
+r.squaredGLMM(g5w) #14% of variation explained by fixed effects, 20% by whole model (interannual variation?)
 qqnorm(residuals(g5w))
 qqline(residuals(g5w))
 shapiro.test(residuals(g5w))
@@ -375,13 +377,12 @@ r.squaredGLMM(g6w) #17% of variation explained by fixed effects, 33% by whole mo
 qqnorm(residuals(g6w))
 qqline(residuals(g6w))
 shapiro.test(residuals(g6w))
-#still not normal, but slightly better
+#still not normal, but better
 gLS6w<-lsmeans(g6w, ~treatment)
 contrast(gLS6w, "pairwise") #differences in consistent/fall dry and spring dry
-
+#treatment is signifiant, more medusahead in fall dry and consistent dry
 ggplot(gfprop_noF_2015, aes(x=treatment, y=TaeCover))+
   geom_boxplot()
-
 #medusahead released from competition in consistent dry and fall dry?
 
 
@@ -398,7 +399,274 @@ ggplot(gfprop_noF_season_graph_2015, aes(x=treatment, y=meancover, color=func, g
   geom_errorbar(aes(ymin=meancover-secover, ymax=meancover+secover), width=.2,position=position_dodge(0.05))+
   labs(x="Treatment", y="Mean Cover (%)")
 
-#does functional diversity/evenness/richness change with precipitation variability (drought vs. control) or seasonability (drought treatments)?
+#make plots to match Lina's BNPP plots
+se <- function(x) sqrt(var(x)/length(x)) #create a function for SE
+gf_prop_all_long <- gfprop_all_2015 %>% gather(func, cover, -plot, -subplot, -treatment,-shelterBlock, -year,-shelter)
+summary_cover_shelter <- gf_prop_all_long %>%
+  filter(treatment == "consistentDry" | treatment == "controlRain", func!="cover") %>%
+  group_by(shelter, func) %>% #group by shelter and functional groups
+  summarise(mean = mean(cover), #summarise by mean and SE
+            SE = se(cover))
+
+summary_cover_fall <- gf_prop_all_long %>%
+  filter(treatment == "controlRain" | treatment == "fallDry", func!="cover") %>%
+  group_by(treatment, func) %>% #group by fall rain treatment and functional groups
+  summarise(mean = mean(cover), #summarise by mean and SE
+            SE = se(cover))
+
+summary_cover_spring <- gf_prop_all_long %>%
+  filter(treatment == "controlRain" | treatment == "springDry", func!="cover") %>%
+  group_by(treatment, func) %>% #gropu by spring rain treatment and functional groups
+  summarise(mean = mean(cover), #summarise by mean and SE
+            SE = se(cover))
+
+
+#interaction plot of shelter treatment and functional groups
+cover_shelter <- ggplot(summary_cover_shelter, aes(x = as.factor(shelter), y = mean, group = func, color = func)) +
+  geom_line(size = 1.0) + #add lines
+  geom_point(size = 2.0) + #add points
+  geom_errorbar(aes(ymin = mean-SE, ymax = mean+SE), width = 0.1, size = 1.0) + #add error bars
+  theme_classic() + #simple, classic theme 
+  labs(x = "Shelter", y = expression(paste("% Cover"))) + #label the axis
+  scale_color_manual(values = c("#999999","#E69F00","#56B4E9", "green", "Red", "purple")) + #specify color 
+  theme(legend.position = "none") + #remove the legend 
+  scale_y_continuous(limits = c(0, 150)) +
+  annotate("text", x= 1.5, y = 535, label = "Mixed", color = "#999999", angle = -40) +
+  annotate("text", x= 1.35, y = 450, label = "Grass", color = "#56B4E9", angle = 40) +
+  annotate("text", x= 1.5, y = 485, label = "Control", color = "Red", angle = -10) +
+  annotate("text", x= 1.5, y = 358, label = "Forb", color = "#E69F00", angle = 18)
+cover_shelter
+
+#interaction plot of fall rain treatment and functional groups
+cover_fall <- 
+  ggplot(summary_cover_fall, aes(x = treatment, y = mean, group = func, color = func)) +
+  geom_line(size = 1.0) + #add lines
+  geom_point(size = 2.0) + #add points
+  geom_errorbar(aes(ymin = mean-SE, ymax = mean+SE), width = 0.1, size = 1.0) + #add error bars
+  theme_classic() + #simple, classic theme 
+  labs(x = "Fall Rain") + #label the axis
+  scale_color_manual(values = c("#999999","#E69F00","#56B4E9", "green", "Red", "purple")) + #specify color
+  theme(legend.position = "none") + #remove the legend
+  scale_y_continuous(labels = NULL, name = NULL, limits = c(0,150)) + #remove y-axis label
+  #scale_x_discrete(limits=c(1,0)) + #change order of discrete x scale 
+  annotate("text", x= 1.5, y = 560, label = "Mixed", color = "#999999", angle = -10) +
+  annotate("text", x= 1.5, y = 445, label = "Grass", color = "#56B4E9", angle = 28) +
+  annotate("text", x= 1.5, y = 515, label = "Control", color = "Red", angle = -31) +
+  annotate("text", x= 1.5, y = 325, label = "Forb", color = "#E69F00", angle = -5)
+cover_fall
+
+#interaction plot of spring rain treatment and functional groups
+cover_spring <- ggplot(summary_cover_spring, aes(x = treatment, y = mean, group = func, color = func)) +
+  geom_line(size = 1.0) + #add lines
+  geom_point(size = 2.0) + #add points
+  geom_errorbar(aes(ymin = mean-SE, ymax = mean+SE), width = 0.1, size = 1.0) + #add error bars
+  theme_classic() + #simple, classic theme 
+  labs(x = "Spring Rain", y = expression(paste("Aggregated BNPP (g/m"^2,") in soil depth 0-30 cm"))) + #label the axis
+  scale_color_manual(values = c("#999999","#E69F00","#56B4E9", "green", "Red", "purple"), labels = c("Mixed", "Forb dominant", "Grass dominant")) + #legend colors and labels 
+  theme(legend.position = "none") + #remove the legend
+  scale_y_continuous(labels = NULL, name = NULL, limits = c(0,150)) + #remove y-axis label
+  annotate("text", x= 1, y = 145, label = "Avena", color = "#999999", angle = 0) +
+  annotate("text", x= 1, y = 105, label = "Forb", color = "#56B4E9", angle = 0) +
+  annotate("text", x= 1, y = 115, label = "Grass", color = "green", angle = 0) +
+  annotate("text", x= 1, y = 135, label = "Medusahead", color = "Red", angle = 0) +
+  annotate("text", x= 1, y = 100, label = "Total", color = "purple", angle = 0) +
+  annotate("text", x= 1, y = 125, label = "Lolium", color = "#E69F00", angle = 0)
+cover_spring
+
+#compile interaction plots 
+grid.arrange(cover_shelter, cover_fall, cover_spring, ncol = 3, widths = c(1.5,1.2,1.2))
+
+
+#How does ANPP relate to total cover?
+#recreate objects from ANPP analyses
+May_ANPP<-read.csv("Plant_composition_data/ANPP/ANPP_CleanedData/ClimVar_ANPP-peak.csv")
+#create subset with 2015 data only, remove compost subplot
+May_ANPP_2015<-filter(May_ANPP, year=='2015', subplot !="C")
+May_2015_XC<-filter(May_ANPP_2015, subplot=='XC')
+
+May_2015 <- merge(May_ANPP_2015, gfprop_all_2015) %>% dplyr::select(-cover)
+
+#create objects from community analysis
+data<- cover %>% dplyr::select(-X, -species, -genus, -status, -func, -func2) %>% spread(species_name, cover)
+data<-data %>% dplyr::select(-Unknown)
+levels(cover$plot)
+str(data)
+levels(data$treatment)
+levels(data$year)
+levels(data$subplot)
+
+data <- tibble::rowid_to_column(data, "subplot")
+data2 <- filter(data, year =="2015", subplot!="C") %>% arrange(treatment, shelterBlock)
+
+Treatment<-data2[,4]
+Year<-data2[,3]
+data2$ID <- seq.int(nrow(data2))
+plotnames<-data2[,64]
+cover.Bio<- data2 %>% dplyr::select(-c(1:6), -ID)
+rownames(cover.Bio)<-plotnames
+#check for empty rows
+cover.Biodrop<-cover.Bio[rowSums(cover.Bio[, (1:57)]) ==0, ] #no empty rows, next step not needed
+# remove empty rows cover.Biodrop<-cover.Bio[rowSums(cover.Bio[, (1:58)])  >0, ]
+
+cover.rowsums <- rowSums(cover.Bio [1:57])
+
+cover.relrow <- data.frame(cover.Bio /cover.rowsums)
+cover.colmax<-sapply(cover.Bio ,max)
+cover.relcolmax <- data.frame(sweep(cover.Bio ,2,cover.colmax,'/'))
+cover.pa <- cover.Bio %>% mutate_each(funs(ifelse(.>0,1,0)), 1:57)
+#calculate shannon
+May_2015$H <- diversity(cover.Bio)
+#calculate pielou's J
+May_2015$J <- H/log(specnumber(cover.Bio))
+
+#make bray-curtis dissimilarity matrix
+spp.bcd <- vegdist(cover.relrow)
+#or
+spp.pa.bcd<-vegdist(cover.pa, binary=T) #this calcs distances based on presence/absence, just in case
+
+#run NMS ordination
+spp.mds0 <-isoMDS(spp.bcd) #runs nms only once
+spp.mds0  #by default 2 dimensions returned, stress is 18.995
+ordiplot(spp.mds0)
+
+#prefer to run multiple NMS ordinations
+#with different starting configurations, and choose the best
+#this function does that, and in addition does several other steps too
+#including: 
+#standardizing the data (though fuction call below turns this off with autotransform=F)
+#calculating distance matrix (default bray-curtis)
+#running NMDS with random starts
+#rotation of axes to maximize variance of site scores on axis 1
+#calculate species scores based on weighted averaging
+
+help(metaMDS)
+spp.mds<-metaMDS(cover.relrow, trace = FALSE, autotransform=T, trymax=100, k=4) #runs several with different starting configurations
+#trace= TRUE will give output for step by step what its doing
+#default is 2 dimensions, can put k=4 for 4 dimensions
+spp.mds #solution converged after 20 tries, stress = 9
+summary(spp.mds)
+
+#plot results
+stressplot(spp.mds, spp.bcd) #stressplot to show fit, fit is decent
+ordiplot(spp.mds)
+spscores1<-scores(spp.mds,display="sites",choices=1)
+spscores2<-scores(spp.mds,display="sites",choices=2)
+tplots<-data2[,2]
+tplot_levels<-levels(tplots)
+spscoresall<-data.frame(tplots,spscores1,spscores2)
+
+#to color grasses and forbs labels:
+colspec<- rep(c("plum1", "plum1", "palegreen", "palegreen", "palegreen", "palegreen", "palegreen", "palegreen", "palegreen", "palegreen", "palegreen", "plum1", "plum1", "plum1", "plum1","plum1", "palegreen", "palegreen", "plum1", "plum1", "plum1", "plum1", "plum1", "plum1", "plum1", "palegreen", "palegreen", "palegreen", "plum1", "plum1", "palegreen", "plum1", "plum1", "plum1", "palegreen", "plum1", "plum1", "plum1", "plum1", "plum1", "plum1", "plum1", "plum1", "plum1", "darkgreen", "plum1", "plum4", "plum4", "plum4", "plum4", "plum4", "plum4", "plum1", "plum4", "palegreen","palegreen", "plum1"))
+
+#plots colored based on treatment
+xc.plot <- ordiplot(spp.mds,choices=c(1,2), type = "none")   #Set up the plot
+colsT2 <- rep(c("darkred","deepskyblue","goldenrod1", "Magenta"), each = 16) #color based on drought treatment
+cols1 <- rep(c("darkred","deepskyblue","goldenrod1", "Magenta"))
+shapes <- rep(c(15, 8, 17, 20 ), each=1) #shapes on subplot
+points(spscoresall$NMDS1,spscoresall$NMDS2,col=colsT2,pch=shapes) 
+text(spp.mds, display = "species", cex=0.5, col=colspec) #label species
+# add legend for treatment
+legend("topright",legend=levels(Treatment), col=cols1, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
+# add legend for year
+legend("topleft",legend=levels(as.factor(as.character(data2$subplot))), col="black", pch=shapes, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
+
+permanova1 <- adonis(spp.bcd~data2$treatment, perm=100, method="bray")
+permanova1
+#treatment does not significantly drive communities
+
+#does diversity/evenness/richness change with precipitation variability (drought vs. control) or seasonability (drought treatments)?
+Hm<-lme(H ~ treatment*subplot, random=~1|shelterBlock, May_2015, na.action=na.exclude)
+summary(Hm)
+anova(Hm)
+r.squaredGLMM(Hm) #25% of variation explained by fixed effects, 40% by whole model (spatial variation?)
+qqnorm(residuals(Hm))
+qqline(residuals(Hm))
+shapiro.test(residuals(Hm))
+#not normally distributed,  log transformation makes it worse, keep as is
+hLS<-lsmeans(Hm, ~subplot)
+contrast(hLS, "pairwise") #forb is more diverse
+
+ggplot(May_2015, aes(x=subplot, y=H, color=subplot))+
+  facet_wrap(~treatment)+
+  geom_boxplot()
+  #geom_smooth(method = "lm", se=FALSE)
+
+ggplot(May_2015, aes(y=weight_g_m, x=percentGrass, color = subplot))+
+  geom_point()+
+  geom_smooth(method="lm",se=F)
+  #scale_colour_gradient(low="magenta", high="plum4")
+
+#how does diversity differ by block?
+ggplot(May_2015, aes(x=shelterBlock, y=H))+
+  facet_wrap(~subplot)+
+  geom_boxplot()
+
+May_2015_XC2<- May_2015 %>% filter(subplot=="XC")
+Hm2<-lme(H ~ treatment, random=~1|shelterBlock, May_2015_XC2, na.action=na.exclude)
+summary(Hm2)
+anova(Hm2)
+r.squaredGLMM(Hm2) #25% of variation explained by fixed effects, 40% by whole model (spatial variation?)
+qqnorm(residuals(Hm2))
+qqline(residuals(Hm2))
+shapiro.test(residuals(Hm2))
+#normal
+hLS2<-lsmeans(Hm2, ~treatment)
+contrast(hLS2, "pairwise") #no differences in diversity by treatment for XC
+
+
+###check trait differences
+#does functional diversity change with precipitation variability (drought vs. control) or seasonability (drought treatments)?
+traits<-read.csv("Traits/Traits_ProcessedData-GH/ClimVar_trait-diversity-GH.csv")
+traits_2015<-traits %>% filter(subplot!="C", year=="2015")
+May_2015<-merge(May_2015,traits_2015)
+May_ANPP<-merge(May_ANPP,traits) 
+May_ANPP <- May_ANPP %>%filter( subplot!="C")
+May_all_XC <- May_ANPP %>% filter (subplot=="XC")
+
+ggplot(May_ANPP, aes(y=RaoQ, x=forbCover, color = treatment, shape=treatment))+
+  facet_wrap(~as.factor(as.character(year)))+
+  geom_point()+
+  geom_smooth(method="lm",se=F)
+  #scale_colour_gradient(low="magenta", high="plum4")
+
+gf_graph_all <- May_ANPP %>%
+  group_by(subplot, treatment, year) %>%
+  summarize(Grass=mean(grassCover), GrassSE=sd(grassCover)/sqrt(length(grassCover)))
+
+gf_graph_forb <- May_ANPP %>%
+  group_by(subplot, treatment, year) %>%
+  summarize(Forb=mean(forbCover), ForbSE=sd(forbCover)/sqrt(length(forbCover)))
+
+gf_graph_all <- merge(gf_graph_all, gf_graph_forb)
+gf_graph_all <- gf_graph_all %>% gather(func, cover, -ForbSE, -GrassSE, -subplot, -treatment, -year) %>%
+  gather(func2, SE, -func, -cover, -subplot, -treatment, -year) %>% dplyr::select(-func2)
+
+ggplot(gf_graph_all, aes(x=treatment, y=cover, fill = func, color=func)) + 
+  geom_point() + 
+  theme_bw() + 
+  facet_wrap(~subplot*year, ncol=3)+
+  geom_errorbar(aes(ymax = cover+SE, ymin = cover-SE), width=.25, position=position_dodge(width=0.9)) + 
+  labs(x="Treatment", y="Cover %") +
+  theme(text = element_text(size=20))+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
 #how does functional diversity differ by block?
+ggplot(May_all_XC, aes(x=shelterBlock, y=FDis))+
+  facet_wrap(~year)+
+  geom_boxplot()
+#block A has higher functional dissimilarity
+#if niche complementarity is in effect, we'd expect block A to have highest ecosystem function
+
+#let's test if block A has highest FDis
+
+
+
+ggplot(May_all_XC, aes(x=treatment, y=R, color=treatment))+
+  facet_wrap(~year)+
+  geom_boxplot()+
+  geom_smooth(method="lm", se=F)
+
+
 #does functional diversity stabilize the community?
 #how does functional diversity relate to coefficient of variation for soil moisture?
