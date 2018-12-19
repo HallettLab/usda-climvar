@@ -93,7 +93,7 @@ ggplot(gf_graphic_2015, aes(x=treatment, y=meancover, fill=func)) +
   theme(text = element_text(size=20))+
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
-ggplot((gfproportion_2015), aes(x=treatment, y = percentForb)) + 
+ggplot((gfproportion_2015), aes(x=treatment, y = percentForb, fill=subplot)) + 
   geom_boxplot()
 
 a<-lme(percentForb ~ treatment, random=~1|shelterBlock/subplot, data=gfproportion_2015,
@@ -140,6 +140,8 @@ anova(b)
 r.squaredGLMM(b)
 summary(glht(b,linfct=mcp(treatment="Tukey")), alternative="Bonferonni")
 
+ggplot((gfproportionG_2015), aes(x=treatment, y = percentGrass, fill=subplot)) + 
+  geom_boxplot()
 
 #calc prop forb
 gfproportionF_2015 <- gf_2015 %>%
@@ -236,6 +238,12 @@ gf3_graph_2015 <- gf4_2015 %>%
 
 gf5_graph_2015 <- gf5_2015 %>%
   group_by(treatment, subplot, genus, func2)%>%
+  filter(subplot!="XC")%>%
+  summarise(cover=mean(percentCov), secover=sd(percentCov)/sqrt(length(percentCov)))
+
+gf6_graph_2015 <- gf5_2015 %>%
+  group_by(treatment, subplot, genus, func2, shelterBlock)%>%
+  filter(subplot!="XC")%>%
   summarise(cover=mean(percentCov), secover=sd(percentCov)/sqrt(length(percentCov)))
 
 #create a stacked bar plot for XC
@@ -276,35 +284,48 @@ ggplot(gf3_graph_2015, aes(fill=genus, colour=func2,  y=cover, x=treatment:func2
 gf5_graph_2015 <- gf5_graph_2015 %>% arrange(func2, genus) %>% filter(cover>0.01) %>% filter(genus!="NA")
 levels(gf5_graph_2015$genus)
 gf5_graph_2015$func2 <- factor(gf5_graph_2015$func2, c("forb","Nfixer","grass"))
-gf5_graph_2015$genus<- factor(gf5_graph_2015$genus, c("Anagalis", "Centaurea","Cerastium", "Convolvulus", "Erodium","Hypochaeris", "Rumex","Sherardia","Silene", "Trifolium","Vicia","Avena","Bromus","Cynodon","Hordeum","Lolium", "Taeniatherum", "Vulpia"))
-ggplot(gf5_graph_2015, aes(fill=genus, colour=func2,  y=cover, x=treatment:func2)) +
+gf5_graph_2015$genus<- factor(gf5_graph_2015$genus, c("Anagalis", "Centaurea","Cerastium", "Erodium","Hypochaeris", "Rumex","Sherardia","Silene", "Trifolium","Vicia","Avena","Bromus","Cynodon","Hordeum","Lolium", "Taeniatherum", "Vulpia"))
+ggplot(gf5_graph_2015, aes(fill=genus, colour=func2,  y=cover, x=treatment)) +
   theme_bw()+
   facet_wrap(~subplot)+
-  scale_fill_manual(values = c("goldenrod","orange", "darkorange2", "orangered", "firebrick","indianred4","indianred", "saddlebrown", "palegreen", "green4", "lightblue", "skyblue2", "skyblue4", "dodgerblue3", "royalblue3","navy", "black"))+
+  scale_fill_manual(values = c("goldenrod","orange", "darkorange2", "firebrick","indianred4","indianred", "saddlebrown", "palegreen", "green4", "lightblue", "skyblue2", "skyblue4", "dodgerblue3", "royalblue3","navy", "black"))+
+  geom_bar( stat="identity", position='stack')+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+gf6_graph_2015 <- gf6_graph_2015 %>% arrange(func2, genus) %>% filter(cover>0.01) %>% filter(genus!="NA", genus!="Unknown")
+levels(gf6_graph_2015$genus)
+gf6_graph_2015$func2 <- factor(gf6_graph_2015$func2, c("forb","Nfixer","grass"))
+gf6_graph_2015$genus<- factor(gf6_graph_2015$genus, c("Anagalis", "Carduus","Centaurea","Cerastium", "Erodium","Hypochaeris","Lactuca", "Lythrum", "Rumex","Sonchrum","Sherardia","Silene","Zeltnera", "Trifolium","Vicia","Avena","Brachypodium","Bromus","Cynodon","Hordeum","Lolium", "Taeniatherum", "Vulpia"))
+ggplot(gf6_graph_2015, aes(fill=genus, colour=func2,  y=cover, x=treatment)) +
+  theme_bw()+
+  facet_wrap(~subplot*shelterBlock)+
+  scale_fill_manual(values = c("goldenrod","orange", "orangered", "darkorange2", "firebrick","indianred4","indianred2","brown4", "indianred", "saddlebrown", "khaki3", "palegreen", "green4", "lightblue", "lightblue4", "skyblue2", "skyblue4", "dodgerblue3", "royalblue3","navy", "black"))+
   geom_bar( stat="identity", position='stack')+
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 
 library(ggpubr)
 #does proportion of Avena drive community structure?
-ggplot(gfprop_all_2015, aes(x=AvCover, y=totcover, color=treatment))+
+#remove XC for comparison to Lina's data
+gfprop_noXC_2015<-gfprop_all_2015%>% filter(subplot!="XC")
+ggplot(gfprop_noXC_2015, aes(x=AvCover, y=totcover, color=treatment))+
   geom_point()+
   geom_smooth(method='lm')+
   labs(x="Percent Avena", y="Total Cover")
 
-ggplot(gfprop_all_2015, aes(x=AvCover, y=percentGrass, color=treatment))+
+ggplot(gfprop_noXC_2015, aes(x=AvCover, y=percentGrass, color=treatment))+
   geom_point()+
   geom_smooth(method='lm' )+
   labs(x="Percent Avena", y="Percent Grass Cover")
 
-ggplot(gfprop_all_2015, aes(x=AvCover, y=LolCover, color=treatment, shape=subplot))+
+ggplot(gfprop_noXC_2015, aes(x=AvCover, y=LolCover, color=treatment, shape=subplot))+
   geom_point()+
   #geom_smooth(method='lm' )+
   #facet_wrap(~treatment)+
   labs(x="Percent Avena", y="Percent Lolium")
 
-gfprop_noF_2015<-gfprop_all_2015 %>% filter(subplot!="F")
-gfprop_noF_season_2015 <- gfprop_all_2015 %>% filter(treatment=="fallDry","springDry")
+gfprop_noF_2015<-gfprop_noXC_2015 %>% filter(subplot!="F")
+gfprop_noF_season_2015 <- gfprop_noXC_2015 %>% filter(treatment=="fallDry","springDry")
 
 ggscatterhist(gfprop_noF_2015, x = "AvCover", y = "LolCover",
               color = "treatment", size = 3, alpha = 0.6,
@@ -314,32 +335,28 @@ ggscatterhist(gfprop_noF_2015, x = "AvCover", y = "TaeCover",
               color = "treatment", size = 3, alpha = 0.6,
               margin.params = list(fill = "treatment", color = "black", size = 0.2))
 
-
-
-
-
-ggplot(gfprop_all_2015, aes(x=subplot, y=percentForb, color=treatment))+
+ggplot(gfprop_noXC_2015, aes(x=subplot, y=percentForb, color=treatment))+
   geom_boxplot()
 
 gfprop_graph_2015<- gfprop_all_2015 %>% gather(func, percent, 9:13)%>%
+  filter(subplot!="XC", func!="percentForb", func!="percentGrass")%>%
   tbl_df()
 
 ggplot(gfprop_graph_2015, aes(x=treatment, y=percent, fill=func))+
   facet_wrap(~subplot)+
   geom_boxplot()
 
-
-ggplot(gfprop_all_2015, aes(x=AvCover, y=totcover, color=treatment))+
+ggplot(gfprop_noXC_2015, aes(x=AvCover, y=totcover, color=treatment))+
   #facet_grid(~treatment)+
   geom_point()+
   geom_smooth(method='lm', se=FALSE)
 
-ggplot(gfprop_all_2015, aes(x=TaeCover, y=totcover, color=treatment))+
+ggplot(gfprop_noXC_2015, aes(x=TaeCover, y=totcover, color=treatment))+
   #facet_grid(~treatment)+
   geom_point()+
   geom_smooth(method='lm', se=FALSE)
 
-gfprop_graph2_2015<-gfprop_all_2015 %>% gather(func, percent, 11:13) %>% filter(subplot=="XC")
+gfprop_graph2_2015<-gfprop_all_2015 %>% gather(func, percent, 11:13) %>% filter(subplot=="B")
 ggplot(gfprop_graph2_2015, aes(x=percent, y=totcover, group=func, color=func))+
   facet_grid(~treatment)+
   geom_point()+
@@ -347,34 +364,34 @@ ggplot(gfprop_graph2_2015, aes(x=percent, y=totcover, group=func, color=func))+
   #ylim(0,100)
   geom_smooth(method='lm', se=FALSE)
 
-ggplot(gfprop_noF_2015, aes(x=treatment, y=AvCover))+
+ggplot(gfprop_noXC_2015, aes(x=treatment, y=AvCover))+
   geom_boxplot()
 
 #does treatment affect % cover for Lolium?
-ggplot(gfprop_noF_2015, aes(x=treatment, y=LolCover))+
+ggplot(gfprop_noXC_2015, aes(x=treatment, y=LolCover))+
   geom_boxplot()
 
-g7<-lme(LolCover ~ treatment, random=~1|subplot/shelterBlock, gfprop_noF_2015, na.action=na.exclude)
+g7<-lme(LolCover ~ treatment, random=~1|subplot/shelterBlock, gfprop_noXC_2015, na.action=na.exclude)
 summary(g7)
 anova(g7) 
-r.squaredGLMM(g7) #19% of variation explained by fixed effects, 31% by whole model (spacial variation?)
+r.squaredGLMM(g7) #12% of variation explained by fixed effects, 30% by whole model (spacial variation?)
 qqnorm(residuals(g7))
 qqline(residuals(g7))
 shapiro.test(residuals(g7))
 #not normally distributed, try log transformation
-g8<-lme(log(LolCover+1) ~treatment, random=~1|subplot/shelterBlock, gfprop_noF_2015, na.action=na.exclude)
+g8<-lme(log(LolCover+1) ~treatment, random=~1|subplot/shelterBlock, gfprop_noXC_2015, na.action=na.exclude)
 summary(g8)
 anova(g8)
-r.squaredGLMM(g8) #17% of variation explained by fixed effects, 48% by whole model (spatial variation?)
+r.squaredGLMM(g8) #14% of variation explained by fixed effects, 32% by whole model (spatial variation?)
 qqnorm(residuals(g8))
 qqline(residuals(g8))
 shapiro.test(residuals(g8))
 #normal
-gLS8<-lsmeans(g8, ~treatment)
-contrast(gLS8, "pairwise") #differences between fall dry and spring dry, control rain and spring dry
+gLS8<-lsmeans(g8, ~treatment, adjust="Tukey")
+contrast(gLS8, "pairwise") #control rain is greater than spring dry
 
 #does treatment affect medusahead
-g5w<-lme(TaeCover ~ treatment, random=~1|subplot/shelterBlock, gfprop_noF_2015, na.action=na.exclude)
+g5w<-lme(TaeCover ~ treatment, random=~1|subplot/shelterBlock, gfprop_noXC_2015, na.action=na.exclude)
 summary(g5w)
 anova(g5w)
 r.squaredGLMM(g5w) #14% of variation explained by fixed effects, 25% by whole model (interannual variation?)
@@ -382,44 +399,45 @@ qqnorm(residuals(g5w))
 qqline(residuals(g5w))
 shapiro.test(residuals(g5w))
 #not normally distributed, try log transformation
-g6w<-lme(log(TaeCover+1) ~treatment, random=~1|subplot/shelterBlock, gfprop_noF_2015, na.action=na.exclude)
+g6w<-lme(log(TaeCover+1) ~treatment, random=~1|shelterBlock/subplot, gfprop_noXC_2015, na.action=na.exclude)
 summary(g6w)
-anova(g6w)
-r.squaredGLMM(g6w) #16% of variation explained by fixed effects, 41% by whole model (interannual variation?)
+anova(g6w) #main effect of treatment; p=0.0031
+r.squaredGLMM(g6w) #19% of variation explained by fixed effects, 47% by whole model (spatial or subplot variation?)
 qqnorm(residuals(g6w))
 qqline(residuals(g6w))
 shapiro.test(residuals(g6w))
 #normal
-gLS6w<-lsmeans(g6w, ~treatment)
-contrast(gLS6w, "pairwise") #differences in consistent/fall dry and spring dry
-#treatment is signifiant, more medusahead in fall dry and consistent dry
-ggplot(gfprop_noF_2015, aes(x=treatment, y=TaeCover))+
+gLS6w<-lsmeans(g6w, ~treatment, adjust="tukey")
+contrast(gLS6w, "pairwise") #differences b/w control rain and fall dry; spring dry and fall dry
+#more medusahead in fall dry
+#treatment is signifiant, more medusahead in fall dry
+ggplot(gfprop_noXC_2015, aes(x=treatment, y=TaeCover))+
   geom_boxplot()
-#medusahead released from competition in consistent dry and fall dry?
+#medusahead released from competition in fall dry?
 
 #does treatment affect avena
-av<-lme(AvCover ~ treatment, random=~1|subplot/shelterBlock, gfprop_noF_2015, na.action=na.exclude)
+av<-lme(AvCover ~ treatment, random=~1|shelterBlock/subplot, gfprop_noXC_2015, na.action=na.exclude)
 summary(av)
 anova(av)
-r.squaredGLMM(av) #14% of variation explained by fixed effects, 25% by whole model (interannual variation?)
+r.squaredGLMM(av) #2% of variation explained by fixed effects, 26% by whole model (interannual variation?)
 qqnorm(residuals(av))
 qqline(residuals(av))
 shapiro.test(residuals(av))
 #not normally distributed, try log transformation
-av2<-lme(log(AvCover+1) ~treatment, random=~1|subplot/shelterBlock, gfprop_noF_2015, na.action=na.exclude)
+av2<-lme(log(AvCover+1) ~treatment, random=~1|shelterBlock/subplot, gfprop_noXC_2015, na.action=na.exclude)
 summary(av2)
 anova(av2)
-r.squaredGLMM(av2) #16% of variation explained by fixed effects, 41% by whole model (interannual variation?)
+r.squaredGLMM(av2) #2% of variation explained by fixed effects, 34% by whole model (interannual variation?)
 qqnorm(residuals(av2))
 qqline(residuals(av2))
 shapiro.test(residuals(av2))
 #normal
-LSav<-lsmeans(av2, ~treatment)
+LSav<-lsmeans(av2, ~treatment, adjust="tukey")
 contrast(LSav, "pairwise") #no differences for avena
-ggplot(gfprop_noF_2015, aes(x=treatment, y=AvCover))+
+ggplot(gfprop_noXC_2015, aes(x=treatment, y=AvCover))+
   geom_boxplot()
 
-gfprop_noF_season_2015 <- gfprop_graph_2015 %>% filter(treatment!="consistentDry") %>% filter(treatment!="controlRain") %>% filter(subplot!="F")
+gfprop_noF_season_2015 <- gfprop_graph_2015 %>% filter(treatment!="consistentDry") %>% filter(subplot!="F", subplot!="XC")
 gfprop_noF_season_graph_2015 <- gfprop_noF_season_2015 %>%
   group_by(func, treatment) %>%
   summarize(meancover=mean(percent), secover=sd(percent)/sqrt(length(percent)))
@@ -434,7 +452,8 @@ ggplot(gfprop_noF_season_graph_2015, aes(x=treatment, y=meancover, color=func, g
 
 #make plots to match Lina's BNPP plots
 se <- function(x) sqrt(var(x)/length(x)) #create a function for SE
-gf_prop_all_long <- gfprop_all_2015 %>% gather(func, cover, -plot, -subplot, -treatment,-shelterBlock, -year,-shelter)
+gf_prop_all_long <- gfprop_noXC_2015 %>% gather(func, cover, -plot, -subplot, -treatment,-shelterBlock, -year,-shelter)
+#note: to include XC on these plots use object: gfprop_all_2015
 summary_cover_shelter <- gf_prop_all_long %>%
   filter(treatment == "consistentDry" | treatment == "controlRain", func!="cover") %>%
   group_by(shelter, func) %>% #group by shelter and functional groups
@@ -464,10 +483,10 @@ cover_shelter <- ggplot(summary_cover_shelter, aes(x = as.factor(shelter), y = m
   scale_color_manual(values = c("#999999","#E69F00","#56B4E9", "green", "Red", "purple")) + #specify color 
   theme(legend.position = "none") + #remove the legend 
   scale_y_continuous(limits = c(0, 150)) +
-  annotate("text", x= 1.5, y = 535, label = "Mixed", color = "#999999", angle = -40) +
-  annotate("text", x= 1.35, y = 450, label = "Grass", color = "#56B4E9", angle = 40) +
-  annotate("text", x= 1.5, y = 485, label = "Control", color = "Red", angle = -10) +
-  annotate("text", x= 1.5, y = 358, label = "Forb", color = "#E69F00", angle = 18)
+ # annotate("text", x= 1.5, y = 535, label = "Mixed", color = "#999999", angle = -40) +
+ # annotate("text", x= 1.35, y = 450, label = "Grass", color = "#56B4E9", angle = 40) +
+  #annotate("text", x= 1.5, y = 485, label = "Control", color = "Red", angle = -10) +
+  #annotate("text", x= 1.5, y = 358, label = "Forb", color = "#E69F00", angle = 18)
 cover_shelter
 
 #interaction plot of fall rain treatment and functional groups
@@ -482,10 +501,10 @@ cover_fall <-
   theme(legend.position = "none") + #remove the legend
   scale_y_continuous(labels = NULL, name = NULL, limits = c(0,150)) + #remove y-axis label
   #scale_x_discrete(limits=c(1,0)) + #change order of discrete x scale 
-  annotate("text", x= 1.5, y = 560, label = "Mixed", color = "#999999", angle = -10) +
-  annotate("text", x= 1.5, y = 445, label = "Grass", color = "#56B4E9", angle = 28) +
-  annotate("text", x= 1.5, y = 515, label = "Control", color = "Red", angle = -31) +
-  annotate("text", x= 1.5, y = 325, label = "Forb", color = "#E69F00", angle = -5)
+  #annotate("text", x= 1.5, y = 560, label = "Mixed", color = "#999999", angle = -10) +
+  #annotate("text", x= 1.5, y = 445, label = "Grass", color = "#56B4E9", angle = 28) +
+  #annotate("text", x= 1.5, y = 515, label = "Control", color = "Red", angle = -31) +
+  #annotate("text", x= 1.5, y = 325, label = "Forb", color = "#E69F00", angle = -5)
 cover_fall
 
 #interaction plot of spring rain treatment and functional groups
@@ -498,12 +517,12 @@ cover_spring <- ggplot(summary_cover_spring, aes(x = treatment, y = mean, group 
   scale_color_manual(values = c("#999999","#E69F00","#56B4E9", "green", "Red", "purple"), labels = c("Mixed", "Forb dominant", "Grass dominant")) + #legend colors and labels 
   theme(legend.position = "none") + #remove the legend
   scale_y_continuous(labels = NULL, name = NULL, limits = c(0,150)) + #remove y-axis label
-  annotate("text", x= 1, y = 145, label = "Avena", color = "#999999", angle = 0) +
-  annotate("text", x= 1, y = 105, label = "Forb", color = "#56B4E9", angle = 0) +
-  annotate("text", x= 1, y = 115, label = "Grass", color = "green", angle = 0) +
-  annotate("text", x= 1, y = 135, label = "Medusahead", color = "Red", angle = 0) +
-  annotate("text", x= 1, y = 100, label = "Total", color = "purple", angle = 0) +
-  annotate("text", x= 1, y = 125, label = "Lolium", color = "#E69F00", angle = 0)
+  annotate("text", x= 2, y = 130, label = "Avena", color = "#999999", angle = 0) +
+  annotate("text", x= 2, y = 140, label = "Forb", color = "#56B4E9", angle = 0) +
+  annotate("text", x= 2, y = 145, label = "Grass", color = "green", angle = 0) +
+  annotate("text", x= 2, y = 120, label = "Medusahead", color = "Red", angle = 0) +
+  annotate("text", x= 2, y = 150, label = "Total", color = "purple", angle = 0) +
+  annotate("text", x= 2, y = 125, label = "Lolium", color = "#E69F00", angle = 0)
 cover_spring
 
 #compile interaction plots 
