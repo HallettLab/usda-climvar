@@ -548,7 +548,7 @@ levels(data$year)
 levels(data$subplot)
 
 data <- tibble::rowid_to_column(data, "subplot")
-data2 <- filter(data, year =="2015", subplot!="C") %>% arrange(treatment, shelterBlock)
+data2 <- filter(data, year =="2015", subplot!="C", subplot!="XC") %>% arrange(treatment, shelterBlock)
 
 Treatment<-data2[,4]
 Year<-data2[,3]
@@ -595,7 +595,7 @@ help(metaMDS)
 spp.mds<-metaMDS(cover.relrow, trace = FALSE, autotransform=T, trymax=100, k=4) #runs several with different starting configurations
 #trace= TRUE will give output for step by step what its doing
 #default is 2 dimensions, can put k=4 for 4 dimensions
-spp.mds #solution converged after 20 tries, stress = 9
+spp.mds #solution converged after 30 tries, stress = 10
 summary(spp.mds)
 
 #plot results
@@ -612,9 +612,9 @@ colspec<- rep(c("plum1", "plum1", "palegreen", "palegreen", "palegreen", "palegr
 
 #plots colored based on treatment
 xc.plot <- ordiplot(spp.mds,choices=c(1,2), type = "none")   #Set up the plot
-colsT2 <- rep(c("darkred","deepskyblue","goldenrod1", "Magenta"), each = 16) #color based on drought treatment
+colsT2 <- rep(c("darkred","deepskyblue","goldenrod1", "Magenta"), each = 12) #color based on drought treatment
 cols1 <- rep(c("darkred","deepskyblue","goldenrod1", "Magenta"))
-shapes <- rep(c(15, 8, 17, 20 ), each=1) #shapes on subplot
+shapes <- rep(c(15, 8, 17 ), each=1) #shapes on subplot
 points(spscoresall$NMDS1,spscoresall$NMDS2,col=colsT2,pch=shapes) 
 text(spp.mds, display = "species", cex=0.5, col=colspec) #label species
 # add legend for treatment
@@ -622,7 +622,7 @@ legend("topright",legend=levels(Treatment), col=cols1, pch=19, cex=0.9,inset=0.1
 # add legend for year
 legend("topleft",legend=levels(as.factor(as.character(data2$subplot))), col="black", pch=shapes, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
 
-permanova1 <- adonis(spp.bcd~data2$treatment*data2$shelterBlock*data2$subplot, perm=100, method="bray")
+permanova1 <- adonis(spp.bcd~data2$treatment*data2$subplot, perm=100, method="bray")
 permanova1
 #treatment does not significantly drive communities
 
@@ -711,7 +711,6 @@ ggplot(May_all_XC, aes(x=shelterBlock, y=FDis))+
 #if niche complementarity is in effect, we'd expect block A to have highest ecosystem function
 
 #let's test if block A has highest FDis
-
 
 
 ggplot(May_all_XC, aes(x=treatment, y=RaoQ, color=treatment))+
