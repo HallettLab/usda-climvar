@@ -37,6 +37,7 @@ ggplot(d=May_2015_XC, aes(x=treatment, y=weight_g_m)) +
   #facet_wrap(~shelterBlock)+
   labs(x="rainfall treatment", y="ANPP g/m2")+
   geom_boxplot(aes(y=weight_g_m), shape=16)
+#lots of variation across treatments, althought control rain tends to have higher biomass than drought trts
 
 ##2. Does seasonality of rainfall affect forage production (H1)?
 ##Expect peak ANPP to be highest when rainfall occurs during peak season (spring dry) or consistently (controlRain)
@@ -56,10 +57,11 @@ LS2<-lsmeans(m2a, ~treatment)
 contrast(LS2, "pairwise")
 #no differences in total ANPP among drought treatments
 #same plot as above but removes control rain
-ggplot(d=May_XC_drought, aes(x=treatment, y=weight_g_m)) +
+ggplot(d=May_2015_drought, aes(x=treatment, y=weight_g_m)) +
   theme_linedraw()+
   labs(x="rainfall treatment", y="ANPP g/m2")+
   geom_boxplot(aes(y=weight_g_m), shape=16)
+#no differences in biomass, spring drought seems to have greater variation
 
 #3. compensation (H2)
 #H2 will be confirmed if mixed plots have greater ANPP compared to grass only or forb only
@@ -80,20 +82,22 @@ ggplot(d=May_ANPP_2015_noXC, aes(x=subplot, y=weight_g_m, fill = treatment)) +
   geom_boxplot(aes(y=weight_g_m), shape=16)
 
 #make plots to match Lina's BNPP plots
+#remove XC to match Lina's analyses
+#note to see XC, use May_ANPP_2015
 se <- function(x) sqrt(var(x)/length(x)) #create a function for SE
-summary_ANPP_shelter <- May_ANPP_2015 %>%
+summary_ANPP_shelter <- May_ANPP_2015_noXC %>%
   filter(treatment == "consistentDry" | treatment == "controlRain") %>%
   group_by(shelter, subplot) %>% #group by shelter and functional groups
   summarise(mean = mean(weight_g_m), #summarise by mean and SE
             SE = se(weight_g_m))
 
-summary_ANPP_fall <- May_ANPP_2015 %>%
+summary_ANPP_fall <- May_ANPP_2015_noXC %>%
   filter(treatment == "controlRain" | treatment == "fallDry") %>%
   group_by(treatment, subplot) %>% #group by fall rain treatment and functional groups
   summarise(mean = mean(weight_g_m), #summarise by mean and SE
             SE = se(weight_g_m))
 
-summary_ANPP_spring <- May_ANPP_2015 %>%
+summary_ANPP_spring <- May_ANPP_2015_noXC %>%
   filter(treatment == "controlRain" | treatment == "springDry") %>%
   group_by(treatment, subplot) %>% #gropu by spring rain treatment and functional groups
   summarise(mean = mean(weight_g_m), #summarise by mean and SE
@@ -112,7 +116,7 @@ ANPP_shelter <- ggplot(summary_ANPP_shelter, aes(x = as.factor(shelter), y = mea
   scale_y_continuous(limits = c(100, 800)) +
   annotate("text", x= 1.5, y = 535, label = "Mixed", color = "#999999", angle = -40) +
   annotate("text", x= 1.35, y = 450, label = "Grass", color = "#56B4E9", angle = 40) +
-  annotate("text", x= 1.5, y = 485, label = "Control", color = "Red", angle = -10) +
+  #annotate("text", x= 1.5, y = 485, label = "Control", color = "Red", angle = -10) +
   annotate("text", x= 1.5, y = 358, label = "Forb", color = "#E69F00", angle = 18)
 ANPP_shelter
 
@@ -130,7 +134,7 @@ ANPP_fall <-
   #scale_x_discrete(limits=c(1,0)) + #change order of discrete x scale 
   annotate("text", x= 1.5, y = 560, label = "Mixed", color = "#999999", angle = -10) +
   annotate("text", x= 1.5, y = 445, label = "Grass", color = "#56B4E9", angle = 28) +
-  annotate("text", x= 1.5, y = 515, label = "Control", color = "Red", angle = -31) +
+  #annotate("text", x= 1.5, y = 515, label = "Control", color = "Red", angle = -31) +
   annotate("text", x= 1.5, y = 325, label = "Forb", color = "#E69F00", angle = -5)
 
 ANPP_fall
@@ -147,7 +151,7 @@ ANPP_spring <- ggplot(summary_ANPP_spring, aes(x = treatment, y = mean, group = 
   scale_y_continuous(labels = NULL, name = NULL, limits = c(100, 800)) + #remove y-axis label
   annotate("text", x= 1.5, y = 650, label = "Mixed", color = "#999999", angle = 45) +
   annotate("text", x= 1.5, y = 425, label = "Grass", color = "#56B4E9", angle = 3) +
-  annotate("text", x= 1.5, y = 485, label = "Control", color = "Red", angle = -15) +
+  #annotate("text", x= 1.5, y = 485, label = "Control", color = "Red", angle = -15) +
   annotate("text", x= 1.5, y = 365, label = "Forb", color = "#E69F00", angle = 30)
 ANPP_spring
 
@@ -171,7 +175,7 @@ shapiro.test(residuals(m4a)) #normal
 LS4a<-lsmeans(m4a, ~subplot)
 contrast(LS4a, "pairwise") #mixed plots have greater biomass forb plots and marginally greater than grass
 
-ggplot(d=May_ANPP_2015_noA, aes(x=treatment, y=weight_g_m, fill=subplot)) +
+ggplot(d=May_ANPP_2015_noA, aes(x=subplot, y=weight_g_m, fill=treatment)) +
   theme_linedraw()+
   labs(x="composition treatment", y="ANPP g/m2")+
   geom_boxplot(aes(y=weight_g_m), shape=16)
@@ -185,7 +189,7 @@ ggplot(d=May_ANPP_2015_noA, aes(x=subplot, y=weight_g_m, fill=subplot)) +
 #Using a mixed model to examine the effects of rainfall timing (fixed effect) with shelterbloc nested within year as random effect
 
 #create subset with no species manipulations (control community) only
-May_2015_XC_noA<-filter(May_ANPP_2015_noA, subplot=='XC')
+May_2015_XC_noA<-filter(May_ANPP_2015, shelterBlock!="A", subplot=='XC')
 
 m1A<-lme(weight_g_m ~treatment, random=~1|shelterBlock, May_2015_XC_noA, na.action=na.exclude)
 summary(m1A)
@@ -286,6 +290,7 @@ grid.arrange(ANPP_shelter_noA, ANPP_fall_noA, ANPP_spring_noA, ncol = 3, widths 
 
 #make plots to match Lina's BNPP plots
 se <- function(x) sqrt(var(x)/length(x)) #create a function for SE
+
 summary_ANPP_shelter_all <- May_ANPP_noC %>%
   filter(treatment == "consistentDry" | treatment == "controlRain") %>%
   group_by(shelter, subplot) %>% #group by shelter and functional groups
@@ -317,7 +322,7 @@ ANPP_shelter_all <- ggplot(summary_ANPP_shelter_all, aes(x = as.factor(shelter),
   scale_y_continuous(limits = c(100, 800)) +
   annotate("text", x= 1.5, y = 535, label = "Mixed", color = "#999999", angle = -40) +
   annotate("text", x= 1.35, y = 450, label = "Grass", color = "#56B4E9", angle = 40) +
-  annotate("text", x= 1.5, y = 485, label = "Control", color = "Red", angle = -10) +
+  #annotate("text", x= 1.5, y = 485, label = "Control", color = "Red", angle = -10) +
   annotate("text", x= 1.5, y = 358, label = "Forb", color = "#E69F00", angle = 18)
 ANPP_shelter_all
 
@@ -335,7 +340,7 @@ ANPP_fall_all <-
   #scale_x_discrete(limits=c(1,0)) + #change order of discrete x scale 
   annotate("text", x= 1.5, y = 560, label = "Mixed", color = "#999999", angle = -10) +
   annotate("text", x= 1.5, y = 445, label = "Grass", color = "#56B4E9", angle = 28) +
-  annotate("text", x= 1.5, y = 515, label = "Control", color = "Red", angle = -31) +
+  #annotate("text", x= 1.5, y = 515, label = "Control", color = "Red", angle = -31) +
   annotate("text", x= 1.5, y = 325, label = "Forb", color = "#E69F00", angle = -5)
 
 ANPP_fall_all
@@ -352,7 +357,7 @@ ANPP_spring_all <- ggplot(summary_ANPP_spring_all, aes(x = treatment, y = mean, 
   scale_y_continuous(labels = NULL, name = NULL, limits = c(100, 800)) + #remove y-axis label
   annotate("text", x= 1.5, y = 650, label = "Mixed", color = "#999999", angle = 45) +
   annotate("text", x= 1.5, y = 425, label = "Grass", color = "#56B4E9", angle = 3) +
-  annotate("text", x= 1.5, y = 485, label = "Control", color = "Red", angle = -15) +
+  #annotate("text", x= 1.5, y = 485, label = "Control", color = "Red", angle = -15) +
   annotate("text", x= 1.5, y = 365, label = "Forb", color = "#E69F00", angle = 30)
 ANPP_spring_all
 
