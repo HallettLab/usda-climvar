@@ -111,7 +111,7 @@ gfproportion_graph_2015_noXC <- gfproportion_2015 %>%
   group_by(treatment) %>% filter(subplot!="XC")%>%
   summarize(meanprop=mean(percentForb), seprop=sd(percentForb)/sqrt(length(percentForb)))
 
-ggplot(gfproportion_graph_2015, aes(x=treatment, y=meanprop)) + 
+ggplot(gfproportion_graph_2015_noXC, aes(x=treatment, y=meanprop)) + 
   geom_bar(stat="identity", position="dodge", fill = "gray") + 
   theme_bw() + 
   geom_errorbar(aes(ymax = meanprop+seprop, ymin = meanprop-seprop), width=.25, position=position_dodge(width=0.9)) + 
@@ -121,7 +121,7 @@ ggplot(gfproportion_graph_2015, aes(x=treatment, y=meanprop)) +
 ggplot(gfproportion_2015_noXC, aes(x=percentForb, y=totcover, color = treatment))+
   geom_point() + geom_smooth(method = "lm")
 
-ggplot(gfproportion_2015, aes(x=percentForb, y=totcover, color = treatment))+
+ggplot(gfproportion_2015_noXC, aes(x=percentForb, y=totcover, color = treatment))+
   facet_grid(~subplot)+
   geom_point() + geom_smooth(method = "lm")
 ############################################
@@ -304,7 +304,7 @@ ggplot(gf6_graph_2015, aes(fill=genus, colour=func2,  y=cover, x=treatment)) +
   scale_fill_manual(values = c("goldenrod","orange", "orangered", "darkorange2", "firebrick","indianred4","indianred2","brown4", "indianred", "saddlebrown", "khaki3", "palegreen", "green4", "lightblue", "lightblue4", "skyblue2", "skyblue4", "dodgerblue3", "royalblue3","navy", "black"))+
   geom_bar( stat="identity", position='stack')+
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
-
+#looks like avena is present when there are almost no forbs - is that competitive or environmentally driven?
 
 library(ggpubr)
 #does proportion of Avena drive community structure?
@@ -315,10 +315,10 @@ ggplot(gfprop_noXC_2015, aes(x=AvCover, y=totcover, color=treatment))+
   geom_smooth(method='lm')+
   labs(x="Percent Avena", y="Total Cover")
 
-ggplot(gfprop_noXC_2015, aes(x=AvCover, y=percentGrass, color=treatment))+
+ggplot(gfprop_noXC_2015, aes(x=AvCover, y=percentForb, color=treatment))+
   geom_point()+
   geom_smooth(method='lm' )+
-  labs(x="Percent Avena", y="Percent Grass Cover")
+  labs(x="Percent Avena", y="Percent Forb Cover")
 
 ggplot(gfprop_noXC_2015, aes(x=AvCover, y=LolCover, color=treatment, shape=subplot))+
   geom_point()+
@@ -329,7 +329,7 @@ ggplot(gfprop_noXC_2015, aes(x=AvCover, y=LolCover, color=treatment, shape=subpl
 gfprop_noF_2015<-gfprop_noXC_2015 %>% filter(subplot!="F")
 gfprop_noF_season_2015 <- gfprop_noXC_2015 %>% filter(treatment=="fallDry","springDry")
 
-ggscatterhist(gfprop_noF_2015, x = "AvCover", y = "LolCover",
+ggscatterhist(gfprop_noF_2015, x = "AvCover", y = "percentForb",
               color = "treatment", size = 3, alpha = 0.6,
               margin.params = list(fill = "treatment", color = "black", size = 0.2))
 
@@ -547,7 +547,7 @@ grid.arrange(cover_shelter, cover_fall, cover_spring, ncol = 3, widths = c(1.5,1
 
 #How does ANPP relate to total cover?
 #recreate objects from ANPP analyses
-May_ANPP<-read.csv("Plant_composition_data/ANPP/ANPP_CleanedData/ClimVar_ANPP-peak.csv")
+May_ANPP<-read.csv("ANPP/ANPP_CleanedData/ClimVar_ANPP-peak.csv")
 #create subset with 2015 data only, remove compost subplot
 May_ANPP_2015<-filter(May_ANPP, year=='2015', subplot !="C")
 May_2015_XC<-filter(May_ANPP_2015, subplot=='XC')
@@ -670,10 +670,10 @@ shapiro.test(residuals(Jm))
 jLS<-lsmeans(Jm, ~subplot)
 contrast(jLS, "pairwise") #forb is more even
 
-ggplot(May_2015, aes(y=weight_g_m, x=percentForb, color = subplot))+
+ggplot(May_2015, aes(y=weight_g_m, x=AvCover, color = percentForb))+
   geom_point()+
-  geom_smooth(method="lm",se=F)
-  #scale_colour_gradient(low="magenta", high="plum4")
+  geom_smooth(method="lm",se=T)+
+  scale_color_gradient(low="magenta", high="black")
 
 #how does diversity differ by block?
 ggplot(May_2015, aes(x=shelterBlock, y=H))+
