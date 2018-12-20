@@ -11,6 +11,8 @@ library(gridExtra)
 
 setwd("~/Dropbox/ClimVar/DATA/")
 May_ANPP<-read.csv("Plant_composition_data/ANPP/ANPP_CleanedData/ClimVar_ANPP-peak.csv")
+#remove compost subplots for later
+May_ANPP_noC <- May_ANPP %>% filter(subplot!="C")
 #create subset with 2015 data only, remove compost subplot
 May_ANPP_2015<-filter(May_ANPP, year=='2015', subplot !="C")
 
@@ -250,7 +252,7 @@ ANPP_shelter_noA <- ggplot(summary_ANPP_shelter_noA, aes(x = as.factor(shelter),
   scale_y_continuous(limits = c(100, 1000)) +
   annotate("text", x= 1.5, y = 600, label = "Mixed", color = "#999999", angle = -40) +
   annotate("text", x= 1.35, y = 440, label = "Grass", color = "#56B4E9", angle = 60) +
-  annotate("text", x= 1.5, y = 518, label = "Control", color = "Red", angle = -40) +
+  #annotate("text", x= 1.5, y = 518, label = "Control", color = "Red", angle = -40) +
   annotate("text", x= 1.5, y = 320, label = "Forb", color = "#E69F00", angle = 18)
 ANPP_shelter_noA
 
@@ -268,7 +270,7 @@ ANPP_fall_noA <-
   #scale_x_discrete(limits=c(1,0)) + #change order of discrete x scale 
   annotate("text", x= 1.5, y = 600, label = "Mixed", color = "#999999", angle = -40) +
   annotate("text", x= 1.35, y = 435, label = "Grass", color = "#56B4E9", angle = 55) +
-  annotate("text", x= 1.5, y = 500, label = "Control", color = "Red", angle = -45) +
+  #annotate("text", x= 1.5, y = 500, label = "Control", color = "Red", angle = -45) +
   annotate("text", x= 1.5, y = 325, label = "Forb", color = "#E69F00", angle = 15)
 
 ANPP_fall_noA
@@ -285,7 +287,7 @@ ANPP_spring_noA <- ggplot(summary_ANPP_spring_noA, aes(x = treatment, y = mean, 
   scale_y_continuous(labels = NULL, name = NULL, limits = c(100, 1000)) + #remove y-axis label
   annotate("text", x= 1.5, y = 695, label = "Mixed", color = "#999999", angle = 45) +
   annotate("text", x= 1.5, y = 405, label = "Grass", color = "#56B4E9", angle = 30) +
-  annotate("text", x= 1.5, y = 522, label = "Control", color = "Red", angle = -40) +
+  #annotate("text", x= 1.5, y = 522, label = "Control", color = "Red", angle = -40) +
   annotate("text", x= 1.5, y = 340, label = "Forb", color = "#E69F00", angle = 30)
 ANPP_spring_noA
 
@@ -296,8 +298,6 @@ grid.arrange(ANPP_shelter_noA, ANPP_fall_noA, ANPP_spring_noA, ncol = 3, widths 
 ##################
 #################
 #make plots for whole experiment (all years) to compare
-
-#make plots to match Lina's BNPP plots
 se <- function(x) sqrt(var(x)/length(x)) #create a function for SE
 
 summary_ANPP_shelter_all <- May_ANPP_noC %>%
@@ -331,7 +331,7 @@ ANPP_shelter_all <- ggplot(summary_ANPP_shelter_all, aes(x = as.factor(shelter),
   scale_y_continuous(limits = c(100, 800)) +
   annotate("text", x= 1.5, y = 535, label = "Mixed", color = "#999999", angle = -40) +
   annotate("text", x= 1.35, y = 450, label = "Grass", color = "#56B4E9", angle = 40) +
-  #annotate("text", x= 1.5, y = 485, label = "Control", color = "Red", angle = -10) +
+  annotate("text", x= 1.5, y = 485, label = "Control", color = "Red", angle = -10) +
   annotate("text", x= 1.5, y = 358, label = "Forb", color = "#E69F00", angle = 18)
 ANPP_shelter_all
 
@@ -349,7 +349,7 @@ ANPP_fall_all <-
   #scale_x_discrete(limits=c(1,0)) + #change order of discrete x scale 
   annotate("text", x= 1.5, y = 560, label = "Mixed", color = "#999999", angle = -10) +
   annotate("text", x= 1.5, y = 445, label = "Grass", color = "#56B4E9", angle = 28) +
-  #annotate("text", x= 1.5, y = 515, label = "Control", color = "Red", angle = -31) +
+  annotate("text", x= 1.5, y = 515, label = "Control", color = "Red", angle = -31) +
   annotate("text", x= 1.5, y = 325, label = "Forb", color = "#E69F00", angle = -5)
 
 ANPP_fall_all
@@ -366,7 +366,7 @@ ANPP_spring_all <- ggplot(summary_ANPP_spring_all, aes(x = treatment, y = mean, 
   scale_y_continuous(labels = NULL, name = NULL, limits = c(100, 800)) + #remove y-axis label
   annotate("text", x= 1.5, y = 650, label = "Mixed", color = "#999999", angle = 45) +
   annotate("text", x= 1.5, y = 425, label = "Grass", color = "#56B4E9", angle = 3) +
-  #annotate("text", x= 1.5, y = 485, label = "Control", color = "Red", angle = -15) +
+  annotate("text", x= 1.5, y = 485, label = "Control", color = "Red", angle = -15) +
   annotate("text", x= 1.5, y = 365, label = "Forb", color = "#E69F00", angle = 30)
 ANPP_spring_all
 
