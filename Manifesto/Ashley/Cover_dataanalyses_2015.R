@@ -93,10 +93,12 @@ ggplot(gf_graphic_2015, aes(x=treatment, y=meancover, fill=func)) +
   theme(text = element_text(size=20))+
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
-ggplot((gfproportion_2015), aes(x=treatment, y = percentForb, fill=subplot)) + 
+gfproportion_2015_noXC<-gfproportion_2015 %>% filter(subplot!="XC")
+
+ggplot((gfproportion_2015_noXC), aes(x=treatment, y = percentForb, fill=subplot)) + 
   geom_boxplot()
 
-a<-lme(percentForb ~ treatment, random=~1|shelterBlock/subplot, data=gfproportion_2015,
+a<-lme(percentForb ~ treatment, random=~1|shelterBlock/subplot, data=gfproportion_2015_noXC,
        contrasts=list(treatment=contr.treatment))
 
 summary(a) 
@@ -105,8 +107,8 @@ r.squaredGLMM(a)
 summary(glht(a,linfct=mcp(treatment="Tukey")), alternative="Bonferonni")
 
 
-gfproportion_graph_2015 <- gfproportion_2015 %>%
-  group_by(treatment) %>%
+gfproportion_graph_2015_noXC <- gfproportion_2015 %>%
+  group_by(treatment) %>% filter(subplot!="XC")%>%
   summarize(meanprop=mean(percentForb), seprop=sd(percentForb)/sqrt(length(percentForb)))
 
 ggplot(gfproportion_graph_2015, aes(x=treatment, y=meanprop)) + 
@@ -116,7 +118,7 @@ ggplot(gfproportion_graph_2015, aes(x=treatment, y=meanprop)) +
   labs(x="Treatment", y="Percent forbs") +
   theme(text = element_text(size=20))
 
-ggplot(gfproportion_2015, aes(x=percentForb, y=totcover, color = treatment))+
+ggplot(gfproportion_2015_noXC, aes(x=percentForb, y=totcover, color = treatment))+
   geom_point() + geom_smooth(method = "lm")
 
 ggplot(gfproportion_2015, aes(x=percentForb, y=totcover, color = treatment))+
@@ -124,12 +126,12 @@ ggplot(gfproportion_2015, aes(x=percentForb, y=totcover, color = treatment))+
   geom_point() + geom_smooth(method = "lm")
 ############################################
 
-#calculate proportion grass
+#calculate proportion grass for composition treatments
 gfproportionG_2015 <- gf_2015 %>%
   group_by(plot, subplot, treatment, shelterBlock, year) %>%
   mutate(totcover = sum(cover)) %>%
   mutate(percentGrass = (cover/totcover)*100) %>%
-  filter(func == "grass") %>%
+  filter(func == "grass", subplot!= "XC") %>%
   dplyr::select(-func)
 
 b<-lme(percentGrass ~ treatment, random=~1|shelterBlock/subplot, data=gfproportionG_2015,
@@ -137,7 +139,7 @@ b<-lme(percentGrass ~ treatment, random=~1|shelterBlock/subplot, data=gfproporti
 
 summary(b) 
 anova(b)
-r.squaredGLMM(b)
+r.squaredGLMM(b) #1% explained by fixed effects
 summary(glht(b,linfct=mcp(treatment="Tukey")), alternative="Bonferonni")
 
 ggplot((gfproportionG_2015), aes(x=treatment, y = percentGrass, fill=subplot)) + 
