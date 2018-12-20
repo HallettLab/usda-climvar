@@ -14,9 +14,9 @@ May_ANPP<-read.csv("Plant_composition_data/ANPP/ANPP_CleanedData/ClimVar_ANPP-pe
 #create subset with 2015 data only, remove compost subplot
 May_ANPP_2015<-filter(May_ANPP, year=='2015', subplot !="C")
 
+#####This first part is using control (XC) data to see effects of drought treatments on the background community
 ##1. Does variability of rainfall affect forage production (H1)?
 #Using a mixed model to examine the effects of rainfall timing (fixed effect) with shelterbloc nested within year as random effect
-
 #create subset with no species manipulations (control community) only
 May_2015_XC<-filter(May_ANPP_2015, subplot=='XC')
 
@@ -63,6 +63,10 @@ ggplot(d=May_2015_drought, aes(x=treatment, y=weight_g_m)) +
   geom_boxplot(aes(y=weight_g_m), shape=16)
 #no differences in biomass, spring drought seems to have greater variation
 
+
+###################
+##In this second part,XC is removed to look at composition plots only
+###################
 #3. compensation (H2)
 #H2 will be confirmed if mixed plots have greater ANPP compared to grass only or forb only
 May_ANPP_2015_noXC<-filter(May_ANPP_2015, subplot !="XC")
@@ -75,6 +79,11 @@ qqline(residuals(m3a))
 shapiro.test(residuals(m3a)) #normal
 LS3a<-lsmeans(m3a, ~subplot)
 contrast(LS3a, "pairwise") #mixed plots have greater biomass than forb, but not grass
+
+ggplot(d=May_ANPP_2015_noXC, aes(x=subplot, y=weight_g_m)) +
+  theme_linedraw()+
+  labs(x="drought treatment", y="ANPP g/m2")+
+  geom_boxplot(aes(y=weight_g_m), shape=16)
 
 ggplot(d=May_ANPP_2015_noXC, aes(x=subplot, y=weight_g_m, fill = treatment)) +
   theme_linedraw()+
