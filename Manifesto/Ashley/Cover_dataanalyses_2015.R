@@ -392,7 +392,7 @@ shapiro.test(residuals(g8))
 gLS8<-lsmeans(g8, ~treatment, adjust="Tukey")
 contrast(gLS8, "pairwise") #control rain is greater than spring dry
 
-#does treatment affect medusahead
+#does treatment affect medusahead?
 g5w<-lme(TaeCover ~ treatment, random=~1|subplot/shelterBlock, gfprop_noXC_2015, na.action=na.exclude)
 summary(g5w)
 anova(g5w)
@@ -437,6 +437,20 @@ shapiro.test(residuals(av2))
 LSav<-lsmeans(av2, ~treatment, adjust="tukey")
 contrast(LSav, "pairwise") #no differences for avena
 ggplot(gfprop_noXC_2015, aes(x=treatment, y=AvCover))+
+  geom_boxplot()
+
+#does treatment affect total % cover ?
+tot<-lme(totcover ~ treatment, random=~1|shelterBlock/subplot, gfprop_noXC_2015, na.action=na.exclude)
+summary(tot)
+anova(tot)
+r.squaredGLMM(tot) #4% of variation explained by fixed effects, 37% by whole model (interannual variation?)
+qqnorm(residuals(tot))
+qqline(residuals(tot))
+shapiro.test(residuals(tot))
+#normal
+LStot<-lsmeans(tot, ~treatment, adjust="tukey")
+contrast(LStot, "pairwise") #no differences for avena
+ggplot(gfprop_noXC_2015, aes(x=treatment, y=totcover))+
   geom_boxplot()
 
 gfprop_noF_season_2015 <- gfprop_graph_2015 %>% filter(treatment!="consistentDry") %>% filter(subplot!="F", subplot!="XC")
@@ -484,7 +498,7 @@ cover_shelter <- ggplot(summary_cover_shelter, aes(x = as.factor(shelter), y = m
   labs(x = "Shelter", y = expression(paste("% Cover"))) + #label the axis
   scale_color_manual(values = c("#999999","#E69F00","#56B4E9", "green", "Red", "purple")) + #specify color 
   theme(legend.position = "none") + #remove the legend 
-  scale_y_continuous(limits = c(0, 150)) +
+  scale_y_continuous(limits = c(0, 150)) 
  # annotate("text", x= 1.5, y = 535, label = "Mixed", color = "#999999", angle = -40) +
  # annotate("text", x= 1.35, y = 450, label = "Grass", color = "#56B4E9", angle = 40) +
   #annotate("text", x= 1.5, y = 485, label = "Control", color = "Red", angle = -10) +
@@ -501,7 +515,7 @@ cover_fall <-
   labs(x = "Fall Rain") + #label the axis
   scale_color_manual(values = c("#999999","#E69F00","#56B4E9", "green", "Red", "purple")) + #specify color
   theme(legend.position = "none") + #remove the legend
-  scale_y_continuous(labels = NULL, name = NULL, limits = c(0,150)) + #remove y-axis label
+  scale_y_continuous(labels = NULL, name = NULL, limits = c(0,150))  #remove y-axis label
   #scale_x_discrete(limits=c(1,0)) + #change order of discrete x scale 
   #annotate("text", x= 1.5, y = 560, label = "Mixed", color = "#999999", angle = -10) +
   #annotate("text", x= 1.5, y = 445, label = "Grass", color = "#56B4E9", angle = 28) +
@@ -618,7 +632,7 @@ colsT2 <- rep(c("darkred","deepskyblue","goldenrod1", "Magenta"), each = 12) #co
 cols1 <- rep(c("darkred","deepskyblue","goldenrod1", "Magenta"))
 shapes <- rep(c(15, 8, 17 ), each=1) #shapes on subplot
 points(spscoresall$NMDS1,spscoresall$NMDS2,col=colsT2,pch=shapes) 
-text(spp.mds, display = "species", cex=0.5, col=colspec) #label species
+text(spp.mds, display = "species", cex=0.8, col=colspec) #label species
 # add legend for treatment
 legend("topright",legend=levels(Treatment), col=cols1, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
 # add legend for year
@@ -636,16 +650,27 @@ r.squaredGLMM(Hm) #25% of variation explained by fixed effects, 40% by whole mod
 qqnorm(residuals(Hm))
 qqline(residuals(Hm))
 shapiro.test(residuals(Hm))
-#not normally distributed,  log transformation makes it worse, keep as is
+#normal
 hLS<-lsmeans(Hm, ~subplot)
 contrast(hLS, "pairwise") #forb is more diverse
 
-ggplot(May_2015, aes(x=subplot, y=H, color=treatment))+
+ggplot(May_2015, aes(x=subplot, y=H))+
   #facet_wrap(~treatment)+
   geom_boxplot()
   #geom_smooth(method = "lm", se=FALSE)
 
-ggplot(May_2015, aes(y=weight_g_m, x=percentGrass, color = subplot))+
+Jm<-lme(J ~ treatment*subplot, random=~1|shelterBlock, May_2015, na.action=na.exclude)
+summary(Jm)
+anova(Jm)
+r.squaredGLMM(Jm) #25% of variation explained by fixed effects, 40% by whole model (spatial variation?)
+qqnorm(residuals(Jm))
+qqline(residuals(Jm))
+shapiro.test(residuals(Jm))
+#normal
+jLS<-lsmeans(Jm, ~subplot)
+contrast(jLS, "pairwise") #forb is more even
+
+ggplot(May_2015, aes(y=weight_g_m, x=percentForb, color = subplot))+
   geom_point()+
   geom_smooth(method="lm",se=F)
   #scale_colour_gradient(low="magenta", high="plum4")
@@ -655,8 +680,10 @@ ggplot(May_2015, aes(x=shelterBlock, y=H))+
   facet_wrap(~subplot)+
   geom_boxplot()
 
-May_2015_XC2<- May_2015 %>% filter(subplot=="XC")
-Hm2<-lme(H ~ treatment, random=~1|shelterBlock, May_2015_XC2, na.action=na.exclude)
+cover.Bio2<- data %>% filter(year=="2015", subplot=="XC") %>% dplyr::select(-c(1:6)) 
+May_2015_XC$H<-diversity(cover.Bio2)
+May_2015_XC$J <- May_2015_XC$H/log(specnumber(cover.Bio2))
+Hm2<-lme(H ~ treatment, random=~1|shelterBlock, May_2015_XC, na.action=na.exclude)
 summary(Hm2)
 anova(Hm2)
 r.squaredGLMM(Hm2) #25% of variation explained by fixed effects, 40% by whole model (spatial variation?)
@@ -667,17 +694,27 @@ shapiro.test(residuals(Hm2))
 hLS2<-lsmeans(Hm2, ~treatment)
 contrast(hLS2, "pairwise") #no differences in diversity by treatment for XC
 
+Jm2<-lme(J ~ treatment, random=~1|shelterBlock, May_2015_XC, na.action=na.exclude)
+summary(Jm2)
+anova(Jm2)
+r.squaredGLMM(Jm2) #25% of variation explained by fixed effects, 40% by whole model (spatial variation?)
+qqnorm(residuals(Jm2))
+qqline(residuals(Jm2))
+shapiro.test(residuals(Jm2))
+#not normal
+jLS2<-lsmeans(Jm2, ~treatment)
+contrast(jLS2, "pairwise") #forb is more even
 
 ###check trait differences
 #does functional diversity change with precipitation variability (drought vs. control) or seasonability (drought treatments)?
 traits<-read.csv("Traits/Traits_ProcessedData-GH/ClimVar_trait-diversity-GH.csv")
-traits_2015<-traits %>% filter(subplot!="C", year=="2015")
+traits_2015<-traits %>% filter(subplot!="XC", subplot!="C", year=="2015")
 May_2015<-merge(May_2015,traits_2015)
 May_ANPP<-merge(May_ANPP,traits) 
 May_ANPP <- May_ANPP %>%filter( subplot!="C")
 May_all_XC <- May_ANPP %>% filter (subplot=="XC")
 
-ggplot(May_ANPP, aes(y=RaoQ, x=forbCover, color = treatment, shape=treatment))+
+ggplot(May_ANPP, aes(y=RaoQ, x=forbCover, color = treatment, shape=subplot))+
   facet_wrap(~as.factor(as.character(year)))+
   geom_point()+
   geom_smooth(method="lm",se=F)
@@ -695,17 +732,77 @@ gf_graph_all <- merge(gf_graph_all, gf_graph_forb)
 gf_graph_all <- gf_graph_all %>% gather(func, cover, -ForbSE, -GrassSE, -subplot, -treatment, -year) %>%
   gather(func2, SE, -func, -cover, -subplot, -treatment, -year) %>% dplyr::select(-func2)
 
-ggplot(gf_graph_all, aes(x=treatment, y=cover, fill = func, color=func)) + 
+ggplot(gf_graph_all, aes(x=treatment, y=cover, group = func, color=func)) + 
+  geom_errorbar(aes(ymax = cover+SE, ymin = cover-SE), width=.25) + 
   geom_point() + 
   theme_bw() + 
   facet_wrap(~subplot*year, ncol=3)+
-  geom_errorbar(aes(ymax = cover+SE, ymin = cover-SE), width=.25, position=position_dodge(width=0.9)) + 
   labs(x="Treatment", y="Cover %") +
   theme(text = element_text(size=20))+
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
+#does functional diversity differ by subplot or treatment?
+Fd<-lme(FDis ~ treatment*subplot, random=~1|shelterBlock, May_2015, na.action=na.exclude)
+summary(Fd)
+anova(Fd)
+r.squaredGLMM(Fd) #42% of variation explained by fixed effects, 47% by whole model (spatial variation?)
+qqnorm(residuals(Fd))
+qqline(residuals(Fd))
+shapiro.test(residuals(Fd))
+#close to normal
+Fd2<-lme(log(FDis+1) ~ treatment*subplot, random=~1|shelterBlock, May_2015, na.action=na.exclude)
+summary(Fd2)
+anova(Fd2)
+r.squaredGLMM(Fd2) #39% of variation explained by fixed effects, 45% by whole model (spatial variation?)
+qqnorm(residuals(Fd2))
+qqline(residuals(Fd2))
+shapiro.test(residuals(Fd2))
+FdLS<-lsmeans(Fd2, ~subplot*treatment)
+contrast(FdLS, "pairwise") #forb is more diverse
 
-#how does functional diversity differ by block?
+ggplot(May_2015, aes(x=subplot, y=FDis))+
+  facet_wrap(~treatment)+
+  geom_boxplot()
+
+Rao<-lme(RaoQ ~ treatment*subplot, random=~1|shelterBlock, May_2015, na.action=na.exclude)
+summary(Rao)
+anova(Rao)
+r.squaredGLMM(Rao) #51% of variation explained by fixed effects, 55% by whole model (spatial variation?)
+qqnorm(residuals(Rao))
+qqline(residuals(Rao))
+shapiro.test(residuals(Rao))
+#normal
+rLS<-lsmeans(Rao, ~subplot)
+contrast(rLS, "pairwise") #forb is more diverse
+
+ggplot(May_2015, aes(x=subplot, y=RaoQ))+
+  geom_boxplot()
+
+
+#how does functional diversity differ by treatment for control plots?
+May_2015_XC2<-May_all_XC %>% filter(year=="2015")
+Rao2<-lme(RaoQ ~ treatment, random=~1|shelterBlock, May_2015_XC2, na.action=na.exclude)
+summary(Rao2)
+anova(Rao2)
+r.squaredGLMM(Rao2) #17% of variation explained by fixed effects, 52% by whole model (spatial variation?)
+qqnorm(residuals(Rao2))
+qqline(residuals(Rao2))
+shapiro.test(residuals(Rao2))
+#normal
+r2LS<-lsmeans(Rao, ~treatment)
+contrast(r2LS, "pairwise") 
+
+Fd2<-lme(FDis ~ treatment, random=~1|year/shelterBlock, May_2015_XC2, na.action=na.exclude)
+summary(Fd2)
+anova(Fd2)
+r.squaredGLMM(Fd2) #14% of variation explained by fixed effects, 48% by whole model (spatial variation?)
+qqnorm(residuals(Fd2))
+qqline(residuals(Fd2))
+shapiro.test(residuals(Fd2))
+#normal
+fd2LS<-lsmeans(Fd2, ~treatment)
+contrast(fd2LS, "pairwise") #no differences
+
 ggplot(May_all_XC, aes(x=shelterBlock, y=FDis))+
   facet_wrap(~year)+
   geom_boxplot()
