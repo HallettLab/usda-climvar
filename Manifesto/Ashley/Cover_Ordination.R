@@ -536,9 +536,9 @@ points(spscoresall_4$NMDS1,spscoresall_4$NMDS2,col=cols,pch=shapes)
 text(spp.mds4, display = "species", cex=0.5, col="grey30") #label species
 ordiarrows(spp.mds4, groups=SB4, order.by=Year4, label=F, col=cols1)
 # add legend for subplot
-legend("topleft",legend=levels(as.factor(as.character(Treatment4))), col=cols2, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=1,x.intersp=1.5,pt.cex=1.1)
+legend("topleft",legend=levels(as.factor(as.character(Treatment4))), col=cols2, pch=19, cex=0.8,inset=0.05,bty="n",y.intersp=0.7,x.intersp=1.5,pt.cex=1)
 # add legend for drought treatment
-legend("topright",legend=levels(Subplot4), col="black", pch=shapes1, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
+legend("topright",legend=levels(Subplot4), col="black", pch=shapes1, cex=0.8,inset=0.05,bty="n",y.intersp=0.7,x.intersp=0.8,pt.cex=1)
 help(ordiplot)
 
 #plots colored based on year
