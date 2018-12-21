@@ -141,7 +141,7 @@ permanova2
 permanova3 <- adonis(spp.bcd~Treatment, perm=999, method="bray")
 permanova3
 
-permanova4 <- adonis(spp.bcd~Treatment*Year*data$shelterBlock, perm=999, method="bray")
+permanova4 <- adonis(spp.bcd~Treatment*Year*data$subplot, perm=999, method="bray")
 permanova4 #everything is significant, need model selection
 
 
@@ -292,7 +292,7 @@ permanova5_2 #block is significant
 
 
 ##Creating an ordination plot with succession vectors
-xc.plot4 <- ordiplot(spp.mds2,choices=c(1,2), type = "none")   #Set up the plot
+xc.plot4 <- ordiplot(spp.mds2,choices=c(1,2), type = "none", xlim=c(-2,2), ylim=c(-2,2))   #Set up the plot
 cols <- rep(c("Red","Black","Orange", "Pink"), each = 12) 
 cols1 <- rep(c("Red","Black","Orange", "Pink"), each = 1) 
 cols2 <- rep(c("Red","Black","Orange", "Pink"), each = 4) 
@@ -526,18 +526,19 @@ spscoresall_4<-data.frame(tplots4,spscores1_4,spscores2_4)
 #plots colored based on subplot
 
 
-compM.plot <- ordiplot(spp.mds4,choices=c(1,2), type = "none")   #Set up the plot
-cols <- rep(c("Purple","Blue","Red"), each = 3) #color based on composition treatment
-cols1 <- rep(c("Purple","Blue","Red"))
-shapes <- rep(c(15, 8, 17, 1 ), each=9) #shapes on drought treatment
-shapes1 <- rep(c(15, 8, 17, 1 ), each=1)
+compM.plot <- ordiplot(spp.mds4,choices=c(1,2), type = "none", xlim=c(-1.5,1.5),ylim=c(-1.5,1.5))   #Set up the plot
+cols <- rep(c("Red","Black","Orange", "Pink"), each = 9) #color based on drought treatment
+cols1 <- rep(c("Red","Black","Orange", "Pink"), each=3) #for arrows
+cols2 <- rep(c("Red","Black","Orange", "Pink")) #for legend
+shapes <- rep(c(15, 8, 17 ), each=3) #shapes on composition treatment
+shapes1 <- rep(c(15, 8, 17), each=1)
 points(spscoresall_4$NMDS1,spscoresall_4$NMDS2,col=cols,pch=shapes) 
-text(spp.mds4, display = "species", cex=0.6, col="grey30") #label species
+text(spp.mds4, display = "species", cex=0.5, col="grey30") #label species
 ordiarrows(spp.mds4, groups=SB4, order.by=Year4, label=F, col=cols1)
 # add legend for subplot
-legend("topleft",legend=levels(Subplot4), col=cols1, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=1,x.intersp=1.5,pt.cex=2)
+legend("topleft",legend=levels(as.factor(as.character(Treatment4))), col=cols2, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=1,x.intersp=1.5,pt.cex=1.1)
 # add legend for drought treatment
-legend("topright",legend=levels(as.factor(as.character(Treatment4))), col="black", pch=shapes1, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
+legend("topright",legend=levels(Subplot4), col="black", pch=shapes1, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
 help(ordiplot)
 
 #plots colored based on year
