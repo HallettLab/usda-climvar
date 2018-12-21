@@ -27,7 +27,7 @@ May_ANPP[,'shelter'] <- as.factor(as.character(May_ANPP[,'shelter']))
 #create subset with no species manipulations (control community) only
 May_XC<-filter(May_ANPP, subplot=='XC')
 
-m1<-lme(weight_g_m ~treatment, random=~1|year/shelterBlock, May_XC, na.action=na.exclude)
+m1<-lme(weight_g_m ~treatment*year, random=~1|shelterBlock, May_XC, na.action=na.exclude)
 summary(m1)
 anova(m1)
 r.squaredGLMM(m1) #12% of variation explained by fixed effects, 57% by whole model (interannual variation?)
@@ -35,7 +35,7 @@ qqnorm(residuals(m1))
 qqline(residuals(m1))
 shapiro.test(residuals(m1))
 #normally distributed, continue
-LS1<-lsmeans(m1, ~treatment)
+LS1<-lsmeans(m1, ~year)
 contrast(LS1, "pairwise")
 #control rain ANPP is significantly greater than all the drought except spring dry, no surprise
 #control rain is most similar to spring dry
@@ -43,6 +43,13 @@ contrast(LS1, "pairwise")
 ggplot(d=May_XC, aes(x=treatment, y=weight_g_m)) +
   theme_linedraw()+
   labs(x="rainfall treatment", y="ANPP g/m2")+
+  annotate("text", x= c("consistentDry", "controlRain","fallDry","springDry"), y = c(900, 975, 900,900), label = c("a", "b", "ab", "ab"), color = "#999999") +
+  geom_boxplot(aes(y=weight_g_m), shape=16)
+
+ggplot(d=May_XC, aes(x=year, y=weight_g_m)) +
+  theme_linedraw()+
+  labs(x="", y="ANPP g/m2")+
+  annotate("text", x= c("2015", "2016","2017"), y = c(900, 975, 975), label = c("a", "b", "b"), color = "#999999") +
   geom_boxplot(aes(y=weight_g_m), shape=16)
 
 ##2. Does seasonality of rainfall affect forage production (H1)?
