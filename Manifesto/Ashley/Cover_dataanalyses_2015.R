@@ -7,6 +7,7 @@ library(lsmeans)
 library(MuMIn)
 library(vegan)
 library(RColorBrewer)
+library(gridExtra)
 
 setwd("~/Dropbox/ClimVar/DATA/Plant_composition_data")
 cover<-read.csv("Cover/Cover_CleanedData/ClimVar_species-cover.csv")
@@ -545,6 +546,51 @@ cover_spring
 grid.arrange(cover_shelter, cover_fall, cover_spring, ncol = 3, widths = c(1.5,1.2,1.2))
 
 
+##check if litter cover or depth affects cover (total, grass, or forb)
+litter<-read.csv("Cover/Cover_CleanedData/ClimVar_litter-cover.csv")
+litter<-litter%>%rename(t.cover=cover)
+litter1<-litter%>%filter(year=="2015",subplot!="XC")%>% dplyr::select(-X)%>%spread(type,t.cover)
+gf_prop_all_wide<-gf_prop_all_long%>%spread(func,cover)
+cover_all<-merge(litter1,gf_prop_all_wide) 
+
+ggplot(cover_all, aes(x=Percent_litter, y=Percent_forb, color=subplot))+
+  geom_point()+
+  geom_smooth(method="lm", se=F)
+
+lit<-lme(Percent_forb~ Percent_litter*treatment, random=~1|shelterBlock/subplot, cover_all, na.action=na.exclude)
+summary(lit)
+anova(lit)#%litter is significant, treatment is not
+r.squaredGLMM(lit) #59% of variation explained by fixed effects, 67% by whole model (spatial variation?)
+qqnorm(residuals(lit))
+qqline(residuals(lit))
+shapiro.test(residuals(lit))
+#normal
+
+ggplot(cover_all, aes(x=Percent_litter, y=AvCover, color=treatment))+
+  geom_point()+
+  geom_smooth(method="lm", se=F)
+
+lit2<-lme(Percent_litter~ subplot*treatment, random=~1|shelterBlock, cover_all, na.action=na.exclude)
+summary(lit2)
+anova(lit2)#subplot is significant, treatment is not
+r.squaredGLMM(lit2) #44% of variation explained by fixed effects, 49% by whole model (spatial variation?)
+qqnorm(residuals(lit2))
+qqline(residuals(lit2))
+shapiro.test(residuals(lit2))
+#normal
+
+ggplot(cover_all, aes(x=subplot, y=Percent_litter))+
+  geom_boxplot()
+
+lit<-lme(Percent_forb~ Percent_litter*treatment, random=~1|shelterBlock/subplot, cover_all, na.action=na.exclude)
+summary(lit)
+anova(lit)#%litter is significant, treatment is not
+r.squaredGLMM(lit) #59% of variation explained by fixed effects, 67% by whole model (spatial variation?)
+qqnorm(residuals(lit))
+qqline(residuals(lit))
+shapiro.test(residuals(lit))
+#normal
+
 #How does ANPP relate to total cover?
 #recreate objects from ANPP analyses
 May_ANPP<-read.csv("ANPP/ANPP_CleanedData/ClimVar_ANPP-peak.csv")
@@ -778,7 +824,6 @@ contrast(rLS, "pairwise") #forb is more diverse
 ggplot(May_2015, aes(x=subplot, y=RaoQ))+
   geom_boxplot()
 
-
 #how does functional diversity differ by treatment for control plots?
 May_2015_XC2<-May_all_XC %>% filter(year=="2015")
 Rao2<-lme(RaoQ ~ treatment, random=~1|shelterBlock, May_2015_XC2, na.action=na.exclude)
@@ -810,12 +855,342 @@ ggplot(May_all_XC, aes(x=shelterBlock, y=FDis))+
 #if niche complementarity is in effect, we'd expect block A to have highest ecosystem function
 
 #let's test if block A has highest FDis
-
-
 ggplot(May_all_XC, aes(x=treatment, y=RaoQ, color=treatment))+
   facet_wrap(~year)+
   geom_boxplot()+
   geom_smooth(method="lm", se=F)
+
+#which traits are prevalent in each community?
+trait_graph_all <- traits_2015 %>%
+  gather(trait, CWM, 14:24)%>%
+  group_by(subplot, treatment, trait) %>%
+  summarize(CWM.M=mean(CWM), CWM.SE=sd(CWM)/sqrt(length(CWM)))
+
+#let's check traits one by one
+
+#coarse root diameter
+mDiamC<-lme(CWM.DiamC ~ treatment*subplot, random=~1|shelterBlock, traits_2015, na.action=na.exclude)
+summary(mDiamC)
+anova(mDiamC)#subplot significant, no treatment effect
+r.squaredGLMM(mDiamC) #56% of variation explained by fixed effects, 59% by whole model (spatial variation?)
+qqnorm(residuals(mDiamC))
+qqline(residuals(mDiamC))
+shapiro.test(residuals(mDiamC))
+#not normal
+mDiamC2<-lme(log(CWM.DiamC+1) ~ treatment*subplot, random=~1|shelterBlock, traits_2015, na.action=na.exclude)
+summary(mDiamC2)
+anova(mDiamC2)#subplot significant, no treatment effect
+r.squaredGLMM(mDiamC2) #58% of variation explained by fixed effects, 61% by whole model (spatial variation?)
+qqnorm(residuals(mDiamC2))
+qqline(residuals(mDiamC2))
+shapiro.test(residuals(mDiamC2)) # better 
+dcLS<-lsmeans(mDiamC2, ~subplot)
+contrast(dcLS, "pairwise") #forb plots have greater DC
+
+DC_graph<-ggplot(subset(trait_graph_all, trait=="CWM.DiamC"), aes(x=subplot, y=CWM.M, color=subplot))+
+  ggtitle("Coarse Root Diameter")+
+  #geom_bar(stat="identity", position="dodge")+
+  theme_bw()+
+  facet_wrap(~treatment, ncol=4)+
+  labs(x="Treatment", y="mm") +
+  theme(legend.position = "none") + #remove the legend
+  geom_errorbar(aes(ymax=CWM.M+CWM.SE, ymin=CWM.M-CWM.SE), color="black")+
+  geom_point(cex=4)
+DC_graph
+
+#Height
+mHt<-lme(CWM.Ht ~ treatment*subplot, random=~1|shelterBlock, traits_2015, na.action=na.exclude)
+summary(mHt)
+anova(mHt)#subplot significant, no treatment effect
+r.squaredGLMM(mHt) #33% of variation explained by fixed effects, 42% by whole model (spatial variation?)
+qqnorm(residuals(mHt))
+qqline(residuals(mHt))
+shapiro.test(residuals(mHt))
+#normal
+htLS<-lsmeans(mHt, ~subplot)
+contrast(htLS, "pairwise") #forb plots are shorter than mixed or grass plots
+
+Ht_graph<-ggplot(subset(trait_graph_all, trait=="CWM.Ht"), aes(x=subplot, y=CWM.M, color=subplot))+
+  ggtitle("Height")+
+  #geom_bar(stat="identity", position="dodge")+
+  theme_bw()+
+  labs(x="Treatment", y="cm") +
+  theme(legend.position = "none") + #remove the legend
+  facet_wrap(~treatment, ncol=4)+
+  geom_errorbar(aes(ymax=CWM.M+CWM.SE, ymin=CWM.M-CWM.SE), color="black")+
+  geom_point(cex=4)
+Ht_graph
+
+#Leaf Dry Matter Content
+mLDMC<-lme(CWM.LDMC ~ treatment*subplot, random=~1|shelterBlock, traits_2015, na.action=na.exclude)
+summary(mLDMC)
+anova(mLDMC)#nothing significant
+r.squaredGLMM(mLDMC) #20% of variation explained by fixed effects, 21% by whole model (spatial variation?)
+qqnorm(residuals(mLDMC))
+qqline(residuals(mLDMC))
+shapiro.test(residuals(mLDMC))
+#normal
+ldmcLS<-lsmeans(mLDMC, ~treatment*subplot)
+contrast(ldmcLS, "pairwise") #no differences
+
+LDMC_graph<-ggplot(subset(trait_graph_all, trait=="CWM.LDMC"), aes(x=subplot, y=CWM.M, color=subplot))+
+  #geom_bar(stat="identity", position="dodge")+
+  ggtitle("Leaf Dry Matter Content")+
+  theme_bw()+
+  labs(x="Treatment", y="proportion (dry:fresh") +
+  theme(legend.position = "none") + #remove the legend
+  facet_wrap(~treatment, ncol=4)+
+  geom_errorbar(aes(ymax=CWM.M+CWM.SE, ymin=CWM.M-CWM.SE), color="black")+
+  geom_point(cex=4)
+LDMC_graph
+
+#Relative growth rate
+mRGR<-lme(CWM.RGR ~ treatment*subplot, random=~1|shelterBlock, traits_2015, na.action=na.exclude)
+summary(mRGR)
+anova(mRGR)#nothing significant
+r.squaredGLMM(mRGR) #18% of variation explained by fixed effects, 35% by whole model (spatial variation?)
+qqnorm(residuals(mRGR))
+qqline(residuals(mRGR))
+shapiro.test(residuals(mRGR))
+#normal
+rgrLS<-lsmeans(mRGR, ~treatment*subplot)
+contrast(rgrLS, "pairwise") #no differences
+
+RGR_graph<-ggplot(subset(trait_graph_all, trait=="CWM.RGR"), aes(x=subplot, y=CWM.M, color=subplot))+
+  #geom_bar(stat="identity", position="dodge")+
+  ggtitle("Relative Growth Rate")+
+  theme_bw()+
+  labs(x="Treatment", y="1/t") +
+  theme(legend.position = "none") + #remove the legend
+  facet_wrap(~treatment, ncol=4)+
+  geom_errorbar(aes(ymax=CWM.M+CWM.SE, ymin=CWM.M-CWM.SE), color="black")+
+  geom_point(cex=4)
+RGR_graph
+
+#Root mass fraction
+mRMF<-lme(CWM.RMF ~ treatment*subplot, random=~1|shelterBlock, traits_2015, na.action=na.exclude)
+summary(mRMF)
+anova(mRMF)#nothing significant
+r.squaredGLMM(mRMF) #15% of variation explained by fixed effects, 20% by whole model (spatial variation?)
+qqnorm(residuals(mRMF))
+qqline(residuals(mRMF))
+shapiro.test(residuals(mRMF))
+#normal
+rmfLS<-lsmeans(mRMF, ~treatment*subplot)
+contrast(rmfLS, "pairwise") #no differences
+
+RMF_graph<-ggplot(subset(trait_graph_all, trait=="CWM.RMF"), aes(x=subplot, y=CWM.M, color=subplot))+
+  #geom_bar(stat="identity", position="dodge")+
+  ggtitle("Root Mass Fraction")+
+  theme_bw()+
+  labs(x="Treatment", y="Proportion") +
+  theme(legend.position = "none") + #remove the legend
+  facet_wrap(~treatment, ncol=4)+
+  geom_errorbar(aes(ymax=CWM.M+CWM.SE, ymin=CWM.M-CWM.SE), color="black")+
+  geom_point(cex=4)
+RMF_graph
+
+#Specific Leaf Area
+mSLA<-lme(CWM.SLA ~ treatment*subplot, random=~1|shelterBlock, traits_2015, na.action=na.exclude)
+summary(mSLA)
+anova(mSLA)#nothing significant
+r.squaredGLMM(mSLA) #59% of variation explained by fixed effects, 60% by whole model (spatial variation?)
+qqnorm(residuals(mSLA))
+qqline(residuals(mSLA))
+shapiro.test(residuals(mSLA))
+#v. close to normal
+slaLS<-lsmeans(mSLA, ~treatment*subplot)
+contrast(slaLS, "pairwise") 
+
+SLA_graph<-ggplot(subset(trait_graph_all, trait=="CWM.SLA"), aes(x=subplot, y=CWM.M, color=subplot))+
+  #geom_bar(stat="identity", position="dodge")+
+  ggtitle("Specific Leaf Area")+
+  theme_bw()+
+  labs(x="Treatment", y="cm^2/g") +
+  theme(legend.position = "none") + #remove the legend
+  facet_wrap(~treatment, ncol=4)+
+  geom_errorbar(aes(ymax=CWM.M+CWM.SE, ymin=CWM.M-CWM.SE), color="black")+
+  geom_point(cex=4)
+SLA_graph
+
+#Specific root length, coarse roots
+mSRLC<-lme(CWM.SRLC ~ treatment*subplot, random=~1|shelterBlock, traits_2015, na.action=na.exclude)
+summary(mSRLC)
+anova(mSRLC)#subplot significant
+r.squaredGLMM(mSRLC) #42% of variation explained by fixed effects, 48% by whole model (spatial variation?)
+qqnorm(residuals(mSRLC))
+qqline(residuals(mSRLC))
+shapiro.test(residuals(mSRLC))
+#close to normal, log is worse
+srlcLS<-lsmeans(mSRLC, ~subplot*treatment)
+contrast(srlcLS, "pairwise") #both and grass > forb
+#grass in control rain > forb in control rain
+
+
+SRLC_graph<-ggplot(subset(trait_graph_all, trait=="CWM.SRLC"), aes(x=subplot, y=CWM.M, color=subplot))+
+  #geom_bar(stat="identity", position="dodge")+
+  ggtitle("SRL: COARSE")+
+  theme_bw()+
+  facet_wrap(~treatment, ncol=4)+
+  labs(x="Treatment", y="cm/g") +
+  theme(legend.position = "none") + #remove the legend
+  geom_errorbar(aes(ymax=CWM.M+CWM.SE, ymin=CWM.M-CWM.SE), color="black")+
+  geom_point(cex=4)
+SRLC_graph
+
+#Specific root length, fine roots
+mSRLF<-lme(CWM.SRLF ~ treatment*subplot, random=~1|shelterBlock, traits_2015, na.action=na.exclude)
+summary(mSRLF)
+anova(mSRLF)#nothing significant
+r.squaredGLMM(mSRLF) #42% of variation explained by fixed effects, 48% by whole model (spatial variation?)
+qqnorm(residuals(mSRLF))
+qqline(residuals(mSRLF))
+shapiro.test(residuals(mSRLF))
+#normal
+srlfLS<-lsmeans(mSRLF, ~subplot*treatment)
+contrast(srlfLS, "pairwise")
+
+SRLF_graph<-ggplot(subset(trait_graph_all, trait=="CWM.SRLF"), aes(x=subplot, y=CWM.M, color=subplot))+
+  #geom_bar(stat="identity", position="dodge")+
+  ggtitle("SRL: FINE")+
+  theme_bw()+
+  facet_wrap(~treatment, ncol=4)+
+  labs(x="Treatment", y="cm/g") +
+  theme(legend.position = "none") + #remove the legend
+  geom_errorbar(aes(ymax=CWM.M+CWM.SE, ymin=CWM.M-CWM.SE), color="black")+
+  geom_point(cex=4)
+SRLF_graph
+
+#density of roots
+mDens<-lme(CWM.Dens ~ treatment*subplot, random=~1|shelterBlock, traits_2015, na.action=na.exclude)
+summary(mDens)
+anova(mDens)#nothing significant
+r.squaredGLMM(mDens) #42% of variation explained by fixed effects, 48% by whole model (spatial variation?)
+qqnorm(residuals(mDens))
+qqline(residuals(mDens))
+shapiro.test(residuals(mDens))
+#not normal
+mDens2<-lme(log(CWM.Dens+1) ~ treatment*subplot, random=~1|shelterBlock, traits_2015, na.action=na.exclude)
+summary(mDens2)
+anova(mDens2)#nothing significant
+r.squaredGLMM(mDens2) #18% of variation explained by fixed effects, 21% by whole model (spatial variation?)
+qqnorm(residuals(mDens2))
+qqline(residuals(mDens2))
+shapiro.test(residuals(mDens2))
+densLS2<-lsmeans(mDens2, ~treatment)
+contrast(densLS2, "pairwise")
+
+Dens_graph<-ggplot(subset(trait_graph_all, trait=="CWM.Dens"), aes(x=subplot, y=CWM.M, color=subplot))+
+  #geom_bar(stat="identity", position="dodge")+
+  theme_bw()+
+  ggtitle("Root Density")+
+  labs(x="Treatment", y="Density (g/cm^3)") +
+  theme(legend.position = "none") + #remove the legend
+  facet_wrap(~treatment, ncol=4)+
+  geom_errorbar(aes(ymax=CWM.M+CWM.SE, ymin=CWM.M-CWM.SE), color="black")+
+  geom_point(cex=4)
+Dens_graph
+
+#total biomass
+#I'm confused why the total biomass is so low - just ~0.15g?
+mtot<-lme(CWM.Total ~ treatment*subplot, random=~1|shelterBlock, traits_2015, na.action=na.exclude)
+summary(mtot)
+anova(mtot)#nothing significant
+r.squaredGLMM(mtot) #14% of variation explained by fixed effects, 32% by whole model (spatial variation?)
+qqnorm(residuals(mtot))
+qqline(residuals(mtot))
+shapiro.test(residuals(mtot))
+#normal
+densLS2<-lsmeans(mDens2, ~treatment)
+contrast(densLS2, "pairwise")
+
+Total_graph<-ggplot(subset(trait_graph_all, trait=="CWM.Total"), aes(x=subplot, y=CWM.M, color=subplot))+
+  #geom_bar(stat="identity", position="dodge")+
+  theme_bw()+
+  labs(x="Treatment", y="Total Biomass (g)") +
+  theme(legend.position = "none") + #remove the legend
+  ggtitle("Total Biomass")+
+  facet_wrap(~treatment, ncol=4)+
+  geom_errorbar(aes(ymax=CWM.M+CWM.SE, ymin=CWM.M-CWM.SE), color="black")+
+  geom_point(cex=4)
+Total_graph
+
+#Proportion fine roots
+mpf<-lme(CWM.PropF ~ treatment*subplot, random=~1|shelterBlock, traits_2015, na.action=na.exclude)
+summary(mpf)
+anova(mpf)#subplot sign.
+r.squaredGLMM(mpf) #19% of variation explained by fixed effects, 19% by whole model (spatial variation?)
+qqnorm(residuals(mpf))
+qqline(residuals(mpf))
+shapiro.test(residuals(mpf))
+#normal
+pfLS2<-lsmeans(mpf, ~subplot)
+contrast(pfLS2, "pairwise")
+
+PF_graph<-ggplot(subset(trait_graph_all, trait=="CWM.PropF"), aes(x=subplot, y=CWM.M, color=subplot))+
+  ggtitle("Proportion fine roots")+
+  #geom_bar(stat="identity", position="dodge")+
+  theme_bw()+
+  facet_wrap(~treatment, ncol=4)+
+  labs(x="Subplot", y="Proportion") +
+  theme(legend.position = "none") + #remove the legend
+  geom_errorbar(aes(ymax=CWM.M+CWM.SE, ymin=CWM.M-CWM.SE), color="black")+
+  geom_point(cex=4)
+PF_graph
+
+#compile root trait plots 
+grid.arrange(PF_graph, RMF_graph, SRLF_graph, SRLC_graph, DC_graph, Dens_graph,  ncol = 2, widths = c(4,4))
+
+#compile aboveground traits
+grid.arrange(SLA_graph, LDMC_graph, Ht_graph, ncol=3)
+
+## PCA for traits by treatment and year; visualized by orgin and functional group ##
+## Uses "May_all_XC"
+
+# Select out correlated traits(MD, actual_area, Total) and those I don't have as much faith in (RMF, RGR)
+trait.dat2 <- May_all_XC %>% dplyr::select(- CWM.Total, -CWM.RMF, - CWM.RGR) %>%
+  mutate(ID = paste(treatment, year, sep = "_"))
+
+# matrix for PCA
+tr <- as.matrix(trait.dat2[,c(16:23)])
+row.names(tr) <- trait.dat2$ID
+
+# run PCA
+myrda <- rda(tr, scale = TRUE)
+
+# extract values
+siteout <- as.data.frame(scores(myrda, choices=c(1,2), display=c("sites")))
+siteout$ID<-rownames(siteout)
+siteout$name <- siteout$ID
+
+enviroout<-as.data.frame(scores(myrda, choices=c(1,2), display=c("species")))
+enviroout$type<-"traits"
+enviroout$name<-rownames(enviroout)
+
+# merge PC axes with trait data
+tog <- left_join(trait.dat2, siteout) 
+
+pdf("XCTraitPCA.pdf", width = 9, height = 7.5)
+
+ggplot(tog, aes(x=PC1, y=PC2))+ 
+  geom_hline(aes(yintercept=0), color="grey") + 
+  geom_vline(aes(xintercept=0), color="grey") +
+  geom_text(aes(label = name, color = treatment), size = 5) +
+  # scale_color_manual(values = c("grey20", "grey70")) +
+  geom_segment(data = enviroout,
+               aes(x = 0, xend =  PC1,
+                   y = 0, yend =  PC2),
+               arrow = arrow(length = unit(0.25, "cm")), colour = "black") + #grid is required for arrow to work.
+  geom_text(data = enviroout,
+            aes(x=  PC1*1.1, y =  PC2*1.1, #we add 10% to the text to push it slightly out from arrows
+                label = name), #otherwise you could use hjust and vjust. I prefer this option
+            size = 3,
+            hjust = 0.5, 
+            color="black") + 
+  theme_bw() +theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),
+                    text=element_text(size = 15))+ 
+  xlab(paste("Axis 1 (",sprintf("%.1f",myrda$CA$eig["PC1"]/myrda$tot.chi*100,3),"%)",sep="")) +
+  ylab(paste("Axis 2 (",sprintf("%.1f",myrda$CA$eig["PC2"]/myrda$tot.chi*100,3),"%)",sep="")) 
 
 
 #does functional diversity stabilize the community?
