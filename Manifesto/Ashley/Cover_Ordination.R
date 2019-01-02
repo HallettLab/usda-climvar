@@ -3,6 +3,7 @@ library(MASS)
 library(tidyverse)
 library(dplyr)
 library (vegan3d)
+library(RVAideMemoire) #for posthoc tests on permanova
 # Import csv file, transform to wide data, call it data
 setwd("~/Dropbox/ClimVar/DATA/Plant_composition_data")
 cover<-read.csv("Cover/Cover_CleanedData/ClimVar_species-cover.csv")
@@ -238,7 +239,7 @@ spscores1_2<-scores(spp.mds2,display="sites",choices=1)
 spscores2_2<-scores(spp.mds2,display="sites",choices=2)
 tplots2<-data2[,65]
 tplots2<-as.factor(tplots2)
-tplot_levels2<-levels(tplots2)
+tplot_levels2<-as.factor(levels(tplots2))
 spscoresall_2<-data.frame(tplots2,spscores1_2,spscores2_2)
 
 library(goeveg)
@@ -284,12 +285,15 @@ permanova2_2 #Year not significant
 permanova3_2 <- adonis(spp.bcd2~Treatment2, perm=999, method="bray")
 permanova3_2 #not significant
 
-permanova4_2 <- adonis(spp.bcd2~Year2*Treatment2, perm=999, method="bray")
+permanova4_2 <- adonis(spp.bcd2~Year2*Treatment2*data2$shelterBlock, perm=999, method="bray")
 permanova4_2 #no significance
+pairwise.perm.manova(spp.bcd2, Treatment2, nperm=999)
 
 permanova5_2 <- adonis(spp.bcd2~data2$shelterBlock, perm=999, method="bray")
 permanova5_2 #block is significant
-
+#which blocks differ?
+pairwise.perm.manova(spp.bcd2, data2$shelterBlock, nperm=999)
+#A is different from all other blocks, B different from D, C & D are not different
 
 ##Creating an ordination plot with succession vectors
 xc.plot4 <- ordiplot(spp.mds2,choices=c(1,2), type = "none", xlim=c(-2,2), ylim=c(-2,2))   #Set up the plot
@@ -308,6 +312,31 @@ legend("topleft",legend=levels(data2$shelterBlock), col="black", pch=shapes1, ce
 ##color based on treatment
 ordirgl (spp.mds2, col=colsT2, pch=shapes)
 help(vegan3d)
+
+####
+#test vector length
+###
+
+spscoresall_2a<-cbind(spscoresall_2, Year2)
+spscoresall_2a<-spscoresall_2a %>% filter(Year2 != "2016") %>% dplyr::select(-Year2) #so endpoints only in dataset
+tplot_levels2a<-levels(spscoresall_2a$tplots2)
+options(scipen=999)
+veclengths<-c()
+vecindices<-c()
+
+for (i in 1:length(tplot_levels2a)){
+  index<-spscoresall_2a$tplots2[i]
+  tempscores<-spscoresall_2a[spscoresall_2a$tplots2==index,]
+  #if(nrow(tempscores) <= 1) next
+  xshift<- tempscores$NMDS1[2]-tempscores$NMDS1[1]
+  yshift<- tempscores$NMDS2[2]-tempscores$NMDS2[1]
+  veclength<- (xshift^2+yshift^2)^0.5
+  veclengths<-c(veclengths, veclength)
+  vecindex<-index
+  vecindices<-c(vecindices,vecindex)
+  lengths<-data.frame(tplot=vecindices, length=veclengths)
+  lengths
+}
 
 ################################
 ###NMDS to compare grass-forb-both treatments
@@ -415,13 +444,14 @@ permanova1_3 <- adonis(spp.bcd3~tplots3, perm=100, method="bray")
 permanova1_3
 
 permanova2_3 <- adonis(spp.bcd3~Year3, perm=100, method="bray")
-permanova2_3 #year significant R2=0.068
+permanova2_3 
 
 permanova3_3 <- adonis(spp.bcd3~Treatment3, perm=999, method="bray")
-permanova3_3 #treatment significant, R2=0.055
+permanova3_3
 
-permanova4_3 <- adonis(spp.bcd3~data3$shelterBlock, perm=999, method="bray")
-permanova4_3 #block significant, R2=0.175
+permanova4_3 <- adonis(spp.bcd3~data3$subplot*Year3*Treatment3*data3$shelterBlock, perm=999, method="bray")
+permanova4_3 #significant treatment * block interaction 
+pairwise.perm.manova(spp.bcd3, Treatment3, nperm=999)
 
 
 ##Creating an ordination plot with succession vectors
@@ -429,14 +459,27 @@ comp.plot4 <- ordiplot(spp.mds3,choices=c(1,2), type = "none")   #Set up the plo
 cols <- rep(c("Red","Black","Orange", "Pink"), each = 36) #drought treatment
 cols1 <- rep(c("Red","Black","Orange", "Pink"), each = 1) 
 cols2 <- rep(c("Red","Black","Orange", "Pink"), each = 12) #36 divided by 3 years
-cols3 <-rep(c("Purple","Blue","Red"), each=1)#to color by composition treatment
 shapes <- rep(c("B", "F", "G"), each=3) #shapes on subplot
-shapes1 <- rep(c("B", "F", "G"), each=1) #shapes on block
+shapes1 <- rep(c("B", "F", "G"), each=1) #shapes on subplot
 points(spscoresall_3$NMDS1,spscoresall_3$NMDS2,col=cols,pch=shapes, cex=1)#Plot the ordination points 
 text(spp.mds3, display = "species", cex=0.5, col="black") #label species
 ordiarrows(spp.mds3, groups=SB3, order.by=Year3, label=F, col=cols2)
 legend("topleft",legend=levels(Treatment3), col=cols1, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
-legend("topright",legend=levels(subplot3), col=cols3, pch=shapes1, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
+legend("topright",legend=levels(subplot3), col="black", pch=shapes1, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
+
+##Creating an ordination plot with succession vectors
+comp.plot5 <- ordiplot(spp.mds3,choices=c(1,2), type = "none")   #Set up the plot
+cols <- rep(c("Red","Black","Orange", "Pink"), each = 36) #drought treatment
+cols1 <- rep(c("Red","Black","Orange", "Pink"), each = 1) 
+cols2 <- rep(c("Red","Black","Orange", "Pink"), each = 12) #36 divided by 3 years
+shapes <- rep(c(16, 18, 2, 22), each=9) #shapes on block
+shapes1 <- rep(c(16, 18, 2, 22), each=1) #shapes on block for legend
+points(spscoresall_3$NMDS1,spscoresall_3$NMDS2,col=cols,pch=shapes, cex=1)#Plot the ordination points 
+text(spp.mds3, display = "species", cex=0.5, col="black") #label species
+ordiarrows(spp.mds3, groups=SB3, order.by=Year3, label=F, col=cols2)
+legend("topleft",legend=levels(Treatment3), col=cols1, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
+legend("topright",legend=levels(data3$shelterBlock), col="black", pch=shapes1, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
+
 
 ##Make a 3 dimensional plot of the ordination
 ordirgl (spp.mds3)
