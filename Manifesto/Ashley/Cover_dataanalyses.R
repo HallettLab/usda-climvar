@@ -462,13 +462,172 @@ ggplot(gfprop_noF_season_graph, aes(x=treatment, y=meancover, color=func, group=
   geom_errorbar(aes(ymin=meancover-secover, ymax=meancover+secover), width=.2,position=position_dodge(0.05))+
   labs(x="Treatment", y="Mean Cover (%)")
 
+##check if litter cover or depth affects cover (total, grass, or forb)
+litter<-read.csv("Cover/Cover_CleanedData/ClimVar_litter-cover.csv")
+litter<-litter%>%rename(t.cover=cover)
+litter1<-litter%>%filter(subplot!="C")%>% dplyr::select(-X)%>%spread(type,t.cover)
+cover_all<-merge(litter1,gfprop_all) 
+
+ggplot(cover_all_XC, aes(x=Percent_forb, y=Percent_litter, color=treatment ))+
+  geom_point()+
+  geom_smooth(method="lm", se=F)
+
+#see XC first
+cover_all_XC <-filter(cover_all, subplot=="XC")
+
+lit<-lme(log(Percent_forb+1)~ Percent_litter*treatment, random=~1|shelterBlock/year, cover_all_XC, na.action=na.exclude)
+summary(lit)
+anova(lit)#not significant
+r.squaredGLMM(lit) 
+qqnorm(residuals(lit))
+qqline(residuals(lit))
+shapiro.test(residuals(lit))
+#normal
+
+ggplot(cover_all_XC, aes(x=year, y=Percent_forb, color=treatment))+
+  geom_point()+
+  facet_wrap(~shelterBlock)+
+  geom_smooth(method="lm", se=F)
+
+#does litter cover differ by treatment?
+lit2<-lme(Percent_litter~ year*treatment, random=~1|shelterBlock, cover_all_XC, na.action=na.exclude)
+summary(lit2)
+anova(lit2)#year is significant, treatment is not
+r.squaredGLMM(lit2) 
+qqnorm(residuals(lit2))
+qqline(residuals(lit2))
+shapiro.test(residuals(lit2))
+#normal
+
+#for composition plots 
+cover_all_comp<-filter(cover_all, subplot!="XC")
+lit3<-lme(log(Percent_litter+1)~ subplot*treatment, random=~1|year/shelterBlock, cover_all_comp, na.action=na.exclude)
+summary(lit3)
+anova(lit3)#subplot is significant, treatment is not
+r.squaredGLMM(lit3) 
+qqnorm(residuals(lit3))
+qqline(residuals(lit3))
+shapiro.test(residuals(lit3))
+#normal
+
+ggplot(cover_all_comp, aes(x=year, y=Percent_forb, color=treatment))+
+  geom_point()+
+  facet_wrap(~shelterBlock*subplot, ncol=3)+
+  geom_smooth(method="lm", se=F)
 
 
+ggplot(cover_all, aes(x=subplot, y=Percent_litter))+
+  geom_boxplot()
+
+lit4<-lme(log(Percent_forb+1)~ Percent_litter*treatment, random=~1|shelterBlock/subplot, cover_all_comp, na.action=na.exclude)
+summary(lit4)
+anova(lit4)#not significant
+r.squaredGLMM(lit4)
+qqnorm(residuals(lit4))
+qqline(residuals(lit4))
+shapiro.test(residuals(lit4))
+#normal
+
+#How does ANPP relate to total cover?
+#recreate objects from ANPP analyses
+May_ANPP<-read.csv("ANPP/ANPP_CleanedData/ClimVar_ANPP-peak.csv")
+#remove compost subplot
+May_ANPP_noC<-filter(May_ANPP, subplot !="C")
+
+May_ANPP_all <- merge(May_ANPP_noC, gfprop_all) %>% dplyr::select(-cover)
+May_ANPP_XC<-filter(May_ANPP_all, subplot=='XC')
+May_ANPP_comp<-filter(May_ANPP_all, subplot!="XC")
+
+#create objects from community analysis
+data<- cover %>% dplyr::select(-X, -species, -genus, -status, -func, -func2) %>% spread(species_name, cover)
+data<-data %>% dplyr::select(-Unknown)
+levels(cover$plot)
+str(data)
+levels(data$treatment)
+levels(data$year)
+levels(data$subplot)
+
+data2 <- filter(data, subplot!="C", subplot=="XC") %>% arrange(treatment, shelterBlock)
+
+Treatment<-data2[,4]
+Year<-data2[,3]
+data2$ID <- seq.int(nrow(data2))
+plotnames<-data2[,64]
+cover.Bio<- data2 %>% dplyr::select(-c(1:6), -ID)
+rownames(cover.Bio)<-plotnames
+#check for empty rows
+cover.Biodrop<-cover.Bio[rowSums(cover.Bio[, (1:57)]) ==0, ] #no empty rows, next step not needed
+# remove empty rows cover.Biodrop<-cover.Bio[rowSums(cover.Bio[, (1:58)])  >0, ]
+
+cover.rowsums <- rowSums(cover.Bio [1:57])
+
+cover.relrow <- data.frame(cover.Bio /cover.rowsums)
+cover.colmax<-sapply(cover.Bio ,max)
+cover.relcolmax <- data.frame(sweep(cover.Bio ,2,cover.colmax,'/'))
+cover.pa <- cover.Bio %>% mutate_each(funs(ifelse(.>0,1,0)), 1:57)
+#calculate shannon-weiner
+May_ANPP_all$H <- diversity(cover.Bio)
+#calculate pielou's J
+May_ANPP_all$J <- May_ANPP_all$H/log(specnumber(cover.Bio))
+
+May_ANPP_XC<-filter(May_ANPP_all, subplot=='XC')
+May_ANPP_comp<-filter(May_ANPP_all, subplot!="XC")
+
+#does diversity/evenness/richness change with precipitation variability (drought vs. control) or seasonability (drought treatments)?
+Hm<-lme(H ~ shelterBlock*treatment, random=~1|year, May_ANPP_XC, na.action=na.exclude)
+summary(Hm)
+anova(Hm) #no differences
+r.squaredGLMM(Hm) 
+qqnorm(residuals(Hm))
+qqline(residuals(Hm))
+shapiro.test(residuals(Hm))
+#not normal
+hLS<-lsmeans(Hm, ~shelterBlock*treatment)
+contrast(hLS, "pairwise") 
+
+ggplot(May_ANPP_XC, aes(x=shelterBlock, y=H))+
+  facet_wrap(~treatment)+
+  geom_boxplot()
+
+Jm<-lme(J ~ treatment*shelterBlock, random=~1|year, May_ANPP_XC, na.action=na.exclude)
+summary(Jm)
+anova(Jm)
+r.squaredGLMM(Jm) 
+qqnorm(residuals(Jm))
+qqline(residuals(Jm))
+shapiro.test(residuals(Jm))
+#normal
+jLS<-lsmeans(Jm, ~treatment)
+contrast(jLS, "pairwise") 
+
+ggplot(May_2015, aes(y=weight_g_m, x=AvCover, color = percentForb))+
+  facet_wrap(~treatment)+
+  geom_point()+
+  geom_smooth(method="lm",se=T)+
+  scale_color_gradient(low="pink", high="black")
+
+#how does diversity differ by block?
+ggplot(May_ANPP_all, aes(x=shelterBlock, y=H))+
+  facet_wrap(~subplot)+
+  geom_boxplot()
+
+ggplot(May_ANPP_XC, aes(x=year, y=H, color=treatment))+
+  facet_wrap(~shelterBlock)+
+  geom_point()+
+  geom_smooth(method="lm", se=F)
+
+#does diversity affect ANPP?
+d1<-lme(weight_g_m ~treatment*H, random=~1|year/shelterBlock, May_ANPP_XC, na.action=na.exclude)
+summary(d1)
+anova(d1)
+r.squaredGLMM(d1) #30% of variation explained by fixed effects, 39% by whole model (interannual variation?)
+qqnorm(residuals(d1))
+qqline(residuals(d1))
+shapiro.test(residuals(d1))
+#normally distributed, continue
+dLS1<-lsmeans(d1, ~treatment)
+contrast(dLS1, "pairwise")
 
 #is cover specific to site (XC and control rain)?
-
-
-
-
 #does functional diversity/evenness/richness change with precipitation variability (drought vs. control) or seasonability (drought treatments)?
 #how does functional diversity relate to coefficient of variation for soil moisture?
