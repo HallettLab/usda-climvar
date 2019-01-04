@@ -3,9 +3,12 @@ library(vegan)
 ###check trait differences
 #does functional diversity change with precipitation variability (drought vs. control) or seasonability (drought treatments)?
 #uses objects created in ANPP_dataanalyses
+setwd("~/Dropbox/ClimVar/DATA/Plant_composition_data")
 traits<-read.csv("Traits/Traits_ProcessedData-GH/ClimVar_trait-diversity-GH.csv")
+May_ANPP<-read.csv("ANPP/ANPP_CleanedData/ClimVar_ANPP-peak.csv")
 May_ANPP<-merge(May_ANPP,traits) 
-May_ANPP <- May_ANPP %>%filter( subplot!="C")
+May_ANPP <- May_ANPP %>%filter( subplot!="C") %>% mutate(AvDom = if_else(Avena >= 40, 1, 0))
+May_ANPP$AvDom<-as.factor(as.character(May_ANPP$AvDom))
 May_all_XC <- May_ANPP %>% filter (subplot=="XC")
 
 ggplot(May_all_XC, aes(y=RaoQ, x=forbCover, color = treatment))+
@@ -37,33 +40,33 @@ ggplot(gf_graph_all, aes(x=as.factor(year), y=cover, group = func, color=func)) 
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 #does functional diversity differ by subplot or treatment?
-Fd<-lme(FDis ~ treatment*year, random=~1|shelterBlock, May_all_XC, na.action=na.exclude)
+Fd<-lme(FDis ~ treatment*AvDom, random=~1|year/shelterBlock, May_all_XC, na.action=na.exclude)
 summary(Fd)
-anova(Fd)#no effects of treatment on fdis
-r.squaredGLMM(Fd) #7% of variation explained by fixed effects, 25% by whole model (spatial variation?)
+anova(Fd)#no effects of treatment on fdis or year on fdis
+r.squaredGLMM(Fd)
 qqnorm(residuals(Fd))
 qqline(residuals(Fd))
 shapiro.test(residuals(Fd))
-#close to normal
-FdLS<-lsmeans(Fd, ~as.factor(year)*treatment)
+#normal
+FdLS<-lsmeans(Fd, ~AvDom)
 contrast(FdLS, "pairwise") #no dif
 
-ggplot(May_all_XC, aes(x=as.factor(year), y=FDis, fill=treatment))+
+ggplot(May_all_XC, aes(x=as.factor(treatment), y=FDis, fill=AvDom))+
   #facet_wrap(~treatment)+
   geom_boxplot()
 
-Rao<-lme(RaoQ ~ treatment*as.factor(year), random=~1|shelterBlock, May_all_XC, na.action=na.exclude)
+Rao<-lme(RaoQ ~ treatment*AvDom, random=~1|year/shelterBlock, May_all_XC, na.action=na.exclude)
 summary(Rao)
 anova(Rao)
-r.squaredGLMM(Rao) #12% of variation explained by fixed effects, 26% by whole model (spatial variation?)
+r.squaredGLMM(Rao) 
 qqnorm(residuals(Rao))
 qqline(residuals(Rao))
 shapiro.test(residuals(Rao))
 #normal
-rLS<-lsmeans(Rao, ~treatment*year)
+rLS<-lsmeans(Rao, ~treatment)
 contrast(rLS, "pairwise") #no dif
 
-ggplot(May_all_XC, aes(x=treatment, y=RaoQ, fill=as.factor(year)))+
+ggplot(May_all_XC, aes(x=treatment, y=RaoQ, fill=AvDom))+
   geom_boxplot()
 
 #how does functional diversity differ by treatment for 2015?
@@ -390,7 +393,7 @@ grid.arrange(SLA_graph, LDMC_graph, Ht_graph, ncol=1)
 
 
 
-## PCA for traits by treatment and year; visualized by orgin and functional group ##
+## PCA for traits by treatment and year ##
 ## Uses "Traits_2015"
 
 # Select out correlated traits(MD, actual_area, Total) and those I don't have as much faith in (RMF, RGR)
@@ -439,3 +442,102 @@ ggplot(tog, aes(x=PC1, y=PC2))+
   ylab(paste("Axis 2 (",sprintf("%.1f",myrda$CA$eig["PC2"]/myrda$tot.chi*100,3),"%)",sep="")) 
 
 dev.off()
+
+## PCA for traits by treatment and year ##
+## Uses "May_all_XC"
+
+# Select out correlated traits(MD, actual_area, Total) and those I don't have as much faith in (RMF, RGR)
+trait.dat2 <- May_all_XC %>% dplyr::select(- CWM.Total, -CWM.RMF) %>%
+  mutate(ID = paste(treatment, year, sep = "_"))
+
+# matrix for PCA
+tr <- as.matrix(trait.dat2[,c(17:25)])
+row.names(tr) <- trait.dat2$ID
+
+# run PCA
+myrda <- rda(tr, scale = TRUE)
+
+# extract values
+siteout <- as.data.frame(scores(myrda, choices=c(1,2), display=c("sites")))
+siteout$ID<-rownames(siteout)
+siteout$name <- siteout$ID
+
+enviroout<-as.data.frame(scores(myrda, choices=c(1,2), display=c("species")))
+enviroout$type<-"traits"
+enviroout$name<-rownames(enviroout)
+
+# merge PC axes with trait data
+tog <- left_join(trait.dat2, siteout) 
+
+pdf("XCTraitPCA.pdf", width = 9, height = 7.5)
+
+ggplot(tog, aes(x=PC1, y=PC2))+ 
+  geom_hline(aes(yintercept=0), color="grey") + 
+  geom_vline(aes(xintercept=0), color="grey") +
+  geom_text(aes(label = name, color = treatment), size = 5) +
+  # scale_color_manual(values = c("grey20", "grey70")) +
+  geom_segment(data = enviroout,
+               aes(x = 0, xend =  PC1,
+                   y = 0, yend =  PC2),
+               arrow = arrow(length = unit(0.25, "cm")), colour = "black") + #grid is required for arrow to work.
+  geom_text(data = enviroout,
+            aes(x=  PC1*1.1, y =  PC2*1.1, #we add 10% to the text to push it slightly out from arrows
+                label = name), #otherwise you could use hjust and vjust. I prefer this option
+            size = 3,
+            hjust = 0.5, 
+            color="black") + 
+  theme_bw() +theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),
+                    text=element_text(size = 15))+ 
+  xlab(paste("Axis 1 (",sprintf("%.1f",myrda$CA$eig["PC1"]/myrda$tot.chi*100,3),"%)",sep="")) +
+  ylab(paste("Axis 2 (",sprintf("%.1f",myrda$CA$eig["PC2"]/myrda$tot.chi*100,3),"%)",sep="")) 
+
+## PCA for traits by treatment, subplot, and year ##
+## Uses "May_all_XC"
+
+# Select out correlated traits(MD, actual_area, Total) and those I don't have as much faith in (RMF, RGR)
+trait.dat3 <- May_ANPP %>% dplyr::select(- CWM.Total, -CWM.RMF, -CWM.RGR) %>% filter(subplot!="XC")%>%
+  mutate(ID = paste(subplot, treatment, year, sep = "_"))
+
+# matrix for PCA
+tr <- as.matrix(trait.dat3[,c(17:24)])
+row.names(tr) <- trait.dat3$ID
+
+# run PCA
+myrda <- rda(tr, scale = TRUE)
+
+# extract values
+siteout <- as.data.frame(scores(myrda, choices=c(1,2), display=c("sites")))
+siteout$ID<-rownames(siteout)
+siteout$name <- siteout$ID
+
+enviroout<-as.data.frame(scores(myrda, choices=c(1,2), display=c("species")))
+enviroout$type<-"traits"
+enviroout$name<-rownames(enviroout)
+
+# merge PC axes with trait data
+tog <- left_join(trait.dat3, siteout) 
+
+pdf("CompTraitPCA_allyears.pdf", width = 9, height = 7.5)
+
+ggplot(tog, aes(x=PC1, y=PC2))+ 
+  geom_hline(aes(yintercept=0), color="grey") + 
+  geom_vline(aes(xintercept=0), color="grey") +
+  geom_text(aes(label = name, color = treatment), size = 3) +
+  # scale_color_manual(values = c("grey20", "grey70")) +
+  geom_segment(data = enviroout,
+               aes(x = 0, xend =  PC1,
+                   y = 0, yend =  PC2),
+               arrow = arrow(length = unit(0.25, "cm")), colour = "black") + #grid is required for arrow to work.
+  geom_text(data = enviroout,
+            aes(x=  PC1*1.1, y =  PC2*1.1, #we add 10% to the text to push it slightly out from arrows
+                label = name), #otherwise you could use hjust and vjust. I prefer this option
+            size = 3,
+            hjust = 0.5, 
+            color="black") + 
+  theme_bw() +theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),
+                    text=element_text(size = 15))+ 
+  xlab(paste("Axis 1 (",sprintf("%.1f",myrda$CA$eig["PC1"]/myrda$tot.chi*100,3),"%)",sep="")) +
+  ylab(paste("Axis 2 (",sprintf("%.1f",myrda$CA$eig["PC2"]/myrda$tot.chi*100,3),"%)",sep="")) 
+
+
+
