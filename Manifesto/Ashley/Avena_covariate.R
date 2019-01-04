@@ -26,7 +26,7 @@ May_XC<-filter(May_ANPP, subplot=='XC')
 May_noAvDom <- filter(May_ANPP, Avena.barbata  <= 30, subplot =="XC")
 May_XC_2017 <-filter(May_XC, year=="2017")
 
-m1<-lme(weight_g_m ~shelter*AvDom, random=~1|shelterBlock, May_XC_2017, na.action=na.exclude)
+m1<-lme(weight_g_m ~shelter*AvDom*year, random=~1|shelterBlock, May_XC, na.action=na.exclude)
 summary(m1)
 anova(m1)
 r.squaredGLMM(m1) #30% of variation explained by fixed effects, 39% by whole model (interannual variation?)
@@ -34,13 +34,13 @@ qqnorm(residuals(m1))
 qqline(residuals(m1))
 shapiro.test(residuals(m1))
 #normally distributed, continue
-LS1<-lsmeans(m1, ~shelter*AvDom)
+LS1<-lsmeans(m1, ~year*AvDom)
 contrast(LS1, "pairwise")
 
 
-ggplot(d=May_XC, aes(x=as.factor(shelter), y=weight_g_m)) +
+ggplot(d=May_XC, aes(x=treatment, y=weight_g_m)) +
   theme_linedraw()+
-  facet_grid(~AvDom*year)+
+  facet_grid(~AvDom)+
   labs(x="rainfall treatment", y="ANPP g/m2")+
   #annotate("text", x= c("consistentDry", "controlRain","fallDry","springDry"), y = c(900, 975, 900,900), label = c("a", "b", "ab", "ab"), color = "#999999") +
   geom_boxplot(aes(y=weight_g_m), shape=16)
