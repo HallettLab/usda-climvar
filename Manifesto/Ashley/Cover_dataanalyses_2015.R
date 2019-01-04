@@ -1144,15 +1144,16 @@ grid.arrange(PF_graph, RMF_graph, SRLF_graph, SRLC_graph, DC_graph, Dens_graph, 
 #compile aboveground traits
 grid.arrange(SLA_graph, LDMC_graph, Ht_graph, ncol=3)
 
+
 ## PCA for traits by treatment and year; visualized by orgin and functional group ##
-## Uses "May_all_XC"
+## Uses "traits_2015"
 
 # Select out correlated traits(MD, actual_area, Total) and those I don't have as much faith in (RMF, RGR)
-trait.dat2 <- May_all_XC %>% dplyr::select(- CWM.Total, -CWM.RMF, - CWM.RGR) %>%
-  mutate(ID = paste(treatment, year, sep = "_"))
+trait.dat2 <- traits_2015 %>% dplyr::select(- CWM.Total, -CWM.RMF, - CWM.RGR) %>%
+  mutate(ID = paste(subplot, treatment, sep = "_"))
 
 # matrix for PCA
-tr <- as.matrix(trait.dat2[,c(16:23)])
+tr <- as.matrix(trait.dat2[,c(14:21)])
 row.names(tr) <- trait.dat2$ID
 
 # run PCA
@@ -1170,12 +1171,12 @@ enviroout$name<-rownames(enviroout)
 # merge PC axes with trait data
 tog <- left_join(trait.dat2, siteout) 
 
-pdf("XCTraitPCA.pdf", width = 9, height = 7.5)
+pdf("CompTraitPCA_2015.pdf", width = 9, height = 7.5)
 
 ggplot(tog, aes(x=PC1, y=PC2))+ 
   geom_hline(aes(yintercept=0), color="grey") + 
   geom_vline(aes(xintercept=0), color="grey") +
-  geom_text(aes(label = name, color = treatment), size = 5) +
+  geom_text(aes(label = name, color = subplot), size = 5) +
   # scale_color_manual(values = c("grey20", "grey70")) +
   geom_segment(data = enviroout,
                aes(x = 0, xend =  PC1,
@@ -1191,6 +1192,8 @@ ggplot(tog, aes(x=PC1, y=PC2))+
                     text=element_text(size = 15))+ 
   xlab(paste("Axis 1 (",sprintf("%.1f",myrda$CA$eig["PC1"]/myrda$tot.chi*100,3),"%)",sep="")) +
   ylab(paste("Axis 2 (",sprintf("%.1f",myrda$CA$eig["PC2"]/myrda$tot.chi*100,3),"%)",sep="")) 
+
+dev.off()
 
 
 #does functional diversity stabilize the community?
