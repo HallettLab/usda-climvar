@@ -4,6 +4,7 @@ library(ggplot2)
 library(multcomp)
 library(lsmeans)
 library(MuMIn)
+library(RColorBrewer)
 setwd("~/Dropbox/ClimVar/DATA/")
 May_ANPP<-read.csv("Plant_composition_data/ANPP/ANPP_CleanedData/ClimVar_ANPP-peak.csv")
 levels(May_ANPP$plot)
@@ -35,7 +36,7 @@ qqnorm(residuals(m1))
 qqline(residuals(m1))
 shapiro.test(residuals(m1))
 #normally distributed, continue
-LS1<-lsmeans(m1, ~year)
+LS1<-lsmeans(m1, ~treatment)
 contrast(LS1, "pairwise")
 #control rain ANPP is significantly greater than all the drought except spring dry, no surprise
 #control rain is most similar to spring dry
@@ -46,11 +47,33 @@ ggplot(d=May_XC, aes(x=treatment, y=weight_g_m)) +
   annotate("text", x= c("consistentDry", "controlRain","fallDry","springDry"), y = c(900, 975, 900,900), label = c("a", "b", "ab", "ab"), color = "#999999") +
   geom_boxplot(aes(y=weight_g_m), shape=16)
 
-ggplot(d=May_XC, aes(x=year, y=weight_g_m)) +
+May_XC$treatment2 <- as.character(May_XC$treatment)
+#Then turn it back into a factor with the levels in the correct order
+May_XC$treatment2 <- factor(May_XC$treatment2, levels = c("controlRain","fallDry", "springDry","consistentDry"))
+ggplot(d=May_XC, aes(x=treatment2, y=weight_g_m)) +
   theme_linedraw()+
-  labs(x="", y="ANPP g/m2")+
-  annotate("text", x= c("2015", "2016","2017"), y = c(900, 975, 975), label = c("a", "b", "b"), color = "#999999") +
+  labs(x="rainfall treatment", y="ANPP g/m2")+
+  annotate("text", x= c("controlRain","consistentDry", "fallDry","springDry"), y = c( 975, 900, 900,900), label = c("a", "b", "ab", "ab"), color = "#999999") +
   geom_boxplot(aes(y=weight_g_m), shape=16)
+
+ggplot(May_XC, aes(x = treatment2, y = weight_g_m)) + 
+  geom_boxplot(aes(fill = treatment2)) + 
+  scale_fill_manual(values = c("royalblue2","lightsteelblue1", "peachpuff", "sienna"), guide = guide_legend(title = "Treatment")) +
+  geom_jitter(position=position_jitter(0.2)) +
+  #geom_jitter(position=position_jitter(0.2), aes(color=May_XC$shelterBlock, shape=as.factor(year))) +
+  theme_bw(base_size = 14) +
+  #facet_wrap(~year)+
+  annotate("text", x= c("controlRain","consistentDry", "fallDry","springDry"), y = c( 975, 900, 900,900), label = c("a", "b", "ab", "ab"), color = "black") +
+  xlab("Rainfall Treatment") +
+  ylab("ANPP g/m2")
+                           
+ggplot(d=May_XC, aes(x=year, y=weight_g_m)) +
+  geom_boxplot(aes(y=weight_g_m, fill=year), shape=16)+
+  scale_fill_manual(values = c("gray99","gray80", "gray50"), guide = guide_legend(title = "Year")) +
+  geom_jitter(position=position_jitter(0.2)) +
+  labs(x="", y="ANPP g/m2")+
+  annotate("text", x= c("2015", "2016","2017"), y = c(900, 975, 975), label = c("a", "b", "b"), color = "black") +
+  theme_linedraw()
 
 ##2. Does seasonality of rainfall affect forage production (H1)?
 ##Expect peak ANPP to be highest when rainfall occurs during peak season or consistently
@@ -97,7 +120,7 @@ qqnorm(residuals(m4))
 qqline(residuals(m4))
 shapiro.test(residuals(m4))
 #barely normal
-LS4<-lsmeans(m4, ~treatment)
+LS4<-lsmeans(m4, ~subplot)
 contrast(LS4, "pairwise")
 #ANOVA: overall sign effect of subplot on ANPP
 #lsmeans: B (mixed plots) have greater ANPP compared to F (forb-only), but not G (grass-only)
@@ -109,6 +132,11 @@ ggplot(d=May_ANPP_noC, aes(x=treatment, y=weight_g_m, fill=subplot)) +
   labs(x="composition treatment", y="ANPP g/m2")+
   geom_boxplot(aes(y=weight_g_m), shape=16)
 
+ggplot(d=May_ANPP_noC, aes(x=subplot, y=weight_g_m)) +
+  theme_linedraw()+
+  labs(x="", y="ANPP g/m2")+
+  annotate("text", x= c("B", "F","G"), y = c(1200, 1250, 1200), label = c("a", "b", "ab"), color = "black") +
+  geom_boxplot(aes(y=weight_g_m), shape=16)
 
 #4. Does variability in soil moisture affect variability in ANPP (H1: variability)?
 #first check interannual variability of ANPP for controls
