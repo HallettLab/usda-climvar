@@ -218,6 +218,11 @@ gf3_graph <- gf4 %>%
   group_by(treatment,genus, func2) %>%
   summarise(cover=mean(percentCov), secover=sd(percentCov)/sqrt(length(percentCov)))
 
+gf4_graph <- gf4 %>%
+  group_by(shelterBlock, treatment,genus, func2, year) %>%
+  summarise(cover=mean(percentCov), secover=sd(percentCov)/sqrt(length(percentCov)))
+
+
 gf5_graph <- gf5 %>%
   group_by(treatment, subplot, genus, func2)%>%
   summarise(cover=mean(percentCov), secover=sd(percentCov)/sqrt(length(percentCov)))
@@ -234,6 +239,17 @@ ggplot(gf3_graph, aes(fill=genus, colour=func2,  y=cover, x=treatment:func2)) +
   theme_bw()+
   scale_fill_manual(values = c("orange", "orangered", "firebrick","indianred4", "palegreen", "green4", "lightblue", "skyblue2", "skyblue4", "dodgerblue3", "royalblue3","navy"))+
   geom_bar( stat="identity", position='stack')+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+#look at block variation for control only using genera with > 1% cover
+gf4_graph <- gf4_graph %>% arrange(func2, genus) %>% filter(cover>0.01, genus!="NA")
+gf4_graph$func2 <- factor(gf4_graph$func2, c("forb","Nfixer","grass"))
+gf4_graph$genus<- factor(gf4_graph$genus, c("Centaurea", "Convolvulus", "Erodium","Hypochaeris","Trifolium","Vicia","Avena","Bromus","Cynodon","Hordeum","Lolium", "Taeniatherum"))
+ggplot(gf4_graph, aes(fill=genus, colour=func2,  y=cover, x=treatment)) +
+  theme_bw()+
+  scale_fill_manual(values = c("orange", "orangered", "firebrick","indianred4", "palegreen", "green4", "lightblue", "skyblue2", "skyblue4", "dodgerblue3", "royalblue3","navy"))+
+  geom_bar( stat="identity", position='stack')+
+  facet_wrap(~shelterBlock*year, ncol=3)+
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 #lets look at cover for the composition treatments
@@ -306,14 +322,15 @@ shapiro.test(residuals(g2))
 LS1<-lsmeans(g1, ~treatment)
 contrast(LS1, "pairwise")
 
-g3<-lme(percentForb ~ year, random=~1|treatment/shelterBlock, gfprop_all, na.action=na.exclude)
+gfprop_XC <- filter(gfprop_all, subplot=="XC")
+g3<-lme(log(percentForb+1) ~ treatment, random=~1|year/shelterBlock, gfprop_XC, na.action=na.exclude)
 summary(g3)
 anova(g3)
 r.squaredGLMM(g3) #7% of variation explained by fixed effects, 11% by whole model (interannual variation?)
 qqnorm(residuals(g3))
 qqline(residuals(g3))
 shapiro.test(residuals(g3))
-#not normally distributed, try sqrt transformation
+#not normally distributed, use log transformation
 g4<-lme(log(percentForb+1) ~year, random=~1|treatment/shelterBlock, gfprop_all, na.action=na.exclude)
 summary(g4)
 anova(g4)
@@ -628,6 +645,6 @@ shapiro.test(residuals(d1))
 dLS1<-lsmeans(d1, ~treatment)
 contrast(dLS1, "pairwise")
 
-#is cover specific to site (XC and control rain)?
+
 #does functional diversity/evenness/richness change with precipitation variability (drought vs. control) or seasonability (drought treatments)?
 #how does functional diversity relate to coefficient of variation for soil moisture?
