@@ -296,17 +296,33 @@ pairwise.perm.manova(spp.bcd2, data2$shelterBlock, nperm=999)
 #A is different from all other blocks, B different from D, C & D are not different
 
 ##Creating an ordination plot with succession vectors
-xc.plot4 <- ordiplot(spp.mds2,choices=c(1,2), type = "none", xlim=c(-2,2), ylim=c(-2,2))   #Set up the plot
-cols <- rep(c("Red","Black","Orange", "Pink"), each = 12) 
-cols1 <- rep(c("Red","Black","Orange", "Pink"), each = 1) 
-cols2 <- rep(c("Red","Black","Orange", "Pink"), each = 4) 
+xc.plot4 <- ordiplot(spp.mds2,choices=c(1,2), type = "none", xlim=c(-1.5,1.5), ylim=c(-1.5,1.5))   #Set up the plot
+cols <- rep(c("sienna","royalblue2","lightsteelblue3", "peachpuff2"), each = 12) 
+cols1 <- rep(c("sienna","royalblue2","lightsteelblue3", "peachpuff2"), each = 1) 
+cols2 <- rep(c("sienna","royalblue2","lightsteelblue3", "peachpuff2"), each = 4) 
 shapes <- rep(c(15, 3, 17, 19), each=3) #shapes on block
 shapes1 <- rep(c(15, 3, 17, 19), each=1) #shapes on block
-points(spscoresall_2$NMDS1,spscoresall_2$NMDS2,col=cols,pch=shapes, cex=1)#Plot the ordination points 
-text(spp.mds2, display = "species", cex=0.5, col="grey30") #label species
+points(spscoresall_2$NMDS1,spscoresall_2$NMDS2,col=cols,pch=shapes, cex=1.2)#Plot the ordination points 
+text(spp.mds2, display = "species", cex=0.4, col="grey30") #label species
 ordiarrows(spp.mds2, groups=TB, order.by=Year2, label=F, col=cols2)
 legend("topright",legend=levels(Treatment2), col=cols1, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
-legend("topleft",legend=levels(data2$shelterBlock), col="black", pch=shapes1, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
+legend("bottomright",legend=levels(data2$shelterBlock), col="black", pch=shapes1, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
+
+#to color grasses and forbs labels:
+colspec<- rep(c("plum1", "plum1", "palegreen", "palegreen", "palegreen", "palegreen", "palegreen", "palegreen", "palegreen", "palegreen", "palegreen", "plum1", "plum1", "plum1", "plum1","plum1", "palegreen", "palegreen", "plum1", "plum1", "plum1", "plum1", "plum1", "plum1", "plum1", "palegreen", "palegreen", "palegreen", "plum1", "plum1", "palegreen", "plum1", "plum1", "plum1", "palegreen", "plum1", "plum1", "plum1", "plum1", "plum1", "plum1", "plum1", "plum1", "plum1", "darkgreen", "plum1", "plum4", "plum4", "plum4", "plum4", "plum4", "plum4", "plum1", "plum4", "palegreen","palegreen", "plum1"))
+##Creating an ordination plot with succession vectors
+xc.plot4 <- ordiplot(spp.mds2,choices=c(1,2), type = "none", xlim=c(-1.5,1.5), ylim=c(-1.5,1.5))   #Set up the plot
+cols <- rep(c("sienna","royalblue2","lightsteelblue3", "peachpuff2"), each = 12) 
+cols1 <- rep(c("sienna","royalblue2","lightsteelblue3", "peachpuff2"), each = 1) 
+cols2 <- rep(c("sienna","royalblue2","lightsteelblue3", "peachpuff2"), each = 4) 
+shapes <- rep(c(15, 3, 17, 19), each=3) #shapes on block
+shapes1 <- rep(c(15, 3, 17, 19), each=1) #shapes on block
+points(spscoresall_2$NMDS1,spscoresall_2$NMDS2,col=cols,pch=shapes, cex=1.2)#Plot the ordination points 
+text(spp.mds2, display = "species", cex=0.7, col=colspec) #label species
+ordiarrows(spp.mds2, groups=TB, order.by=Year2, label=F, col=cols2)
+legend("topright",legend=levels(Treatment2), col=cols1, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
+legend("bottomright",legend=levels(data2$shelterBlock), col="black", pch=shapes1, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
+
 
 ##Make a 3 dimensional plot of this ordination
 ##color based on treatment
@@ -327,7 +343,7 @@ vecindices<-c()
 for (i in 1:length(tplot_levels2a)){
   index<-spscoresall_2a$tplots2[i]
   tempscores<-spscoresall_2a[spscoresall_2a$tplots2==index,]
-  #if(nrow(tempscores) <= 1) next
+  if(nrow(tempscores) <= 1) next
   xshift<- tempscores$NMDS1[2]-tempscores$NMDS1[1]
   yshift<- tempscores$NMDS2[2]-tempscores$NMDS2[1]
   veclength<- (xshift^2+yshift^2)^0.5
@@ -337,6 +353,8 @@ for (i in 1:length(tplot_levels2a)){
   lengths<-data.frame(tplot=vecindices, length=veclengths)
   lengths
 }
+
+
 
 ################################
 ###NMDS to compare grass-forb-both treatments
