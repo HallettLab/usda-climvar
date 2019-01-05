@@ -587,14 +587,14 @@ spscoresall_4<-data.frame(tplots4,spscores1_4,spscores2_4)
 #plots colored based on subplot
 
 
-compM.plot <- ordiplot(spp.mds4,choices=c(1,2), type = "none", xlim=c(-1.5,1.5),ylim=c(-1.5,1.5))   #Set up the plot
-cols <- rep(c("Red","Black","Orange", "Pink"), each = 9) #color based on drought treatment
-cols1 <- rep(c("Red","Black","Orange", "Pink"), each=3) #for arrows
-cols2 <- rep(c("Red","Black","Orange", "Pink")) #for legend
-shapes <- rep(c(15, 8, 17 ), each=3) #shapes on composition treatment
-shapes1 <- rep(c(15, 8, 17), each=1)
+compM.plot <- ordiplot(spp.mds4,choices=c(1,2), type = "none", xlim=c(-2.5,1.5),ylim=c(-1.5,1.5))   #Set up the plot
+cols <- rep(c("sienna","royalblue2","lightsteelblue3", "peachpuff2"), each = 9) #color based on drought treatment
+cols1 <- rep(c("sienna","royalblue2","lightsteelblue3", "peachpuff2"), each=3) #for arrows
+cols2 <- rep(c("sienna","royalblue2","lightsteelblue3", "peachpuff2")) #for legend
+shapes <- rep(c(15, 8, 21 ), each=3) #shapes on composition treatment
+shapes1 <- rep(c(15, 8, 21), each=1)
 points(spscoresall_4$NMDS1,spscoresall_4$NMDS2,col=cols,pch=shapes) 
-text(spp.mds4, display = "species", cex=0.5, col="grey30") #label species
+text(spp.mds4, display = "species", cex=0.4, col=colspec) #label species
 ordiarrows(spp.mds4, groups=SB4, order.by=Year4, label=F, col=cols1)
 # add legend for subplot
 legend("topleft",legend=levels(as.factor(as.character(Treatment4))), col=cols2, pch=19, cex=0.8,inset=0.05,bty="n",y.intersp=0.7,x.intersp=1.5,pt.cex=1)
