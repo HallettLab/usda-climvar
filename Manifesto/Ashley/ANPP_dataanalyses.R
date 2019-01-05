@@ -59,8 +59,9 @@ ggplot(d=May_XC, aes(x=treatment2, y=weight_g_m)) +
 ggplot(May_XC, aes(x = treatment2, y = weight_g_m)) + 
   geom_boxplot(aes(fill = treatment2)) + 
   scale_fill_manual(values = c("royalblue2","lightsteelblue1", "peachpuff", "sienna"), guide = guide_legend(title = "Treatment")) +
-  geom_jitter(position=position_jitter(0.2)) +
+  geom_jitter(position=position_jitter(0.2), aes(color=year)) +
   #geom_jitter(position=position_jitter(0.2), aes(color=May_XC$shelterBlock, shape=as.factor(year))) +
+  scale_color_manual(values = c("gray80","gray50", "black"), guide = guide_legend(title = "Year")) +
   theme_bw(base_size = 14) +
   #facet_wrap(~year)+
   annotate("text", x= c("controlRain","consistentDry", "fallDry","springDry"), y = c( 975, 900, 900,900), label = c("a", "b", "ab", "ab"), color = "black") +
@@ -70,7 +71,8 @@ ggplot(May_XC, aes(x = treatment2, y = weight_g_m)) +
 ggplot(d=May_XC, aes(x=year, y=weight_g_m)) +
   geom_boxplot(aes(y=weight_g_m, fill=year), shape=16)+
   scale_fill_manual(values = c("gray99","gray80", "gray50"), guide = guide_legend(title = "Year")) +
-  geom_jitter(position=position_jitter(0.2)) +
+  geom_jitter(position=position_jitter(0.2), aes(color=treatment2)) +
+  scale_color_manual(values = c("royalblue2","lightsteelblue1", "peachpuff", "sienna"), guide = guide_legend(title = "Treatment")) +
   labs(x="", y="ANPP g/m2")+
   annotate("text", x= c("2015", "2016","2017"), y = c(900, 975, 975), label = c("a", "b", "b"), color = "black") +
   theme_linedraw()
