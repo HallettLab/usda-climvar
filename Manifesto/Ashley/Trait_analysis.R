@@ -1,4 +1,5 @@
 library(vegan)
+library(tidyverse)
 
 ###check trait differences
 #does functional diversity change with precipitation variability (drought vs. control) or seasonability (drought treatments)?
@@ -399,6 +400,7 @@ grid.arrange(SLA_graph, LDMC_graph, Ht_graph, ncol=1)
 # Select out correlated traits(MD, actual_area, Total) and those I don't have as much faith in (RMF, RGR)
 trait.dat2 <- traits_2015 %>% dplyr::select(- CWM.Total, -CWM.RMF, - CWM.RGR) %>%
   mutate(ID = paste(subplot, treatment, sep = "_"))
+trait.dat2<-trait.dat2[order(trait.dat2$treatment),]
 
 # matrix for PCA
 tr <- as.matrix(trait.dat2[,c(14:21)])
@@ -424,8 +426,8 @@ pdf("CompTraitPCA_2015.pdf", width = 9, height = 7.5)
 ggplot(tog, aes(x=PC1, y=PC2))+ 
   geom_hline(aes(yintercept=0), color="grey") + 
   geom_vline(aes(xintercept=0), color="grey") +
-  geom_text(aes(label = name, color = subplot), size = 5) +
-  # scale_color_manual(values = c("grey20", "grey70")) +
+  geom_text(aes(label = name, color = treatment), size = 5) +
+  scale_color_manual(values = c("sienna","royalblue2","lightsteelblue3", "peachpuff2")) +
   geom_segment(data = enviroout,
                aes(x = 0, xend =  PC1,
                    y = 0, yend =  PC2),
@@ -447,11 +449,11 @@ dev.off()
 ## Uses "May_all_XC"
 
 # Select out correlated traits(MD, actual_area, Total) and those I don't have as much faith in (RMF, RGR)
-trait.dat2 <- May_all_XC %>% dplyr::select(- CWM.Total, -CWM.RMF) %>%
+trait.dat2 <- May_all_XC %>% dplyr::select(- CWM.Total, -CWM.RMF, -CWM.RGR) %>%
   mutate(ID = paste(treatment, year, sep = "_"))
 
 # matrix for PCA
-tr <- as.matrix(trait.dat2[,c(17:25)])
+tr <- as.matrix(trait.dat2[,c(17:24)])
 row.names(tr) <- trait.dat2$ID
 
 # run PCA
@@ -472,10 +474,12 @@ tog <- left_join(trait.dat2, siteout)
 pdf("XCTraitPCA.pdf", width = 9, height = 7.5)
 
 ggplot(tog, aes(x=PC1, y=PC2))+ 
+  xlim(-1.75,1.75)+
+  ylim(-1.75,1.25)+
   geom_hline(aes(yintercept=0), color="grey") + 
   geom_vline(aes(xintercept=0), color="grey") +
   geom_text(aes(label = name, color = treatment), size = 5) +
-  # scale_color_manual(values = c("grey20", "grey70")) +
+  scale_color_manual(values = c("sienna","royalblue2","lightsteelblue3", "peachpuff2")) +
   geom_segment(data = enviroout,
                aes(x = 0, xend =  PC1,
                    y = 0, yend =  PC2),
@@ -523,7 +527,9 @@ ggplot(tog, aes(x=PC1, y=PC2))+
   geom_hline(aes(yintercept=0), color="grey") + 
   geom_vline(aes(xintercept=0), color="grey") +
   geom_text(aes(label = name, color = treatment), size = 3) +
-  # scale_color_manual(values = c("grey20", "grey70")) +
+  scale_color_manual(values = c("sienna","royalblue2","lightsteelblue3", "peachpuff2")) +
+  xlim(-2.5,2.5)+
+  ylim(-2,2)+
   geom_segment(data = enviroout,
                aes(x = 0, xend =  PC1,
                    y = 0, yend =  PC2),
