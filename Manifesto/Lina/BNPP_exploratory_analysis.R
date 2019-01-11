@@ -521,6 +521,7 @@ Spring_rain <- joined %>%
 #aggBNPP controlRain vs. consistentlyDry
 ft7 <- aov(data = Amount_rain, agg_BNPP ~ subplot * shelter.y + Error(shelterBlock))
 summary(ft7)
+TukeyHSD(aov(data = Amount_rain, agg_BNPP ~ subplot * shelter.y))
 
 #root_shoot controlRain vs. consistentDry
 ft8 <- aov(data = Amount_rain, root_shoot ~ subplot * shelter.y + Error(shelterBlock))
@@ -537,10 +538,16 @@ summary(ft10)
 #aggBNPP controlRain vs. springDry
 ft11 <- aov(data = Spring_rain, agg_BNPP ~ subplot * spring + Error(shelterBlock))
 summary(ft11)
+TukeyHSD(aov(data = Spring_rain, agg_BNPP ~ subplot * spring))
 
 #root_shoot controlRain vs. springDry
 ft12 <- aov(data = Spring_rain, root_shoot ~ subplot * spring + Error(shelterBlock))
 summary(ft12)
 
+#Is the decline of grass BNPP in spring drought significant?
+Spring_rain_grass <- Spring_rain %>%
+  filter(subplot == "G")
+ft12 <- lme(data = Spring_rain_grass, agg_BNPP ~ spring, random=~1|shelterBlock)
+summary(ft12) #Not significant p = 0.3
 
 
