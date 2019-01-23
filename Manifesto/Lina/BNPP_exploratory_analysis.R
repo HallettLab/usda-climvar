@@ -518,7 +518,7 @@ Fall_rain <- joined %>%
 Spring_rain <- joined %>%
   filter(treatment == "controlRain" | treatment == "springDry")
 
-#aggBNPP controlRain vs. consistentlyDry
+#aggBNPP controlRain vs. consistentlyDry ###make factor 
 ft7 <- aov(data = Amount_rain, agg_BNPP ~ subplot * shelter.y + Error(shelterBlock))
 summary(ft7)
 TukeyHSD(aov(data = Amount_rain, agg_BNPP ~ subplot * shelter.y))
