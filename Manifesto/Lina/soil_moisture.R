@@ -3,6 +3,7 @@ setwd("~/Dropbox/ClimVar/DATA/Decagon data")
 
 library(tidyverse)
 library(ggplot2)
+library(lubridate)
 
 data <- read.csv("ClimVar_sm_2015.csv", header = TRUE)
 data$month <- as.factor(data$month)
@@ -19,14 +20,18 @@ SE <- function(x){(sd(x)/sqrt(length(x)))}
 sm_data <- data %>%
   filter(sm >0) %>%
   filter(subplot == "B"| subplot == "G" | subplot == "F") %>%
-  mutate(season = ifelse(month %in% 9:12, "fall", ifelse(month %in% 2:5, "spring", ifelse(month %in% 6:8, "summer", "fall")))) %>%
-  group_by(season,treatment, subplot) %>%
+  mutate(date = ymd_hms(date)) %>%
+  filter(date > '2014-11-13 02:00:00',
+         date < '2015-05-10 18:00:00') %>%
+  mutate(season = ifelse(month %in% c(11:12, 1), "fall", "spring")) 
+
+summary_sm <- sm_data %>%
+  group_by(treatment, plot, subplot, shelterBlock, season) %>%
   summarise(mean_sm = mean(sm), se_sm = SE(sm), sd_sm = sd(sm), cv_sm = CV(sm))
 
 #plot soil moisture by season
-ggplot(data = sm_data, aes(x = season, y = mean_sm, col = treatment, shape = subplot)) +
-  geom_point() +
-  #geom_errorbar(aes(ymin=mean_sm-se_sm, ymax=mean_sm+se_sm), width=.1) +
+ggplot(data = sm_data, aes(x = season, y = sm, col = treatment)) +
+  geom_boxplot() +
   theme_classic()
 
 #soil moisture affects BNPP?
@@ -43,24 +48,33 @@ BNPP <- BNPP0 %>%
   summarise(agg_BNPP = sum(bmass_g_m2))#sum BNPP 
 #join soil moisture and BNPP summaries
 joined <- BNPP %>%
-  group_by(subplot, treatment) %>%
-  summarise(mean_BNPP = mean(agg_BNPP), se_BNPP = SE(agg_BNPP), sd_BNPP = sd(agg_BNPP), cv_BNPP = CV(agg_BNPP)) %>%
-  right_join(sm_data, by = c("subplot", "treatment"))
+  right_join(summary_sm, by = c("plot", "subplot", "treatment", "shelterBlock"))
 #subset joined data
 sm_fall <- joined %>%
   filter(season == "fall")
 sm_spring <- joined %>%
   filter(season == "spring")
-sm_summer <- joined %>%
-  filter(season == "summer")
+
 #plot BNPP against soil moisture
-ggplot(sm_fall, aes(x=mean_sm, y= mean_BNPP, col = treatment, shape = subplot)) +
+ggplot(sm_fall, aes(x=mean_sm, y=agg_BNPP, col = subplot, shape = treatment)) +
   geom_point() +
-  theme_classic()
-ggplot(sm_spring, aes(x=mean_sm, y=mean_BNPP, col=treatment, shape=subplot)) +
+  theme_classic() +
+  labs(x = "Mean Soil Moisture", y = expression(paste("Aggregated BNPP (g/m"^2,") in soil depth 0-30 cm")))
+ggplot(sm_spring, aes(x=mean_sm, y=agg_BNPP, col=subplot, shape = treatment)) +
   geom_point() +
-  theme_classic()
-ggplot(sm_summer, aes(x=mean_sm, y=mean_BNPP, col=treatment, shape=subplot)) +
+  theme_classic() +
+  labs(x = "Mean Soil Moisture", y = expression(paste("Aggregated BNPP (g/m"^2,") in soil depth 0-30 cm")))
+
+#add linear regression lines
+ggplot(sm_fall, aes(x=mean_sm, y=agg_BNPP, col = subplot)) +
+    geom_point() +
+    geom_smooth(method = lm , size = 1, se = FALSE, fullrange = TRUE) +
+    theme_classic() +
+    labs(x = "Mean Soil Moisture", y = expression(paste("Aggregated BNPP (g/m"^2,") in soil depth 0-30 cm")))
+ggplot(sm_spring, aes(x=mean_sm, y=agg_BNPP, col=subplot)) +
   geom_point() +
-  theme_classic()
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = TRUE)+
+  theme_classic() +
+  labs(x = "Mean Soil Moisture", y = expression(paste("Aggregated BNPP (g/m"^2,") in soil depth 0-30 cm")))
+
 

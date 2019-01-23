@@ -481,6 +481,7 @@ shapiro.test(residuals(root_shoot.lme)) #not normally distributed
 
 ###Interaction of treatment and functional groups
 #interaction aggBNPP shelter
+joined$shelter.y <- as.factor(joined$shelter.y)
 ft1 <- aov(data= joined, agg_BNPP ~ subplot * shelter.y + Error(shelterBlock))
 summary(ft1) 
 TukeyHSD(aov(data= joined, agg_BNPP ~ subplot * shelter.y))
@@ -518,7 +519,7 @@ Fall_rain <- joined %>%
 Spring_rain <- joined %>%
   filter(treatment == "controlRain" | treatment == "springDry")
 
-#aggBNPP controlRain vs. consistentlyDry ###make factor 
+#aggBNPP controlRain vs. consistentlyDry 
 ft7 <- aov(data = Amount_rain, agg_BNPP ~ subplot * shelter.y + Error(shelterBlock))
 summary(ft7)
 TukeyHSD(aov(data = Amount_rain, agg_BNPP ~ subplot * shelter.y))
