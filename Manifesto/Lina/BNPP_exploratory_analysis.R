@@ -447,20 +447,17 @@ with(BNPP.agg, plot(tapply(bmass_g_m2, A, var),
 replications(bmass_g_m2 ~ treatment + subplot + depth, BNPP) #unbalanced 
 
 #fit mixed model using lme
-Top10.lme <- lme(data = Top10, Top10_biomass ~ Top10_trt * subplot, random = ~1| shelterBlock)
-anova(Top10.lme)
-summary(Top10.lme)
-plot(resid(Top10.lme) ~fitted(Top10.lme))
+Top10_fit <- aov(data = Top10, Top10_biomass ~ Top10_trt * subplot + Error(shelterBlock))
+summary(Top10_fit)
+TukeyHSD(aov(data = Top10, Top10_biomass ~ Top10_trt * subplot))
 
-Mid10.lme <- lme(data = Mid10, Mid10_biomass ~ Mid10_trt * subplot, random = ~1| shelterBlock)
-anova(Mid10.lme)
-summary(Mid10.lme)
-plot(resid(Mid10.lme) ~fitted(Mid10.lme))
+Mid10_fit <- aov(data = Mid10, Mid10_biomass ~ Mid10_trt * subplot + Error(shelterBlock))
+summary(Mid10_fit)
+TukeyHSD(aov(data = Mid10, Mid10_biomass ~ Mid10_trt * subplot))
 
-Bottom10.lme <- lme(data = Bottom10, Bottom10_biomass ~ Bottom10_trt * subplot, random = ~1| shelterBlock)
-anova(Bottom10.lme)
-summary(Bottom10.lme)
-plot(resid(Bottom10.lme) ~fitted(Bottom10.lme))
+Bottom10_fit <- aov(data = Bottom10, Bottom10_biomass ~ Bottom10_trt * subplot + Error(shelterBlock))
+summary(Bottom10_fit)
+TukeyHSD(aov(data = Bottom10, Bottom10_biomass ~ Bottom10_trt * subplot))
 
 total.lme <- lme(data = joined, agg_BNPP ~ treatment * subplot, random = ~1| shelterBlock)
 anova(total.lme)
@@ -470,6 +467,9 @@ qqnorm(residuals(total.lme))
 qqline(residuals(total.lme))
 shapiro.test(residuals(total.lme)) #normally distributed
 
+total <- aov(data = joined, agg_BNPP ~ treatment * subplot + Error(shelterBlock))
+summary(total)
+TukeyHSD(aov(data= joined, agg_BNPP ~ treatment * subplot ))
 ###Randomized block ANOVA root:shoot ~ functional group * treatment (block as random)
 root_shoot.lme <- lme(data = joined, root_shoot ~ treatment * subplot, random = ~1| shelterBlock)
 anova(root_shoot.lme)
