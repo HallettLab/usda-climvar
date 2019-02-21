@@ -33,7 +33,7 @@ cover[,'shelter'] <- as.factor(as.character(cover[,'shelter']))
 cover_noC_2015<-filter(cover, subplot!='C', year == '2015')
 
 ####################################################
-##rerun following block of code from Lauren's old code:
+##rerun following block of code from Lauren's code:
 vegAv_2015 <- cover_noC_2015 %>%
   group_by(plot, subplot, treatment, shelterBlock) %>%
   mutate(totcover = sum(cover)) %>%
@@ -549,11 +549,12 @@ grid.arrange(cover_shelter, cover_fall, cover_spring, ncol = 3, widths = c(1.5,1
 ##check if litter cover or depth affects cover (total, grass, or forb)
 litter<-read.csv("Cover/Cover_CleanedData/ClimVar_litter-cover.csv")
 litter<-litter%>%rename(t.cover=cover)
-litter1<-litter%>%filter(year=="2015",subplot!="XC")%>% dplyr::select(-X)%>%spread(type,t.cover)
+litter1<-litter%>%filter(year=="2015",subplot!="XC", subplot !="C")%>% dplyr::select(-X)%>%spread(type,t.cover)
 gf_prop_all_wide<-gf_prop_all_long%>%spread(func,cover)
 cover_all<-merge(litter1,gf_prop_all_wide) 
+lit<- litter1 %>% dplyr::select(-Percent_grass, -Percent_forb)
 
-ggplot(cover_all, aes(x=Percent_litter, y=Percent_forb, color=subplot))+
+ggplot(cover_all, aes(x=Percent_litter, y=AvCover, color=subplot))+
   geom_point()+
   geom_smooth(method="lm", se=F)
 
@@ -570,7 +571,7 @@ ggplot(cover_all, aes(x=Percent_litter, y=AvCover, color=treatment))+
   geom_point()+
   geom_smooth(method="lm", se=F)
 
-lit2<-lme(Percent_litter~ subplot*treatment, random=~1|shelterBlock, cover_all, na.action=na.exclude)
+lit2<-lme(Percent_litter~ AvCover*treatment, random=~1|shelterBlock, cover_all, na.action=na.exclude)
 summary(lit2)
 anova(lit2)#subplot is significant, treatment is not
 r.squaredGLMM(lit2) #44% of variation explained by fixed effects, 49% by whole model (spatial variation?)
@@ -579,8 +580,11 @@ qqline(residuals(lit2))
 shapiro.test(residuals(lit2))
 #normal
 
-ggplot(cover_all, aes(x=subplot, y=Percent_litter))+
+ggplot(cover_all, aes(x=subplot, y=Litter_depth_cm))+
+  facet_wrap(~AvDom)+
   geom_boxplot()
+
+cover_all<-merge(cover_all, May_ANPP_2015)
 
 lit<-lme(Percent_forb~ Percent_litter*treatment, random=~1|shelterBlock/subplot, cover_all, na.action=na.exclude)
 summary(lit)
@@ -590,6 +594,7 @@ qqnorm(residuals(lit))
 qqline(residuals(lit))
 shapiro.test(residuals(lit))
 #normal
+
 
 #How does ANPP relate to total cover?
 #recreate objects from ANPP analyses
@@ -674,13 +679,13 @@ colspec<- rep(c("plum1", "plum1", "palegreen", "palegreen", "palegreen", "palegr
 
 #plots colored based on treatment
 xc.plot <- ordiplot(spp.mds,choices=c(1,2), type = "none")   #Set up the plot
-colsT2 <- rep(c("darkred","deepskyblue","goldenrod1", "Magenta"), each = 12) #color based on drought treatment
+colsT2 <- rep(c("darkred","deepskyblue","goldenrod1", "Magenta"), each = 3) #color based on drought treatment
 cols1 <- rep(c("darkred","deepskyblue","goldenrod1", "Magenta"))
 shapes <- rep(c(15, 8, 17 ), each=1) #shapes on subplot
 points(spscoresall$NMDS1,spscoresall$NMDS2,col=colsT2,pch=shapes) 
 text(spp.mds, display = "species", cex=0.8, col=colspec) #label species
 # add legend for treatment
-legend("topright",legend=levels(Treatment), col=cols1, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
+legend("topright",legend=levels(data2$shelterBlock), col=cols1, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
 # add legend for year
 legend("topleft",legend=levels(as.factor(as.character(data2$subplot))), col="black", pch=shapes, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
 
@@ -715,6 +720,11 @@ shapiro.test(residuals(Jm))
 #normal
 jLS<-lsmeans(Jm, ~subplot)
 contrast(jLS, "pairwise") #forb is more even
+
+ggplot(May_2015, aes(x=subplot, y=J))+
+  #facet_wrap(~treatment)+
+  geom_boxplot()
+#geom_smooth(method = "lm", se=FALSE)
 
 ggplot(May_2015, aes(y=weight_g_m, x=AvCover, color = percentForb))+
   geom_point()+
@@ -760,9 +770,9 @@ May_ANPP<-merge(May_ANPP,traits)
 May_ANPP <- May_ANPP %>%filter( subplot!="C")
 May_all_XC <- May_ANPP %>% filter (subplot=="XC")
 
-ggplot(May_ANPP, aes(y=RaoQ, x=forbCover, color = treatment, shape=subplot))+
-  facet_wrap(~as.factor(as.character(year)))+
-  geom_point()+
+ggplot(May_2015, aes(y=RaoQ, x=treatment, color = treatment))+
+  facet_wrap(~as.factor(as.character(subplot)))+
+  geom_boxplot()+
   geom_smooth(method="lm",se=F)
   #scale_colour_gradient(low="magenta", high="plum4")
 
@@ -1148,7 +1158,8 @@ grid.arrange(SLA_graph, LDMC_graph, Ht_graph, ncol=3)
 ## PCA for traits by treatment and year; visualized by orgin and functional group ##
 ## Uses "traits_2015"
 
-# Select out correlated traits(MD, actual_area, Total) and those I don't have as much faith in (RMF, RGR)
+#modify Loralee's PCA code
+# Loralee: Select out correlated traits(MD, actual_area, Total) and those I don't have as much faith in (RMF, RGR)
 trait.dat2 <- traits_2015 %>% dplyr::select(- CWM.Total, -CWM.RMF, - CWM.RGR) %>%
   mutate(ID = paste(subplot, treatment, sep = "_"))
 
