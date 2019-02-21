@@ -113,6 +113,37 @@ ggplot(gfproportion_graph, aes(x=treatment, y=meanprop)) +
   labs(x="Treatment", y="Percent forbs") +
   theme(text = element_text(size=20))
 
+gf_graphic2 <- gf %>%
+  group_by(subplot, func, treatment, year) %>%
+  summarize(meancover=mean(cover), secover=sd(cover)/sqrt(length(cover)))
+
+ggplot(data = subset(gf_graphic2, subplot %in% c("B","G","F")), aes(x=treatment, y=meancover, color=func)) + 
+  geom_point() + 
+  facet_wrap(~subplot*year, ncol=3) +
+  theme_bw() + 
+  geom_errorbar(aes(ymax = meancover+secover, ymin = meancover-secover), width=.25) + 
+  labs(x="Treatment", y="Percent cover", fill="Functional
+       group") +
+  theme(text = element_text(size=20))+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+gf_graphic2$treatment2 <- as.character(gf_graphic2$treatment)
+#Then turn it back into a factor with the levels in the correct order
+gf_graphic2$treatment2 <- factor(gf_graphic2$treatment2, levels = c("controlRain", "springDry", "fallDry", "consistentDry"))
+ggplot(data = subset(gf_graphic2, subplot %in% c("XC")), aes(x=year, y=meancover, shape=func)) + 
+  geom_rect(data = subset(gf_graphic2,treatment2 == 'consistentDry'),aes(fill = treatment2),xmin = -Inf,xmax = Inf, ymin = -Inf,ymax = Inf,alpha = 0.3) +
+  geom_rect(data = subset(gf_graphic2,treatment2 == 'controlRain'),aes(fill = treatment2),xmin = -Inf,xmax = Inf, ymin = -Inf,ymax = Inf,alpha = 0.3) +
+  geom_rect(data = subset(gf_graphic2,treatment2 == 'fallDry'),aes(fill = treatment2),xmin = -Inf,xmax = Inf, ymin = -Inf,ymax = Inf,alpha = 0.3) +
+  geom_rect(data = subset(gf_graphic2,treatment2 == 'springDry'),aes(fill = treatment2),xmin = -Inf,xmax = Inf, ymin = -Inf,ymax = Inf,alpha = 0.3) +
+  scale_fill_manual(values=c("sienna", "royalblue2",  "peachpuff2", "lightsteelblue1"))+
+  geom_point(cex=3.5) +
+  geom_errorbar(aes(ymax = meancover+secover, ymin = meancover-secover), width=.25) + 
+  labs(x="Year", y="Percent cover", fill="Functional group") +
+  facet_wrap(~treatment2, ncol=4)+ 
+  theme_bw()+ 
+  theme(text = element_text(size=14))+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
 ggplot(gfproportion, aes(x=percentForb, y=totcover, color = treatment))+
   geom_point() + geom_smooth(method = "lm")
 
@@ -227,6 +258,10 @@ gf5_graph <- gf5 %>%
   group_by(treatment, subplot, genus, func2)%>%
   summarise(cover=mean(percentCov), secover=sd(percentCov)/sqrt(length(percentCov)))
 
+gf6_graph <- gf4 %>%
+  group_by(treatment,genus, func2, year) %>%
+  summarise(cover=mean(percentCov), secover=sd(percentCov)/sqrt(length(percentCov)))
+
 #create a stacked bar plot
 ggplot(gf2_graph, aes(fill=species_name, y=cover, x=treatment)) +
 geom_bar( stat="identity")
@@ -235,7 +270,7 @@ geom_bar( stat="identity")
 gf3_graph <- gf3_graph %>% arrange(func2, genus) %>% filter(cover>0.01)
 gf3_graph$func2 <- factor(gf3_graph$func2, c("forb","Nfixer","grass"))
 gf3_graph$genus<- factor(gf3_graph$genus, c("Centaurea", "Convolvulus", "Erodium","Hypochaeris","Trifolium","Vicia","Avena","Bromus","Cynodon","Hordeum","Lolium", "Taeniatherum"))
-ggplot(gf3_graph, aes(fill=genus, colour=func2,  y=cover, x=treatment:func2)) +
+ggplot(gf3_graph, aes(fill=genus, colour=func2,  y=cover, x=treatment)) +
   theme_bw()+
   scale_fill_manual(values = c("orange", "orangered", "firebrick","indianred4", "palegreen", "green4", "lightblue", "skyblue2", "skyblue4", "dodgerblue3", "royalblue3","navy"))+
   geom_bar( stat="identity", position='stack')+
@@ -250,6 +285,17 @@ ggplot(gf4_graph, aes(fill=genus, colour=func2,  y=cover, x=treatment)) +
   scale_fill_manual(values = c("orange", "orangered", "firebrick","indianred4", "palegreen", "green4", "lightblue", "skyblue2", "skyblue4", "dodgerblue3", "royalblue3","navy"))+
   geom_bar( stat="identity", position='stack')+
   facet_wrap(~shelterBlock*year, ncol=3)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+#look at block variation for control only using genera with > 1% cover
+gf6_graph <- gf6_graph %>% arrange(func2, genus) %>% filter(cover>0.01, genus!="NA")
+gf6_graph$func2 <- factor(gf6_graph$func2, c("forb","Nfixer","grass"))
+gf6_graph$genus<- factor(gf6_graph$genus, c("Centaurea", "Convolvulus", "Erodium","Hypochaeris","Trifolium","Vicia","Avena","Bromus","Cynodon","Hordeum","Lolium", "Taeniatherum"))
+ggplot(gf6_graph, aes(fill=genus, colour=func2,  y=cover, x=year)) +
+  theme_bw()+
+  scale_fill_manual(values = c("orange", "orangered", "firebrick","indianred4", "palegreen", "green4", "lightblue", "skyblue2", "skyblue4", "dodgerblue3", "royalblue3","navy"))+
+  geom_bar( stat="identity", position='stack')+
+  facet_wrap(~treatment, ncol=4)+
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 #lets look at cover for the composition treatments
@@ -303,7 +349,7 @@ ggplot(gfprop_noF, aes(x=year, y=percentGrass, color=treatment))+
   geom_boxplot()+
   labs(x="year",y="Grass Cover")
 
-g1<-lme(percentGrass ~treatment, random=~1|year/shelterBlock, gfprop_all, na.action=na.exclude)
+g1<-lme(percentGrass ~treatment*year, random=~1|shelterBlock, gfprop_all, na.action=na.exclude)
 summary(g1)
 anova(g1)
 r.squaredGLMM(g1) #1% of variation explained by fixed effects, 11% by whole model (interannual variation?)
@@ -323,7 +369,7 @@ LS1<-lsmeans(g1, ~treatment)
 contrast(LS1, "pairwise")
 
 gfprop_XC <- filter(gfprop_all, subplot=="XC")
-g3<-lme(log(percentForb+1) ~ treatment, random=~1|year/shelterBlock, gfprop_XC, na.action=na.exclude)
+g3<-lme(log(percentForb+1) ~ treatment*year, random=~1|shelterBlock, gfprop_XC, na.action=na.exclude)
 summary(g3)
 anova(g3)
 r.squaredGLMM(g3) #7% of variation explained by fixed effects, 11% by whole model (interannual variation?)
@@ -331,7 +377,7 @@ qqnorm(residuals(g3))
 qqline(residuals(g3))
 shapiro.test(residuals(g3))
 #not normally distributed, use log transformation
-g4<-lme(log(percentForb+1) ~year, random=~1|treatment/shelterBlock, gfprop_all, na.action=na.exclude)
+g4<-lme(log(percentGrass+1) ~treatment*year, random=~1|shelterBlock, gfprop_XC, na.action=na.exclude)
 summary(g4)
 anova(g4)
 r.squaredGLMM(g4) #7% of variation explained by fixed effects, 19% by whole model (interannual variation?)
@@ -374,7 +420,7 @@ ggplot(gfprop_graph2, aes(x=percentGrass, y=percent, color=func))+
 gfprop_noF_wetyr <- gfprop_noF %>% filter(year!="2015")
 
 #first see if treatment effects % cover for Avena
-g5<-lme(AvCover ~ treatment, random=~1|year/shelterBlock, gfprop_noF, na.action=na.exclude)
+g5<-lme(AvCover ~ treatment, random=~1|year/shelterBlock, gfprop_XC, na.action=na.exclude)
 summary(g5)
 anova(g5)
 r.squaredGLMM(g5) #7% of variation explained by fixed effects, 36% by whole model (interannual variation?)
@@ -382,7 +428,7 @@ qqnorm(residuals(g5))
 qqline(residuals(g5))
 shapiro.test(residuals(g5))
 #not normally distributed, try sqrt transformation
-g6<-lme(log(AvCover+1) ~treatment, random=~1|year/shelterBlock, gfprop_noF, na.action=na.exclude)
+g6<-lme(log(AvCover+1) ~treatment, random=~1|year/shelterBlock, gfprop_XC, na.action=na.exclude)
 summary(g6)
 anova(g6)
 r.squaredGLMM(g6) #9% of variation explained by fixed effects, 42% by whole model (interannual variation?)
@@ -393,14 +439,14 @@ shapiro.test(residuals(g6))
 gLS6<-lsmeans(g6, ~treatment)
 contrast(gLS6, "pairwise")
 
-ggplot(gfprop_noF, aes(x=treatment, y=AvCover))+
+ggplot(gfprop_XC, aes(x=treatment, y=AvCover))+
   geom_boxplot()
 
 #does treatment affect % cover for Lolium?
-ggplot(gfprop_noF, aes(x=treatment, y=LolCover))+
+ggplot(gfprop_all, aes(x=treatment, y=LolCover))+
   geom_boxplot()
 
-g7<-lme(LolCover ~ treatment, random=~1|year/shelterBlock, gfprop_noF, na.action=na.exclude)
+g7<-lme(LolCover ~ treatment, random=~1|year/shelterBlock, gfprop_all, na.action=na.exclude)
 summary(g7)
 anova(g7)
 r.squaredGLMM(g7) #11% of variation explained by fixed effects, 51% by whole model (interannual variation?)
@@ -591,7 +637,7 @@ May_ANPP_XC<-filter(May_ANPP_all, subplot=='XC')
 May_ANPP_comp<-filter(May_ANPP_all, subplot!="XC")
 
 #does diversity/evenness/richness change with precipitation variability (drought vs. control) or seasonability (drought treatments)?
-Hm<-lme(H ~ shelterBlock*treatment, random=~1|year, May_ANPP_XC, na.action=na.exclude)
+Hm<-lme(H ~ treatment, random=~1|year/shelterBlock, May_ANPP_XC, na.action=na.exclude)
 summary(Hm)
 anova(Hm) #no differences
 r.squaredGLMM(Hm) 
@@ -599,14 +645,14 @@ qqnorm(residuals(Hm))
 qqline(residuals(Hm))
 shapiro.test(residuals(Hm))
 #not normal
-hLS<-lsmeans(Hm, ~shelterBlock*treatment)
+hLS<-lsmeans(Hm, ~treatment)
 contrast(hLS, "pairwise") 
 
 ggplot(May_ANPP_XC, aes(x=shelterBlock, y=H))+
   facet_wrap(~treatment)+
   geom_boxplot()
 
-Jm<-lme(J ~ treatment*shelterBlock, random=~1|year, May_ANPP_XC, na.action=na.exclude)
+Jm<-lme(J ~ treatment, random=~1|year/shelterBlock, May_ANPP_XC, na.action=na.exclude)
 summary(Jm)
 anova(Jm)
 r.squaredGLMM(Jm) 
