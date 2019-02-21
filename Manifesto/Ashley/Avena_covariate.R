@@ -69,3 +69,24 @@ ggplot(d=May_ANPP_noC, aes(x=AvDom, y=weight_g_m, fill=subplot)) +
   theme_linedraw()+
   labs(x="composition treatment", y="ANPP g/m2")+
   geom_boxplot(aes(y=weight_g_m), shape=16)
+
+May_ANPP_2015<- May_ANPP %>% filter(year=="2015", subplot!="XC", subplot != "C")
+May_ANPP_2015_noF <-May_ANPP_2015 %>% filter(subplot != "F")
+
+m4<-lme(weight_g_m ~subplot*treatment*AvDom, random=~1|shelterBlock, May_ANPP_2015_noF, na.action=na.exclude)
+summary(m4)
+anova(m4)
+r.squaredGLMM(m4)
+qqnorm(residuals(m4))
+qqline(residuals(m4))
+shapiro.test(residuals(m4)) #normal
+LS4<-lsmeans(m4, ~subplot*treatment*AvDom)
+contrast(LS4, "pairwise")
+
+ggplot(d=May_ANPP_2015_noF, aes(x=AvDom, y=weight_g_m, fill=subplot)) +
+  #facet_wrap(~treatment)+
+  theme_linedraw()+
+  labs(x="composition treatment", y="ANPP g/m2")+
+  geom_boxplot(aes(y=weight_g_m), shape=16)
+
+
