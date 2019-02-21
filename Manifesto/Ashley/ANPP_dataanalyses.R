@@ -28,9 +28,9 @@ May_ANPP[,'shelter'] <- as.factor(as.character(May_ANPP[,'shelter']))
 #create subset with no species manipulations (control community) only
 May_XC<-filter(May_ANPP, subplot=='XC')
 
-m1<-lme(weight_g_m ~treatment*year, random=~1|shelterBlock, May_XC, na.action=na.exclude)
+m1<-lme(weight_g_m ~treatment, random=~1|year/shelterBlock, May_XC, na.action=na.exclude)
 summary(m1)
-anova(m1)
+anova(m1) #treatment is significant
 r.squaredGLMM(m1) #12% of variation explained by fixed effects, 57% by whole model (interannual variation?)
 qqnorm(residuals(m1))
 qqline(residuals(m1))
@@ -44,16 +44,16 @@ contrast(LS1, "pairwise")
 ggplot(d=May_XC, aes(x=treatment, y=weight_g_m)) +
   theme_linedraw()+
   labs(x="rainfall treatment", y="ANPP g/m2")+
-  annotate("text", x= c("consistentDry", "controlRain","fallDry","springDry"), y = c(900, 975, 900,900), label = c("a", "b", "ab", "ab"), color = "#999999") +
+  annotate("text", x= c("consistentDry", "controlRain","fallDry","springDry"), y = c(900, 975, 900,900), label = c("b", "a", "b", "ab"), color = "#999999") +
   geom_boxplot(aes(y=weight_g_m), shape=16)
 
 May_XC$treatment2 <- as.character(May_XC$treatment)
 #Then turn it back into a factor with the levels in the correct order
-May_XC$treatment2 <- factor(May_XC$treatment2, levels = c("controlRain","fallDry", "springDry","consistentDry"))
+May_XC$treatment2 <- factor(May_XC$treatment2, levels = c("controlRain","springDry", "fallDry","consistentDry"))
 ggplot(d=May_XC, aes(x=treatment2, y=weight_g_m)) +
   theme_linedraw()+
   labs(x="rainfall treatment", y="ANPP g/m2")+
-  annotate("text", x= c("controlRain","consistentDry", "fallDry","springDry"), y = c( 975, 900, 900,900), label = c("a", "b", "ab", "ab"), color = "#999999") +
+  annotate("text", x= c("controlRain","consistentDry", "fallDry","springDry"), y = c( 975, 900, 900,900), label = c("a", "b", "b", "ab"), color = "#999999") +
   geom_boxplot(aes(y=weight_g_m), shape=16)
 
 ggplot(May_XC, aes(x = treatment2, y = weight_g_m)) + 
@@ -64,7 +64,7 @@ ggplot(May_XC, aes(x = treatment2, y = weight_g_m)) +
   scale_color_manual(values = c("gray80","gray50", "black"), guide = guide_legend(title = "Year")) +
   theme_bw(base_size = 14) +
   #facet_wrap(~year)+
-  annotate("text", x= c("controlRain","consistentDry", "fallDry","springDry"), y = c( 975, 900, 900,900), label = c("a", "b", "ab", "ab"), color = "black") +
+  annotate("text", x= c("controlRain","consistentDry", "fallDry","springDry"), y = c( 975, 900, 900,900), label = c("a", "b", "b", "ab"), color = "black") +
   xlab("Rainfall Treatment") +
   ylab("ANPP g/m2")
                            
