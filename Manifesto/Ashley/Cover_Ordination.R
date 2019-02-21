@@ -225,7 +225,7 @@ ordiplot(spp.mds0_2)
 #rotation of axes to maximize variance of site scores on axis 1
 #calculate species scores based on weighted averaging
 
-spp.mds2<-metaMDS(cover.relrow2, trace = T, autotransform=F, trymax=999, k=3) #runs several with different starting configurations
+spp.mds2<-metaMDS(cover.relrow2, trace = T, autotransform=F, trymax=999, k=2) #runs several with different starting configurations
 
 #trace= TRUE will give output for step by step what its doing
 #default is 2 dimensions, can put k=4 for 4 dimensions
@@ -278,6 +278,7 @@ legend("bottomright",legend=levels(data2$shelterBlock), col=cols1, pch=19, cex=0
 
 permanova1_2 <- adonis(spp.bcd2~tplots2, perm=100, method="bray")
 permanova1_2
+pairwise.perm.manova(spp.bcd2, tplots2, nperm=999)
 
 permanova2_2 <- adonis(spp.bcd2~Year2, perm=100, method="bray")
 permanova2_2 #Year not significant
@@ -286,7 +287,7 @@ permanova3_2 <- adonis(spp.bcd2~Treatment2, perm=999, method="bray")
 permanova3_2 #not significant
 
 permanova4_2 <- adonis(spp.bcd2~Year2*Treatment2*data2$shelterBlock, perm=999, method="bray")
-permanova4_2 #no significance
+permanova4_2 
 pairwise.perm.manova(spp.bcd2, Treatment2, nperm=999)
 
 permanova5_2 <- adonis(spp.bcd2~data2$shelterBlock, perm=999, method="bray")
@@ -309,7 +310,7 @@ legend("topright",legend=levels(Treatment2), col=cols1, pch=19, cex=0.9,inset=0.
 legend("bottomright",legend=levels(data2$shelterBlock), col="black", pch=shapes1, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
 
 #to color grasses and forbs labels:
-colspec<- rep(c("plum1", "plum1", "palegreen", "palegreen", "palegreen", "palegreen", "palegreen", "palegreen", "palegreen", "palegreen", "palegreen", "plum1", "plum1", "plum1", "plum1","plum1", "palegreen", "palegreen", "plum1", "plum1", "plum1", "plum1", "plum1", "plum1", "plum1", "palegreen", "palegreen", "palegreen", "plum1", "plum1", "palegreen", "plum1", "plum1", "plum1", "palegreen", "plum1", "plum1", "plum1", "plum1", "plum1", "plum1", "plum1", "plum1", "plum1", "darkgreen", "plum1", "plum4", "plum4", "plum4", "plum4", "plum4", "plum4", "plum1", "plum4", "palegreen","palegreen", "plum1"))
+colspec<- rep(c("plum1", "plum1", "darkgreen", "palegreen", "palegreen", "palegreen", "palegreen", "palegreen", "palegreen", "palegreen", "palegreen", "plum1", "plum1", "plum1", "plum1","plum1", "palegreen", "palegreen", "plum1", "plum1", "plum1", "plum1", "plum1", "plum1", "plum1", "palegreen", "palegreen", "palegreen", "plum1", "plum1", "palegreen", "plum1", "plum1", "plum1", "palegreen", "plum1", "plum1", "plum1", "plum1", "plum1", "plum1", "plum1", "plum1", "plum1", "palegreen", "plum1", "plum4", "plum4", "plum4", "plum4", "plum4", "plum4", "plum1", "plum4", "palegreen","palegreen", "plum1"))
 ##Creating an ordination plot with succession vectors
 xc.plot4 <- ordiplot(spp.mds2,choices=c(1,2), type = "none", xlim=c(-1.5,1.5), ylim=c(-1.5,1.5))   #Set up the plot
 cols <- rep(c("sienna","royalblue2","lightsteelblue3", "peachpuff2"), each = 12) 
@@ -320,7 +321,7 @@ shapes1 <- rep(c(15, 3, 17, 19), each=1) #shapes on block
 points(spscoresall_2$NMDS1,spscoresall_2$NMDS2,col=cols,pch=shapes, cex=1.2)#Plot the ordination points 
 text(spp.mds2, display = "species", cex=0.7, col=colspec) #label species
 ordiarrows(spp.mds2, groups=TB, order.by=Year2, label=F, col=cols2)
-legend("topright",legend=levels(Treatment2), col=cols1, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
+legend("topright",legend=levels(Treatment2), col=cols1, pch=19, cex=0.9,inset=0.01,bty="n",y.intersp=0.5,x.intersp=0.4,pt.cex=1.1)
 legend("bottomright",legend=levels(data2$shelterBlock), col="black", pch=shapes1, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
 
 
