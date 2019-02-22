@@ -82,9 +82,38 @@ shapiro.test(residuals(m3a)) #normal
 LS3a<-lsmeans(m3a, ~subplot)
 contrast(LS3a, "pairwise") #mixed plots have greater biomass than forb, but not grass
 
-ggplot(d=May_ANPP_2015_noXC, aes(x=subplot, y=weight_g_m)) +
+ggplot(d=May_ANPP_2015_noXC, aes(x=treatment, y=weight_g_m, fill=treatment)) +
+  facet_wrap(~subplot)+
   theme_linedraw()+
   labs(x="drought treatment", y="ANPP g/m2")+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  geom_boxplot(aes(y=weight_g_m), shape=16)
+
+ggplot(d=May_ANPP_2015_noXC, aes(x=subplot, y=weight_g_m, fill = treatment)) +
+  theme_linedraw()+
+  labs(x="composition treatment", y="ANPP g/m2")+
+  geom_boxplot(aes(y=weight_g_m), shape=16)
+
+###################
+##check Forb plots by themselves
+###################
+#3. Are there treatment effects on biomass?
+May_ANPP_2015_G<-filter(May_ANPP_2015_noXC, subplot =="G")
+m3b<-lme(weight_g_m ~treatment, random=~1|shelterBlock, May_ANPP_2015_G, na.action=na.exclude)
+summary(m3b)
+anova(m3b) #subplot significant
+r.squaredGLMM(m3b)#32% of variation explained by fixed effects, 32% by whole model
+qqnorm(residuals(m3b))
+qqline(residuals(m3b))
+shapiro.test(residuals(m3b)) #normal
+LS3b<-lsmeans(m3b, ~treatment)
+contrast(LS3b, "pairwise") #mixed plots have greater biomass than forb, but not grass
+
+ggplot(d=May_ANPP_2015_noXC, aes(x=treatment, y=weight_g_m, fill=treatment)) +
+  facet_wrap(~subplot)+
+  theme_linedraw()+
+  labs(x="drought treatment", y="ANPP g/m2")+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
   geom_boxplot(aes(y=weight_g_m), shape=16)
 
 ggplot(d=May_ANPP_2015_noXC, aes(x=subplot, y=weight_g_m, fill = treatment)) +
