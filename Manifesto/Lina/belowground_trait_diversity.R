@@ -107,3 +107,10 @@ ggplot(data = joined, aes(x=FRic, y = agg_BNPP, col = subplot)) +
   geom_point() +
   geom_smooth(method = lm, size = 1, se = FALSE, fullrange = TRUE)+
   theme_classic()
+#linear regression by subplot
+fit5 <- lm(agg_BNPP ~ FRic, both) 
+summary(fit5) 
+fit6 <- lm(agg_BNPP ~ FRic, forb)
+summary(fit6)
+fit7 <- lm(agg_BNPP ~ FRic, grass)
+summary(fit7)
