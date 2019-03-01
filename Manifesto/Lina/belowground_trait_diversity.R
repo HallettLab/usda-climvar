@@ -214,6 +214,8 @@ summary(PropF_forb) #not significant
 PropF_grass <- lm(agg_BNPP ~ CWM.PropF, grass)
 summary(PropF_grass) #not significant
 
+#
+
 ###Calculate Rao's Q of each trait
 Dens_results <- dbFD(tr[,1], comp, corr="cailliez")
 Dens_results <- as.data.frame(Dens_results) %>%
@@ -374,7 +376,6 @@ FDPropF_forb <- lm(agg_BNPP ~ RaoQ, PropF_forb)
 summary(FDPropF_forb) #not significant
 FDPropF_grass <- lm(agg_BNPP ~ RaoQ, PropF_grass)
 summary(FDPropF_grass ) #not significant
-
 
 
 
