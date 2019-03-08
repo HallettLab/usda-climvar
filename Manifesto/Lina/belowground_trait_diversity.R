@@ -1,6 +1,6 @@
-veg <- read.csv("./Dropbox/ClimVar/DATA/Plant_composition_data/Cover/Cover_CleanedData/ClimVar_2015_species-cover_wide.csv", header = TRUE)
-traits <- read.csv("./Dropbox/ClimVar/DATA/Plant_composition_data/Traits/Traits_GHscreening_Brad/BradTraits_Cleaned.csv", header = TRUE)
-BNPP <- read.csv("./Dropbox/ClimVar/DATA/Plant_composition_data/BNPP/BNPP_CleanedData/BNPP_MayHarvest_2015.csv", header = TRUE)
+veg <- read.csv("~/Dropbox/ClimVar/DATA/Plant_composition_data/Cover/Cover_CleanedData/ClimVar_2015_species-cover_wide.csv", header = TRUE)
+traits <- read.csv("~/Dropbox/ClimVar/DATA/Plant_composition_data/Traits/Traits_GHscreening_Brad/BradTraits_Cleaned.csv", header = TRUE)
+BNPP <- read.csv("~/Dropbox/ClimVar/DATA/Plant_composition_data/BNPP/BNPP_CleanedData/BNPP_MayHarvest_2015.csv", header = TRUE)
 
 library(tidyverse)
 library(FD)
@@ -44,6 +44,11 @@ results <- as.data.frame(results) %>%
   tbl_df()
 Div <- cbind(veg_keys, results) #combine with keys
 
+#standardize Div dataset
+library(vegan)
+stand_Div_num <- decostand(Div[,10:20], "standardize")
+stand_Div <- as.data.frame(append(Div[,1:9], stand_Div_num))
+
 ###ANOVA Rao's Q ~ subplot
 library(nlme)
 library(ggplot2)
@@ -69,6 +74,11 @@ BNPP1 <- BNPP %>%
 #Join the aggregated BNPP dataset with Div
 joined <- Div %>%
   inner_join(BNPP1, by = c( "plot", "subplot", "treatment", "shelterBlock")) 
+
+#Join the aggregated BNPP dataset with standardized Div
+stand_BNPP <- as.data.frame(append(BNPP1[,1:8], decostand(BNPP1[,9], "standardize")))
+stand_joined <- stand_Div %>%
+  inner_join(stand_BNPP, by = c("plot", "subplot", "treatment", "shelterBlock"))
 
 ###Regression BNPP by Rao's Q
 ggplot(data = joined, aes(x=RaoQ, y = agg_BNPP, col = subplot)) +
@@ -214,7 +224,29 @@ summary(PropF_forb) #not significant
 PropF_grass <- lm(agg_BNPP ~ CWM.PropF, grass)
 summary(PropF_grass) #not significant
 
-#
+#Backward step-wise regression model - which trait contributes to BNPP?
+stand_both <- stand_joined %>%
+  filter(subplot == "B")
+stand_forb <- stand_joined %>%
+  filter(subplot == "F")
+stand_grass <- stand_joined %>%
+  filter(subplot == "G")
+
+model0 <- lm(agg_BNPP ~ CWM.PropF, stand_joined)
+summary(model0)
+AIC(model0)
+
+model1 <- lm(agg_BNPP ~ CWM.Dens + CWM.SRLC, stand_both)
+summary(model1)
+AIC(model1)
+
+model2 <- lm(agg_BNPP ~ CWM.DiamC, stand_forb)
+summary(model2)
+AIC(model2)
+
+model3 <- lm(agg_BNPP ~ CWM.SRLF + CWM.DiamC, stand_grass)
+summary(model3)
+AIC(model3)
 
 ###Calculate Rao's Q of each trait
 Dens_results <- dbFD(tr[,1], comp, corr="cailliez")
@@ -251,6 +283,13 @@ PropF_results <- as.data.frame(PropF_results) %>%
 PropF_Div <- cbind(veg_keys, PropF_results) #combine with keys
 PropF_joined <- PropF_Div %>%
   inner_join(BNPP1, by = c( "plot", "subplot", "treatment", "shelterBlock"))
+
+#standardize ind RaoQ and BNPP
+rao <- as.data.frame(cbind(Dens_joined[,14], SRLF_joined[,14], SRLC_joined[,14], DiamC_joined[,14], 
+                                  PropF_joined[,14], Dens_joined[,20]))
+colnames(rao) <- c("DensRao", "SRLFRao", "SRLCRao", "DiamCRao", "PropFRao", "BNPP")
+stand_rao <- decostand(rao, "standardize")
+stand_rao_plot <- as.data.frame(cbind(Dens_joined[,2:3],stand_rao))
 
 #Plot BNPP vs Raos Q of each trait
 f1 <- ggplot(data = Dens_joined, aes(x = RaoQ, y = agg_BNPP, col = subplot)) +
@@ -377,5 +416,26 @@ summary(FDPropF_forb) #not significant
 FDPropF_grass <- lm(agg_BNPP ~ RaoQ, PropF_grass)
 summary(FDPropF_grass ) #not significant
 
+#Stepwise regression of BNPP ~ ind RaoQ
+stand_rao_both <- stand_rao_plot %>%
+  filter(subplot == "B")
+stand_rao_forb <- stand_rao_plot %>%
+  filter(subplot == "F")
+stand_rao_grass <- stand_rao_plot %>%
+  filter(subplot == "G")
 
+model4 <- lm(BNPP ~  SRLFRao, stand_rao)
+summary(model4)
+AIC(model4)
 
+model5 <- lm(BNPP ~ DensRao +  DiamCRao , stand_rao_both)
+summary(model5)
+AIC(model5)
+
+model6 <- lm(BNPP ~  DiamCRao , stand_rao_forb)
+summary(model6)
+AIC(model6)
+
+model7 <- lm(BNPP ~  DensRao, stand_rao_grass)
+summary(model7)
+AIC(model7)
