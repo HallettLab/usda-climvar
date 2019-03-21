@@ -38,13 +38,25 @@ str(treatment)
 ###################
 
 recruit_clean <- recruit_dat %>%
-  dplyr::select(-recorder, -miniplot, -notes, -scaling.sub1, -scaling.sub2, -plot.density.sub1, -plot.density.sub2) %>%
+  # remove single fecundity observation for BRNI, manually adjust in code later as its the only case
+  # remove notes, will add disturbance data back in later
+  dplyr::select(-recorder, -miniplot, -individuals.fecund, -heads.fecund, -wp.fecund, -notes) %>%
   mutate(sample_month = ifelse(species %in% c("TACA", "LOMU"), "May", "April")) %>%
   gather(metric, value, individuals.sub1:wp.sub2) %>%
   mutate(sample = ifelse(grepl("sub1", metric)==TRUE, 1,2),
          metric = gsub(".sub1|.sub2","", metric)) %>%
   filter(!is.na(value)) %>%
   spread(metric, value) %>%
-  mutate(wp = ifelse(is.na(wp)==TRUE, 0, wp)) %>%
   dplyr::select(-sample.date) %>%
-  merge(treatment)
+  group_by(plot, species, sample_month) %>%
+  mutate(double_sample = length(heads))
+  # create rules for averaging stem counts and heads by plot and species
+  # where whole plot censused, prioritize that number over 5x5cm subsample
+  group_by(plot, species, sample_month) %>%
+  mutate(stems = ifelse(wp==1, individuals,
+                              mean(individuals, na.rm=TRUE)))
+  #merge(treatment)
+
+# create keyword search for disturbance (e.g. gopher, rain, browsing, background weeds)
+keywords <- c("rain", "disturb", "infest", "invade", "gopher", "munch")
+
