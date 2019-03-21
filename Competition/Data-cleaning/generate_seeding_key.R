@@ -32,8 +32,7 @@ theme_set(theme_bw())
 na_vals <- c("", " ", NA, "NA")
 
 #set absolute path to dropbox folder to retrieve and write out data
-## --> can vary by user, enter code for your path below <--
-dropbox_path <- "../../Dropbox/ClimVar/" #ctw's path
+dropbox_path <- "~/Dropbox/ClimVar/"
 
 #read in excel data:
 #seeding instructions from LMH to CTW
