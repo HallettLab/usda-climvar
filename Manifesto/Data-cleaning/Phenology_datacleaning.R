@@ -198,6 +198,9 @@ pheno_master <- full_join(pheno, pheno_photos)
 # final checks..
 summary(pheno_master) 
 lapply(select(pheno_master, date:percent_bare), function(x) sort(unique(x)))
+# add a note to 2017 rows to indicate only photos collected, no data recorded
+pheno_master$notes[year(pheno_master$date) == 2017] <- "No phenology data collected for Spring 2017 season, only photos of shelter/ambient plots"
+
 # write out to cleaned phenology subfolder
 write.csv(pheno_master, 
           file = paste0(datpath, "Plant_composition_data/Phenology/Phenology_CleanedData/ClimVar_Phenology_clean.csv"),
