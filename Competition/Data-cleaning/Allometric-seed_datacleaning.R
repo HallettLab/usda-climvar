@@ -1,76 +1,88 @@
-library(gdata)
-library(pbapply)
+
+
+# -- SETUP -----
+rm(list = ls()) # clean environment
+library(readxl)
 library(tidyverse)
 library(broom)
-library(readr)
+options(stringsAsFactors = F)
+theme_set(theme_bw())
+na_vals = c("", " ", NA, "NA")
+datpath <- "~/Dropbox/ClimVar/Competition/Data/"
 
-## batch read in the different tabs of the seed weight xlsx file
-source("https://gist.github.com/schaunwheeler/5825002/raw/3526a15b032c06392740e20b6c9a179add2cee49/xlsxToR.r")
+# iterate through each tab in competition specimens 2017 workbook, read in and compile data.
+# all tabs have same headers, each species x dry/wet on its own tab
+# get spreadsheets
+specsheets <- excel_sheets(paste0(datpath, "Competition_EnteredData/Competition_specimens_spring2017.xlsx"))
+specsheets # first tab is metadata, tabs 2 through end are data tabs
 
-alldat <- xlsxToR("~/Dropbox/ClimVar/Competition/Data/Competition_EnteredData/Competition_specimens_spring2017.xlsx", header = TRUE)
-alldat2 <- alldat[-1]
+# get colname order from metadata spreadsheet for ordering master compiled data frame (below)
+specmeta <- read_excel(paste0(datpath, "Competition_EnteredData/Competition_specimens_spring2017.xlsx"), 
+                       sheet = specsheets[1],
+                       na = na_vals)
+# clean up read in metadata table
+# preserve variable descriptions and order
+specmeta <- specmeta[23:nrow(specmeta),]
+# set row one as colnames then remove
+colnames(specmeta) <- specmeta[1,]; specmeta <- specmeta[-1,]
 
-# unlist (for unnecessary ease)
-for (i in seq(alldat2))
-  assign(paste0("df", i), alldat2[[i]]) 
-
-# format each (this is clunky but whatevs)
-laca_d <- df1 %>%
-  tbl_df() %>%
-  select(species, trt, seeds, wgt_g)  %>%
-  filter(!is.na(wgt_g)) %>%
-  mutate(wgt_g = as.numeric(as.character(wgt_g)))
-
-laca_w <- df2 %>%
-  select(species, trt, seeds, wgt_g)  %>%
-  filter(!is.na(wgt_g)) %>%
-  mutate(wgt_g = as.numeric(as.character(wgt_g)))
-
-ggplot(laca_d, aes(wgt_g, seeds)) + geom_point() + geom_point(data = laca_w, aes(wgt_g, seeds), color = "blue")
-
-
-avfa_d <- df3 %>%
-  tbl_df() %>%
-  select(species, trt, seeds, wgt_g)  %>%
-  filter(!is.na(wgt_g)) %>%
-  mutate(wgt_g = as.numeric(as.character(wgt_g)))
-
-avfa_w <- df4 %>%
-  select(species, trt, seeds, wgt_g)  %>%
-  filter(!is.na(wgt_g)) %>%
-  mutate(wgt_g = as.numeric(as.character(wgt_g)))
-
-ggplot(avfa_d, aes(wgt_g, seeds)) + geom_point() + geom_point(data = avfa_w, aes(wgt_g, seeds), color = "blue")
-
-brho_d <- df5 %>%
-  tbl_df() %>%
-  select(species, trt, seeds, wgt_g)  %>%
-  filter(!is.na(wgt_g)) %>%
-  mutate(wgt_g = as.numeric(as.character(wgt_g)))
-
-brho_w <- df6 %>%
-  select(species, trt, seeds, wgt_g)  %>%
-  filter(!is.na(wgt_g)) %>%
-  mutate(wgt_g = as.numeric(as.character(wgt_g)))
-
-ggplot(brho_d, aes(wgt_g, seeds)) + geom_point() + geom_point(data = brho_w, aes(wgt_g, seeds), color = "blue")
+# read in cleaned biomass2 to join with allometric seed rates
+comp.all <- read.csv(paste0(datpath, "/Competition_CleanedData/ClimVar_Comp_combined-biomass-2.csv"),
+                     na.strings = na_vals, strip.white = T) 
 
 
-vumy_d <- df7 %>%
-  tbl_df() %>%
-  select(species, trt, seeds, wgt_g)  %>%
-  filter(!is.na(wgt_g)) %>%
-  mutate(wgt_g = as.numeric(as.character(wgt_g)))
+# -- READ IN AND COMPILE ALL SPECIMEN TABS -----
+# initiate df for storing specimen data
+specdat <- data.frame()
+for(i in specsheets[-1]){ # don't read in metadata tab
+  print(paste("Reading in",i))
+  tempdat <- read_excel(paste0(datpath,"Competition_EnteredData/Competition_specimens_spring2017.xlsx"), 
+                        sheet = i, na = na_vals, trim_ws = T)
+  #print(paste("Colnames for", i, "are:"))
+  #print(colnames(tempdat))
+  if(ncol(specdat) == 0){
+    specdat <- rbind(specdat, tempdat)
+  }else{
+    #compare colnames in master vs read in dataset
+    master_names <- colnames(specdat); tempdat_names <- colnames(tempdat)
+    missing_master <- master_names[!master_names %in% tempdat_names]
+    missing_tempdat <- tempdat_names[!tempdat_names %in% master_names]
+    if(length(missing_master)>0){
+      print(paste("Master colnames missing in", i, "being added to bind:"))
+      print(missing_master)
+      addtoTemp <- as.data.frame(matrix(ncol=length(missing_master), nrow = nrow(tempdat)))
+      colnames(addtoTemp) <- missing_master
+      tempdat <- cbind(tempdat, addtoTemp)
+    }
+    if(length(missing_tempdat)>0){
+      print(paste(i, "colnames missing in master specimen data frame being added to bind:"))
+      print(missing_tempdat)
+      addtoMaster <- as.data.frame(matrix(ncol=length(missing_tempdat), nrow = nrow(specdat)))
+      colnames(addtoMaster) <- missing_tempdat
+      specdat <- cbind(specdat, addtoMaster)
+    }
+    # alphabetize temporarily to rbind; reorder cols when at last dataset read in
+    tempdat <- tempdat[sort(colnames(tempdat))]
+    specdat <- specdat[sort(colnames(specdat))]
+    specdat <- rbind(specdat, tempdat)
+  }
+  if(i == specsheets[length(specsheets)]){
+    # reorder columns
+    specdat <- specdat[specmeta$Variable]
+    print("All specimens imported and compiled in master data frame!")
+    # clean up environment
+    rm(addtoMaster, addtoTemp, tempdat, master_names, tempdat_names, missing_master, missing_tempdat, i)
+  }
+}
 
-vumy_w <- df8 %>%
-  select(species, trt, seeds, wgt_g)  %>%
-  filter(!is.na(wgt_g)) %>%
-  mutate(wgt_g = as.numeric(as.character(wgt_g)))
 
-ggplot(vumy_d, aes(wgt_g, seeds)) + geom_point() + geom_point(data = vumy_w, aes(wgt_g, seeds), color = "blue")
-
+# -- SIMPLIFY (PER LMH) AND JOIN WITH CLEANED COMPETITION BIOMASS -----
+# > note: ctw cleaned up code here significantly since all datasets compiled in for loop
+# > LMH previously simplified each into separate datasets bc read in as separate list items
 # put it together!
-allo.tog <- rbind(laca_d, laca_w, avfa_d, avfa_w, brho_d, brho_w, vumy_d, vumy_w)
+allo.tog <- specdat %>%
+  select(species, trt, specimen, seeds, wgt_g) %>%
+  filter(!is.na(wgt_g))
 
 # graph it all together!
 ggplot(allo.tog, aes(x=wgt_g, y=seeds, color = trt)) + geom_point() + geom_smooth(method = "lm", se =F) + 
@@ -80,7 +92,6 @@ ggplot(allo.tog, aes(x=wgt_g, y=seeds, color = trt)) + geom_point() + geom_smoot
 l <- lm(seeds~wgt_g, data = subset(allo.tog, species == "LACA"))
 lacaout <- tidy(l) %>%
   mutate(species = "LACA")
-
 
 l <- lm(seeds~wgt_g, data = subset(allo.tog, species == "AVFA"))
 avfaout <- tidy(l) %>%
@@ -104,29 +115,30 @@ allo.out_tomerge <- allo.out %>%
          intercept = `(Intercept)`, 
          slope = wgt_g)
 
-
-comp.all <- read_csv( "~/Dropbox/ClimVar/Competition/Data/Competition_CleanedData/ClimVar_Comp_combined-biomass-2.csv") 
-
+# join allometric seeding rates with biomass
 comp.all2 <- left_join(comp.all, allo.out_tomerge) %>%
   mutate(seedsOut = intercept + slope*ind_weight_g)
 
-write_csv(comp.all2, "~/Dropbox/ClimVar/Competition/Data/Competition_CleanedData/ClimVar_Comp_fecundity.csv")
+write_csv(comp.all2, paste0(datpath, "Competition_CleanedData/ClimVar_Comp_fecundity.csv"))
 
+
+# -- VISUALIZE TRENDS -----
 ## what I want to have is 
-
 # take the average across blocks
-comp.dat2 <- comp.all2 %>%
-  tbl_df() %>%
+comp.dat2 <- ungroup(comp.all2) %>%
   group_by(backgroundspp, backgrounddensity, phyto, falltreatment, seedsAdded) %>%
   # filter(!is.na(disturbance)) %>%
   summarize(mean_weight = mean(ind_weight_g, na.rm = T),
-            mean_seed = mean(seedsOut, na.rm = T))
+            mean_seed = mean(seedsOut, na.rm = T)) %>%
+  as.data.frame()
 
 
 # some graphs of density and biomass
-ggplot(background.density, aes(x=falltreatment, y=density)) + geom_boxplot() + facet_grid(backgrounddensity~backgroundspp)
+ggplot(comp.dat2, aes(x=falltreatment, y=density)) + 
+  geom_boxplot() + facet_grid(backgrounddensity~backgroundspp)
 
-ggplot(subset(comp.dat2, backgrounddensity != "none"), aes(x=backgrounddensity, y = mean_weight, color = backgroundspp, group = backgroundspp)) + geom_point() +
+ggplot(subset(comp.dat2, backgrounddensity != "none"), 
+       aes(x=backgrounddensity, y = mean_weight, color = backgroundspp, group = backgroundspp)) + geom_point() +
   geom_line() + 
   facet_grid(phyto~falltreatment, scales = "free")
 
