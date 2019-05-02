@@ -10,6 +10,7 @@
 # specimens collected by fall dry and fall wet. check to see if treatment makes a difference on fecundity.
 # more than 20 specimens collected for some species (e.g. april and late-season samples for forbs)
 
+# > as of 2019-05-02, still need to address +20specimen collections for LACA, but writing out data table so we can move on for now
 
 # -- SETUP -----
 rm(list = ls()) # clean environment
@@ -36,10 +37,6 @@ specmeta <- read_excel(paste0(datpath, "Competition_EnteredData/Competition_spec
 specmeta <- specmeta[23:nrow(specmeta),]
 # set row one as colnames then remove
 colnames(specmeta) <- specmeta[1,]; specmeta <- specmeta[-1,]
-
-# read in cleaned biomass2 to join with allometric seed rates
-comp.all <- read.csv(paste0(datpath, "/Competition_CleanedData/ClimVar_Comp_combined-biomass-2.csv"),
-                     na.strings = na_vals, strip.white = T) 
 
 
 # -- READ IN AND COMPILE ALL SPECIMEN TABS -----
@@ -148,12 +145,17 @@ allo.out_tomerge <- allo.out %>%
   spread(term, estimate) %>%
   # keeps species codes to link to species lookup table (and traits potentially)
   #mutate(species = recode(species, LACA = "Lasthenia", AVFA = "Avena", BRHO = "Bromus", VUMY = "Vulpia")) %>%
-  select(phyto = species,
+  select(phytometer = species,
          intercept = `(Intercept)`, 
-         slope = wgt_g)
+         slope = wgt_g) %>%
+  # join std error and pval on statistic (can plot seeds with CIs)
+  left_join(allo.out[grepl("wgt", allo.out$term), c("species", "estimate", "std.error", "p.value")],
+            by = c("phytometer" = "species", "slope" = "estimate")) %>%
+  rename(slope_se = std.error,
+         slope_pval = p.value)
 
-# join allometric seeding rates with biomass
-comp.all2 <- left_join(comp.all, allo.out_tomerge) %>%
-  mutate(seedsOut = intercept + slope*ind_weight_g)
 
-write_csv(comp.all2, paste0(datpath, "Competition_CleanedData/ClimVar_Comp_fecundity.csv"))
+
+# -- FINISHING -----
+# write out allometric table
+write.csv(allo.out_tomerge, paste0(datpath,"Competition_CleanedData/Competition_allometric_clean.csv"), row.names = F)
