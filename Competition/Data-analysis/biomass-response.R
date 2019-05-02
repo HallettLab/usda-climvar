@@ -38,3 +38,47 @@ ggplot(subset(grass.dat, backgrounddensity != "none"), aes(x=falltreatment, y = 
 ggsave("~/Dropbox/ClimVar/Competition/Figures/Exploratory/grass-competition.pdf", width = 8, height = 10)
 
 
+
+# -- VISUALIZE TRENDS -----
+## what I want to have is 
+# take the average across blocks
+comp.dat2 <- ungroup(comp.all2) %>%
+  group_by(backgroundspp, backgrounddensity, phyto, falltreatment, seedsAdded) %>%
+  # filter(!is.na(disturbance)) %>%
+  summarize(mean_weight = mean(ind_weight_g, na.rm = T),
+            mean_seed = mean(seedsOut, na.rm = T)) %>%
+  as.data.frame()
+
+
+# some graphs of density and biomass
+ggplot(comp.dat2, aes(x=falltreatment, y=density)) + 
+  geom_boxplot() + facet_grid(backgrounddensity~backgroundspp)
+
+ggplot(subset(comp.dat2, backgrounddensity != "none"), 
+       aes(x=backgrounddensity, y = mean_weight, color = backgroundspp, group = backgroundspp)) + geom_point() +
+  geom_line() + 
+  facet_grid(phyto~falltreatment, scales = "free")
+
+ggplot(comp.dat2, aes(x=backgrounddensity, y = mean_weight, color = falltreatment, group = falltreatment)) + geom_point() +
+  geom_line() + 
+  facet_grid(phyto~backgroundspp, scales = "free")
+
+
+# some graphs of seeds
+ggplot(comp.dat2, aes(x=falltreatment, y=mean_seed/seedsAdded)) + geom_boxplot() + 
+  facet_grid(backgrounddensity~backgroundspp, scales = "free") 
+
+
+ggplot(subset(comp.dat2, backgrounddensity != "none"), aes(x=backgrounddensity, y = mean_seed, color = backgroundspp, group = backgroundspp)) + geom_point() +
+  geom_line() + 
+  facet_grid(phyto~falltreatment, scales = "free")
+
+ggplot(comp.dat2, aes(x=backgrounddensity, y = mean_seed, color = falltreatment, group = falltreatment)) + geom_point() +
+  geom_line() + 
+  facet_grid(phyto~backgroundspp, scales = "free")
+
+# seems like:
+# Avena is always the superior competitor
+# Brome vs Vulpia is weather dependent: Brome can increase when rare under wet, Vuplia under dry
+# Lasthenia is always the weakest competitor
+

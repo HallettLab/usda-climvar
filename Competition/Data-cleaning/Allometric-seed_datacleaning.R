@@ -6,6 +6,10 @@
 # derive allometric relationship of biomass to seed production (fecundity) by species by fall drought treatment
 # write out to competition cleaned data 
 
+# notes: 
+# specimens collected by fall dry and fall wet. check to see if treatment makes a difference on fecundity.
+# more than 20 specimens collected for some species (e.g. april and late-season samples for forbs)
+
 
 # -- SETUP -----
 rm(list = ls()) # clean environment
@@ -83,6 +87,30 @@ for(i in specsheets[-1]){ # don't read in metadata tab
 }
 
 
+# -- SENSITIVITY CHECKS -----
+# dry vs wet (does it matter? or can pool all specimens)
+ggplot(specdat, aes(wgt_g, seeds, col = trt)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth() +
+  facet_grid(trt~species, scales = "free")
+
+# april vs may samples for forbs (LACA)
+subset(specdat, species == "LACA") %>%
+  mutate(clip_month = ifelse(lubridate::month(clip_date)==4, "April", "May"),
+         clip_month = ifelse(is.na(clip_month), "May", clip_month)) %>%
+  ggplot(aes(wgt_g, seeds, col = clip_month)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm", se=F) +
+  facet_wrap(~species, scales = "free") #hm.. april looks like better time to clip? maybe plants pooping out by may
+# potentially should exclude may samples?
+
+# check how slope changes if exclude may
+# everything
+summary(lm(seeds~wgt_g, data = subset(specdat, species == "LACA")))
+# april only
+summary(lm(seeds~wgt_g, data = subset(specdat, species == "LACA" & clip_date == as.Date("2017-04-19"))))
+
+
 # -- SIMPLIFY (PER LMH) AND JOIN WITH CLEANED COMPETITION BIOMASS -----
 # > note: ctw cleaned up code here significantly since all datasets compiled in for loop
 # > LMH previously simplified each into separate datasets bc read in as separate list items
@@ -94,6 +122,7 @@ allo.tog <- specdat %>%
 # graph it all together!
 ggplot(allo.tog, aes(x=wgt_g, y=seeds, color = trt)) + geom_point() + geom_smooth(method = "lm", se =F) + 
   facet_wrap(~species, scales = "free") + geom_smooth(data = allo.tog, aes(x=wgt_g, y=seeds), method = "lm", se = F, color = "black")
+# treatment doesn't seem to have any effect, can group all together in models
 
 # long form way, don't care...
 l <- lm(seeds~wgt_g, data = subset(allo.tog, species == "LACA"))
@@ -117,7 +146,8 @@ allo.out <- rbind(lacaout, avfaout, brhoout, vumyout)
 allo.out_tomerge <- allo.out %>%
   select(species, term, estimate) %>%
   spread(term, estimate) %>%
-  mutate(species = recode(species, LACA = "Lasthenia", AVFA = "Avena", BRHO = "Bromus", VUMY = "Vulpia")) %>%
+  # keeps species codes to link to species lookup table (and traits potentially)
+  #mutate(species = recode(species, LACA = "Lasthenia", AVFA = "Avena", BRHO = "Bromus", VUMY = "Vulpia")) %>%
   select(phyto = species,
          intercept = `(Intercept)`, 
          slope = wgt_g)
