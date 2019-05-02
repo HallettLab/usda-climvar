@@ -14,6 +14,7 @@ rm(list=ls()) # clean environment
 require(readxl)
 library(tidyverse)
 options(stringsAsFactors = F)
+theme_set(theme_bw())
 na_vals <- c(" ", "", NA, "NA")
 
 # set competition data pathway
@@ -43,7 +44,7 @@ subset(background_bio, grepl("TRH|ESC|LAC", background) & dry_wgt_g >0 & !is.na(
   mutate(clip_month = ifelse(grepl("Apr", clip_date), "April", "May"),
          background = gsub("_.*", "", background)) %>%
   ggplot(aes(stems, dry_wgt_g, col = clip_month)) +
-  geom_jitter(alpha = 0.6, width = 0.1) +
+  geom_jitter(alpha = 0.6, width = 0.1, height = 0) +
   facet_wrap(~background)
 
 subset(background_bio, grepl("TRH|ESC|LAC", background) & dry_wgt_g >0 & !is.na(dry_wgt_g)) %>%
@@ -133,9 +134,9 @@ subset(background_stems, grepl("La", background) & !is.na(stems) & stems > 0) %>
 
 # -- CHECK AREA SEEDED -----
 # nicolai wrote in the notes he left a 10cm buffer on each side when seeding (after CTW left SFREC)
-# when CTW and Nicolai were seeding together, left about a 5-cm marging all on sides
+# when CTW and Nicolai were seeding together, left about a 5-cm margin all on sides
 # this would be..
-area_seeded <- (50*50) - (2*(40*10)+ 2*(20*10))
+area_seeded <- (50*50) - (2*(50*10)+ 2*(30*10))
 area_seeded
 # CTW recorded percent cover when clipping AV and VUMY to get a sense of coverage
 # look at coverage
@@ -154,6 +155,8 @@ subset(background_stems, grepl("Ave|Bro|Vul", background)) %>%
   geom_boxplot() +
   geom_hline(yintercept = area_seeded, col = "red") +
   geom_jitter(pch = 1, width = 0.2, height = 0) +
+  labs(x = "Background density",
+       y = "Plot area covered (cm^2)") +
   ggtitle("Background species area covered vs. estimated area seeded (red line)") +
   facet_wrap(~backgroundspp)
 # > 2019-05-01: sent LMH an email with this figure asking what she thinks we should do..
@@ -162,103 +165,177 @@ subset(background_stems, grepl("Ave|Bro|Vul", background)) %>%
 # avena sampled in 10x10cm when subsampled, all else in 5x5cm 
 
 
-# -- PREP DATASETS ----- 
+# -- QUALITY CHECK DATASETS/TROUBLESHOOT NAs ----- 
 # decisions made for prepping data (for now, as of 2019-05-01):
 # area seeded = 1300cm^2 (10cm buffers on all sides)
 # scale flowers up directly
 # exclude late-season data for forbs (since phytometer data only considers april counts)
 
+# look at repeat samples once more..
+background_bio %>%
+  mutate(ID = paste(plot, background)) %>%
+  subset(ID %in% ID[sample2 == 1]) %>% 
+  View() # only ESCA, TRHI, LACA, none had flowers in April, but most in May 
+
+# check for NAs in stem and ANPP counts
+# anpp dataset
+summary(background_bio) # 3 NAs in background bio
+background_bio[is.na(background_bio$stems),c("plot", "background", "stems", "dry_wgt_g", "disturbed", "QA_flag", "QA_notes")]
+background_stems[background_stems$plot %in% c(3,10,14) & 
+                   grepl("Esc.*hi|Las.*lo|Bro.*lo", background_stems$background), ]
+# stem count dataset
+summary(background_stems)
+background_stems[is.na(background_stems$stems),] # only the same bromus_low from above
+
+# infill missing brho_low stem count in anpp dataset
+# one bromus stem count is missing, but percent cover and ANPP area present.. could be infilled by estimating stems ~ ANPP + pct_cover for BRHO
+BRHO_bdat <- subset(background_stems, grepl("Bro", background)) %>%
+  mutate(type = ifelse(grepl("lo", background), "BRHO_LO", "BRHO_HI")) %>%
+  left_join(background_bio, by = c("plot", "comp_plot", "type" = "background")) %>%
+  left_join(shelter.key)
+# simple models
+summary(lm(stems.y ~ dry_wgt_g + pct_cover_wp, data = BRHO_bdat))
+summary(lm(stems.y ~ pct_cover_wp, data = BRHO_bdat)) # stronger with just pct_cover alone
+# 5.43765+(0.26468*.15) = 5.477352.. in the biomass data, 3 BRHO entries have weights of 0.41g (1 is the missing BRHO, and the other two have 6 stems)
+# one of those 0.41g entries was a fall dry with 10% cover and low density, the missing brho is consistent dry with 15% cover and is low density..
+# maybe just infill 6 stems as well for the missing BRHO? so we don't lost data point, an explain we infilled through best estimation available
+
+# check corr between brho hi and brho lo
+brhohi <- subset(BRHO_bdat, type == "BRHO_HI") %>% dplyr::select(plot, stems.x, stems_wp) %>% rename(hi_stems = stems.x, hi_wp = stems_wp)
+brholo <- subset(BRHO_bdat, type == "BRHO_LO") %>% dplyr::select(plot, stems.x, stems_wp) %>% rename(lo_stems = stems.x, lo_wp = stems_wp)
+test <- merge(brhohi, brholo) %>%
+  # keep only plots where stems counted at same scale
+  subset(lo_wp == hi_wp)
+summary(lm(test$lo_stems ~ test$hi_stems))
+plot(test$lo_stems ~ test$hi_stems, main = "Plot-level background BRHO stems in HI\nvs. BRHO stems in LO") #hm.. will keep at 6
+
+# infill p14 bromus_low stem count and anpp stem count (are same for BRHO and VUMY) with 6
+background_bio$stems[is.na(background_bio$stems) & background_bio$plot == 14] <- 6
+background_stems$stems[is.na(background_stems$stems)] <- 6
+# fill in area clipped/counted too (so script below projects plot density [won't if there are NAs])
+background_stems$stems_area_cm2[is.na(background_stems$stems_area_cm2) & grepl("Br.*lo",background_stems$background)] <- 25
+background_stems$stems_wp[is.na(background_stems$stems_wp) & grepl("Br.*lo",background_stems$background)] <- 0
+
+
+# -- PREP DATASETS ----
 # Clean up biomass data
-background_bio2 <- background_bio
-
-  mutate(flowers_clipped = ifelse(flowers_wp == 1, flowers, flowers*(area_seeded/25)),
-         stems_clipped = ifelse(stems_wp),
-         harvest = ifelse(clip_date == "April 2017", "April", "May")) %>%
-  mutate(backgroundspp = gsub("_.*", "", background),
+background_bio2 <- background_bio %>%
+  # remove 2nd sample
+  subset(sample2 != 1) %>%
+  rename(bflowers_anpp = flowers,
+         bstems_anpp = stems,
+         disturbed_banpp = disturbed) %>%
+  mutate(b.ind.wgt.g = ifelse(bstems_anpp == 0, 0, round(dry_wgt_g/bstems_anpp,4)), # round to 4 places since box scale only weighed out to 4
+         backgroundspp = gsub("_.*", "", background),
          backgrounddensity = ifelse(grepl("LO", background), "low", "high")) %>%
-  dplyr::select(plot, backgroundspp, backgrounddensity, area_clipped_cm2, 
-              stems_clipped, dry_wgt_g, flower_bcount, harvest)
-
-
-# Note: 1 low VUMY missing, think just was no material there, VUMY has stems for all others except 1 hi, 3 low, 3 high
-# Bromus has no stem counts 
-# tocheck <- background_bio2 %>%
-#   filter(!is.na(area_clipped_cm2))
+  dplyr::select(plot, backgroundspp, backgrounddensity, 
+              bstems_anpp, dry_wgt_g, b.ind.wgt.g, bflowers_anpp, area_clipped_cm2, disturbed_banpp)
 
 
 # Clean up stem data
 background_stems2 <- background_stems %>%
   mutate(stems_scale = ifelse(stems_wp == 0, area_seeded/stems_area_cm2, 1),
          flor_scale = ifelse(flowers_wp == 0, area_seeded/flowers_area_cm2, 1),
-         insitu_bstems = stems * stems_scale,
-         insitu_bflowers = flowers * flor_scale,
-         backgroundspp = gsub("-.*", "", background),
+         insitu_plot_bdensity = stems * stems_scale,
+         insitu_plot_bflowers = flowers * flor_scale,
+         backgroundspp = gsub("_.*", "", background),
          backgrounddensity = gsub(".*_", "", background)) %>%
-  dplyr::select(plot, backgroundspp, backgrounddensity, insitu_bstems, insitu_bflowers, disturbed)
-# one bromus stem count is missing, but percent cover and ANPP area present.. could be infilled by estimating stems ~ ANPP + pct_cover for BRHO
+  rename(insitu_bdisturbed = disturbed) %>%
+  dplyr::select(plot, backgroundspp, backgrounddensity, insitu_plot_bdensity, insitu_plot_bflowers, insitu_bdisturbed)
 
-BRHO_bdat <- subset(background_stems, grepl("Bro", background)) %>%
-  mutate(type = ifelse(grepl("lo", background), "BRHO_LO", "BRHO_HI")) %>%
-  left_join(background_bio, by = c("plot", "comp_plot", "type" = "background")) %>%
-  left_join(shelter.key)
-
-summary(lm(stems.y ~ dry_wgt_g + pct_cover_wp, data = BRHO_bdat))
-summary(lm(stems.y ~ pct_cover_wp, data = BRHO_bdat)) # stronger with just pct_cover alone
-# 5.4376+(0.264*.15) = 5.4772.. in the biomass data, 3 BRHO entries have weights of 0.41g (1 is the missing BRHO, and the other two have 6 stems)
-# one of those 0.41g entries was a fall dry with 10% cover and low density, the missing brho is consistent dry with 15% cover and is low density..
-# maybe just infill 6 stems as well for the missing BRHO? so we don't lost data point, an explain we infilled through best estimation available
-background_stems2$insitu_bstems[is.na(background_stems2$insitu_bstems)] <- 6 * (area_seeded/25)
-# yield 312 stems in the comp plot; the 0.41 fall dry plot has 6 stems in a 5x5cm subsample (and 7 in 5x5cm subsample 2 [see plot notes])
-# BUT whole plot only had 41 stems (Nikolai counted all) because coverage was patchy.. so 312 could be a big overestimation for BRHO LO on plot 14
-
-# check corr between brho hi and brho lo
-brhohi <- subset(BRHO_bdat, type == "BRHO_HI") %>% dplyr::select(plot, stems.x) %>% rename(hi_stems = stems.x)
-brholo <- subset(BRHO_bdat, type == "BRHO_LO") %>% dplyr::select(plot, stems.x) %>% rename(lo_stems = stems.x)
-test <- merge(brhohi, brholo)
-cor.test(~ test$lo_stems + test$hi_stems)
-plot(test$hi_stems ~ test$lo_stems) #hm.. will keep at 6
+# recode backgroundspp with code4
+code4 <- c("AVFA", "BRHO", "ESCA", "LACA", "TRHI", "VUMY")
+genera <- sort(unique(background_stems2$backgroundspp))
+for(i in 1:length(genera)){
+  background_stems2$backgroundspp[background_stems2$backgroundspp == genera[i]] <- code4[i]
+}
+# check
+print(data.frame(orig = background_stems$background, newspp = background_stems2$backgroundspp, newdens =background_stems2$backgrounddensity))
+# looks good
 
 
 # -- JOIN STEMS AND BIOMASS -----
-
+# join individual anpp and projected plot stem density
 tog <- left_join(background_bio2, background_stems2) %>%
-   mutate(ind_weight_g = dry_wgt_g/stems_clipped) %>%
-#   ## density should be multiplied by 2500 for the full plot; but because the
-#   ## seeds were concentrated in the center i'm estimating that it was in fact a smaller area (1/4 that size)
-#   mutate(density = stems_counted/area_counted_cm2*625) %>%
-#
-#   # mutate(stems_counted1 = ifelse(is.na(stems_counted), stems_clipped, stems_counted),
-#   # stems_clipped1 = ifelse(is.na(stems_clipped), plants_clipped, stems_clipped),
-#   # stems_clipped1 = ifelse(is.na(stems_clipped1) & area_counted_cm2 == 25,
-#   #                               stems_counted, stems_clipped1)) %>%
-#   #  mutate(ind_weight_g = dry_wgt_g/stems_clipped1) %>%
-#   ## density should be multiplied by 2500 for the full plot; but because the
-#   ## seeds were concentrated in the center i'm estimating that it was in fact a smaller area (1/4 that size)
-#   ## might make this an if/else if the plot is subsampled or completely sampled...
-#   #  mutate(density = stems_counted1/area_counted_cm2*625) %>%
-#   mutate(tot_weight_g = ind_weight_g*density) %>%
-#   mutate(flowers = ifelse(is.na(flowers_counted), flower_bcount, flowers_counted),
-#          ind_flower = flowers/stems_counted) %>%
-#   select(plot, backgroundspp, backgrounddensity, harvest, ind_weight_g, density, tot_weight_g, ind_flower)
-
-
-
-
-# Join it all
-background_clean <-left_join(shelter.key, tog) %>%
-  mutate(falltreatment = "wet",
-         falltreatment = ifelse(treatment == "fallDry" | treatment == "consistentDry", "dry", falltreatment))
-
-background_clean <-left_join(background_clean, seed.key) %>%
-  mutate(perPersist = density/seedsAdded)
-
-
+  # project plot ANPP
+  # for VUMY and BRHO, whether multiply ANPP * area_seeded/area_clipped or multiply individual dry weight * project plot density, you get the same number
+  # > bc area clipped was area stem counted (all other background spp, we only clipped 3 individuals for ANPP)
+  mutate(plot_banpp = round(b.ind.wgt.g * insitu_plot_bdensity,4)) %>%
+  dplyr::select(plot, backgroundspp, backgrounddensity, b.ind.wgt.g, plot_banpp, disturbed_banpp, insitu_plot_bdensity, insitu_plot_bflowers, insitu_bdisturbed)
   
+# do the projected data seem reasonable?
+summary(tog)
+ggplot(tog, aes(insitu_plot_bdensity, plot_banpp)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm") +
+  facet_wrap(backgroundspp ~ backgrounddensity, scales = "free")
+# it seems reasonable based on what CTW saw in the field:
+# low density plots typically had heartier background plants (i.e. higher ANPP plants) bc they weren't in competition with themselves
+# for example, the BRHO high density plot having a negative trend with higher stem density makes sense in contrast with BRHO low
+
+# look at flowers
+ggplot(subset(tog, backgroundspp %in% c("TRHI", "LACA", "ESCA")), aes(insitu_plot_bdensity, insitu_plot_bflowers)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(method = "lm") +
+  facet_wrap(backgroundspp ~ backgrounddensity, scales = "free", nrow = 3)
+# may need to revisit incorporating may flower data for forbs.. but maybe not bc only have seed data for LACA anyway
+# but could consider incorporating flowers counted in ANPP weighing
+# plus also dealing with broken LACA stems..
+# > 2019-05-02: go with this for now..
+
+
+
+# -- JOIN TREATMENT AND SEEDING DATA -----
+# prep seeding key for joining
+bseeding <- subset(seed.key, grepl("comp", experiment, ignore.case = T)) %>%
+  dplyr::select(species:treatment, seeds_per_plot) %>%
+  rename(seedsAdded = seeds_per_plot)
+  
+# join treatment data and seeding data
+background_clean <- left_join(shelter.key, tog) %>%
+  mutate(falltreatment = ifelse(grepl("fallDry|consistentDry", treatment), "dry", "wet")) %>% 
+  #join seeding key data as final QA check
+  left_join(bseeding, by = c("backgroundspp" = "code4", "backgrounddensity" = "treatment")) %>%
+  # calculate percent seeded that survived
+  mutate(perPersist = round((insitu_plot_bdensity/seedsAdded)*100, 2),
+         # flag any projected densities that are unrealistic
+         bdensity_flag = ifelse(insitu_plot_bdensity > seedsAdded, 1, NA))
+
+summary(background_clean)
+summary(background_clean$bdensity_flag == 1) #10 observations exceed realistic values based on numbers seeded
+# what are these flagged density observations?
+ggplot(subset(background_clean, perPersist > 100), aes(backgroundspp, perPersist, col = backgrounddensity)) +
+  geom_jitter(width = 0.25, height = 0, alpha = 0.8, size = 2) +
+  ggtitle("Percent persistence in background seeded\nthat exceeds individuals seeded (i.e. unrealistic)")
+# mostly AV and BRHO (not counted by CTW), 1 TRHI.. all in low density plots..
+
+# perhaps using percent plot covered could help with better density estimates? not sure what to do about TRHI
+
+# what does everything else look like?
+ggplot(data = subset(background_clean, perPersist < 100), aes(backgrounddensity, perPersist)) +
+  #geom_point(data = subset(background_clean, perPersist > 100), aes(backgrounddensity, perPersist), col = "red") +
+  geom_boxplot() +
+  geom_jitter(width = 0.25, height = 0, pch = 1) +
+  geom_text(data = unique(background_clean[c("backgrounddensity", "backgroundspp", "seedsAdded")]), 
+            aes(x = backgrounddensity, y = 80, label = paste0("+",unique(seedsAdded))),nudge_x = -0.2, col = "dodgerblue3") +
+  labs(x = "Background density",
+       y = "Percent persisted (plot density/seeds added)",
+       title = "Background competitor persistence (# seeds added in blue text)",
+       subtitle = paste("1 unrealistic AVFA low persistence value:",background_clean$perPersist[background_clean$perPersist>100], "(not shown)")) +
+  facet_wrap(~backgroundspp)
+# LACA and VUMY seem too low on survivorship (esp LACA.. but those seeds are tiny)
 
 
 # -- FINISHING -----
-write.csv(background, "~/Dropbox/ClimVar/Competition/Data/Competition_CleanedData/ClimVar_Comp_background-biomass-2.csv", row.names = F) %>%
-  tbl_df()
+# write out to competition cleaned data folder
+write.csv(background_clean, "~/Dropbox/ClimVar/Competition/Data/Competition_CleanedData/Competition_background_clean.csv", row.names = F)
+
+
+
+
+
+
+
 
 
 
