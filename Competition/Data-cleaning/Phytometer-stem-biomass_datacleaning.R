@@ -1,4 +1,4 @@
-# clean phytometer biomass dataset
+# clean and compile phytometer biomass and in situ stem count
 # authors: LMH, CTW
 # created: Jan 2019
 
@@ -11,7 +11,13 @@
 ## read in phytometer biomass and shelter key
 ## check phytometer biomass sensitivity to position and, for forbs, later season clip date (i.e. sample2 == 1)
 ## calculate individual plant wgts from (sample drymass / sample stem count)
-## join with shelter key and write out to competition cleaned data folder
+## join stems counted in field and shelter key data
+## write out to competition cleaned data folder
+
+# note:
+# should probably keep notes from anpp and stems datasets so can make decisions pre-analysis about how to treat browsed samples and confirm missing samples 
+# but CTW too lazy to write that in right now, just want to get all scripts working together first
+
 
 
 # -- SETUP ----
@@ -34,6 +40,9 @@ phyto.meta <- read_excel(paste0(datpath, "Competition_EnteredData/Competition_ph
 # phytometer biomass
 phyto.dat <- read_excel(paste0(datpath, "Competition_EnteredData/Competition_phytometers_spring2017.xlsx"), 
                         sheet="phyto_anpp", na = na_vals, trim_ws = T)
+# phytometer in situ stem count
+phyto.stems <- read_excel(paste0(datpath, "Competition_EnteredData/Competition_phytometers_spring2017.xlsx"), 
+                        sheet="phyto_stems", na = na_vals, trim_ws = T)
 # shelter key
 shelter.key <- read.csv(paste0(datpath,"Shelter_key.csv"), na.strings = na_vals, strip.white = T)
 
@@ -45,9 +54,9 @@ shelter.key <- read.csv(paste0(datpath,"Shelter_key.csv"), na.strings = na_vals,
 for(i in sort(unique(phyto.dat$phytometer))){
   p <- subset(phyto.dat, phytometer == i & sample2 == 0 & is.na(disturbed)) %>%
     ggplot(aes(as.factor(position), dry_wgt_g)) +
-    geom_boxplot(alpha = 0.6) +
+    geom_point(alpha = 0.6) +
     ggtitle(paste(i, "biomass sensitivity to phytometer position")) +
-    facet_wrap(~background)
+    facet_wrap(~background, scales = "free_y")
   print(p)
 }
 # plot all together
@@ -64,8 +73,16 @@ subset(phyto.dat, sample2 == 0 & is.na(disturbed)) %>%
   ggtitle(paste("Phytometer position sensitivity: mean biomass per species per position")) +
   facet_wrap(~phytometer, scales = "free_y")
 
+# check stem count by position
+for(i in sort(unique(phyto.stems$phytometer))){
+  p <- subset(phyto.stems, phytometer == i & is.na(disturbed)) %>%
+    ggplot(aes(as.factor(position), stems)) +
+    geom_point(alpha = 0.6) +
+    ggtitle(paste(i, "stem count sensitivity to phytometer position")) +
+    facet_wrap(~background, scales = "free_y")
+  print(p)
+}
 # > no visually noticeable influences in position. good!
-
 
 ## LATE SEASON CLIP FOR FORBS ##
 # e.g. did we clip ESCA or TRHI too early? how to adjust if so?
@@ -140,27 +157,54 @@ phyto.dat2$backgrounddensity[grepl("Co", phyto.dat2$background)] <- NA
 # change NA in disturbed to 0 (so true binary var)
 phyto.dat2$disturbed[is.na(phyto.dat2$disturbed)] <- 0
 
-# select final cols for clean dataset
+# prep stem dataset for merging with biomass
+phyto.stems2 <- dplyr::select(phyto.stems, plot, background:stems, disturbed) %>%
+  rename(insitu_stems = stems,
+         insitu_disturbed = disturbed) %>%
+  mutate(insitu_disturbed = ifelse(is.na(insitu_disturbed), 0, insitu_disturbed),
+         # split background species from density treatment
+         backgroundspp = gsub("_.*", "", background),
+         backgrounddensity = ifelse(grepl("lo", background), "LO", 
+                                    ifelse(grepl("hi", background), "HI", NA)),
+         # change genera to 4-letter code
+         backgroundspp = recode(backgroundspp, Avena = "AVFA", Bromus = "BRHO", Lasthenia = "LACA",
+                                Eschscholzia = "ESCA", Vulpia = "VUMY", Trifolium = "TRHI"),
+         backgroundspp = ifelse(grepl("Cont", backgroundspp), "Control", backgroundspp),
+         # change genera to 4-letter code in phytometer col
+         phytometer = recode(phytometer, Avena = "AVFA", Bromus = "BRHO", Lasthenia = "LACA",
+                             Eschscholzia = "ESCA", Vulpia = "VUMY", Trifolium = "TRHI"))
+
+
+# combine biomass and in situ stem count datasets, select final cols for clean dataset
 phyto.dat3 <- phyto.dat2 %>%
-  dplyr::select(plot, backgroundspp, backgrounddensity, phytometer, dry_wgt_g, stems, ind.weight.g, disturbed)
-# rename cols to lmh's preferred names
-colnames(phyto.dat3)[colnames(phyto.dat3) %in% c("phytometer", "dry_wgt_g", "stems")] <- c("phyto", "drywgt.g", "no.plants")
+  dplyr::select(plot, backgroundspp, backgrounddensity, phytometer, dry_wgt_g, stems, ind.weight.g, disturbed) %>%
+  # rename stem column in ANPP dataset to not confused with in situ stem column
+  rename(ANPP_stems = stems,
+         ANPP_disturbed = disturbed) %>%
+  # join stem counts 
+  left_join(phyto.stems2[!colnames(phyto.stems2) %in% c("background", "position")])
+
+# logic check: do any ANPP stem counts exceed field stem counts? (should not)
+summary(phyto.dat3$ANPP_stems > phyto.dat3$insitu_stems)
+# what are the NAs?
+View(phyto.dat3[is.na(phyto.dat3$ANPP_stems > phyto.dat3$field_stems),])
+# these are true NAs for ANPP:
+# 1) VUMY was planted in place of BRHO
+# 2) ESCA wasn't clipped, but stems counted
+# 3) TRHI was missing (didn't see it in plot photo, no sample for it in lab.. but since stem count exists, must have not been clipped)
+
+# rename cols to lmh's preferred names -- not yet
+# colnames(phyto.dat3)[colnames(phyto.dat3) %in% c("phytometer", "dry_wgt_g", "ANPP_stems", "field_stems")] <- c("phyto", "drywgt.g", "ANPP.no.plants", "field.no.stems")
 
 
 # -- FINISHING ----
 # join with shelter key and clean up
 phyto.bmass <-left_join(phyto.dat3, shelter.key, by = "plot") %>%
-  mutate(backgrounddensity = recode(backgrounddensity, LO = "low", HI = "high"),
-         falltreatment = ifelse(treatment %in% c("fallDry", "consistentDry"), "dry", "wet")) #springDry received ambient rainfall in fall
-# note: LMH recoded species codes, but CTW keeping as they are in case want to pair with species descriptive info or traits
-  # mutate(backgroundspp = recode(backgroundspp, AVFA = "Avena", BRHO = "Bromus", LACA = "Lasthenia",
-  #                               ESCA = "Eschscholzia", TRHI = "Trifolium", VUMY = "Vulpia"),
-  #        phyto = recode(phyto, AVFA = "Avena", BRHO = "Bromus", LACA = "Lasthenia",
-  #                       ESCA = "Eschscholzia", TRHI = "Trifolium", VUMY = "Vulpia"),
-
+  #mutate(backgrounddensity = recode(backgrounddensity, LO = "low", HI = "high"),
+  mutate(falltreatment = ifelse(treatment %in% c("fallDry", "consistentDry"), "dry", "wet")) #springDry received ambient rainfall in fall
 
 # write out to dropbox competition cleaned data folder
 #write.csv(phyto.bmass, paste0(datpath, "Competition_CleanedData/ClimVar_Comp_phytometer-biomass-2.csv"), row.names = F)
 # give more informative name
-write.csv(phyto.bmass, paste0(datpath, "Competition_CleanedData/ClimVar_Comp_phytometer_biomass_clean.csv"), row.names = F)
+write.csv(phyto.bmass, paste0(datpath, "Competition_CleanedData/Competition_phytometers_clean.csv"), row.names = F)
 
