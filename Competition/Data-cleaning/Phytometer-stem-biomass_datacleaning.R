@@ -200,8 +200,8 @@ View(phyto.dat3[is.na(phyto.dat3$ANPP_stems > phyto.dat3$field_stems),])
 # -- FINISHING ----
 # join with shelter key and clean up
 phyto.bmass <-left_join(phyto.dat3, shelter.key, by = "plot") %>%
-  #mutate(backgrounddensity = recode(backgrounddensity, LO = "low", HI = "high"),
-  mutate(falltreatment = ifelse(treatment %in% c("fallDry", "consistentDry"), "dry", "wet")) #springDry received ambient rainfall in fall
+  mutate(backgrounddensity = recode(backgrounddensity, LO = "low", HI = "high"),
+         falltreatment = ifelse(treatment %in% c("fallDry", "consistentDry"), "dry", "wet")) #springDry received ambient rainfall in fall
 
 # write out to dropbox competition cleaned data folder
 #write.csv(phyto.bmass, paste0(datpath, "Competition_CleanedData/ClimVar_Comp_phytometer-biomass-2.csv"), row.names = F)
