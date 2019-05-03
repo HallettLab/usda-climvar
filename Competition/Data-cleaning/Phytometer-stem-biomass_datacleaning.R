@@ -179,7 +179,8 @@ phyto.stems2 <- dplyr::select(phyto.stems, plot, background:stems, disturbed) %>
 phyto.dat3 <- phyto.dat2 %>%
   dplyr::select(plot, backgroundspp, backgrounddensity, phytometer, dry_wgt_g, stems, p.ind.wgt.g, disturbed) %>%
   # rename stem column in ANPP dataset to not confused with in situ stem column
-  rename(pANPP_stems = stems,
+  rename(pdry_wgt_g = dry_wgt_g,
+         pANPP_stems = stems,
          pANPP_disturbed = disturbed) %>%
   # join stem counts 
   left_join(phyto.stems2[!colnames(phyto.stems2) %in% c("background", "position")]) %>%
