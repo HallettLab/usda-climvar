@@ -123,6 +123,18 @@ ggplot(subset(comp.dat, !is.na(insitu_plot_bdensity) & !pcode4 %in% c("ESCA", "T
   facet_grid(phytometer~bdensity, scales = "free")
 ggsave("~/Dropbox/ClimVar/Competition/Figures/Exploratory/all-fecundity.pdf", width = 8, height = 10)
 
+subset(comp.dat, !pcode4 %in% c("ESCA", "TRHI")) %>%
+  ungroup() %>%
+  mutate(background = ifelse(is.na(background), "Control", background),
+         bdensity = ifelse(is.na(bdensity), "none", bdensity)) %>%
+  ggplot(aes(bdensity, p_totwgt_seedfit)) +
+  geom_boxplot() +
+  labs(x = "Background density treatment",
+       y = "Phytometer fecundity (# seeds)",
+       title = "Projected phytometer fecundity, by density treatment, competitor, and phytometer") +
+  facet_grid(phytometer~background, scales = "free")
+ggsave("~/Dropbox/ClimVar/Competition/Figures/Exploratory/all-fecundity-boxplots.pdf", width = 8, height = 10)
+
 
 # seems like:
 # Avena is always the superior competitor
