@@ -143,11 +143,11 @@ ggplot(subset(phyto.dat, sample2 == 0), aes(background, stems)) +
 # -- CLEAN UP AND AGGREGATE DATA -----
 # Get individual weights
 phyto.dat2 <- as.data.frame(subset(phyto.dat, sample2 == 0)) # excude 2nd rep samples
-phyto.dat2$ind.weight.g <- with(phyto.dat2, round(dry_wgt_g/stems,6)) # round to 6 decimal places (altho our analytic scale could only measure out to 4..)
+phyto.dat2$p.ind.wgt.g <- with(phyto.dat2, round(dry_wgt_g/stems,6)) # round to 6 decimal places (altho our analytic scale could only measure out to 4..)
 # check NaNs generated (is it all from 0 biomass wgt? [i.e. nothing grew])
-phyto.dat2$dry_wgt_g[is.nan(phyto.dat2$ind.weight.g)] # yes
+phyto.dat2$dry_wgt_g[is.nan(phyto.dat2$p.ind.wgt.g)] # yes
 # change NaNs to 0
-phyto.dat2$ind.weight.g[is.nan(phyto.dat2$ind.weight.g)] <- 0
+phyto.dat2$p.ind.wgt.g[is.nan(phyto.dat2$p.ind.wgt.g)] <- 0
 # split background competition and background seeding density
 phyto.dat2$backgroundspp <- substr(phyto.dat2$background,1,4)
 phyto.dat2$backgrounddensity <- gsub("[A-Z]{4}_", "", phyto.dat2$background)
@@ -159,9 +159,9 @@ phyto.dat2$disturbed[is.na(phyto.dat2$disturbed)] <- 0
 
 # prep stem dataset for merging with biomass
 phyto.stems2 <- dplyr::select(phyto.stems, plot, background:stems, disturbed) %>%
-  rename(insitu_stems = stems,
-         insitu_disturbed = disturbed) %>%
-  mutate(insitu_disturbed = ifelse(is.na(insitu_disturbed), 0, insitu_disturbed),
+  rename(insitu_pstems = stems,
+         insitu_pdisturbed = disturbed) %>%
+  mutate(insitu_pdisturbed = ifelse(is.na(insitu_pdisturbed), 0, insitu_pdisturbed),
          # split background species from density treatment
          backgroundspp = gsub("_.*", "", background),
          backgrounddensity = ifelse(grepl("lo", background), "LO", 
@@ -177,17 +177,18 @@ phyto.stems2 <- dplyr::select(phyto.stems, plot, background:stems, disturbed) %>
 
 # combine biomass and in situ stem count datasets, select final cols for clean dataset
 phyto.dat3 <- phyto.dat2 %>%
-  dplyr::select(plot, backgroundspp, backgrounddensity, phytometer, dry_wgt_g, stems, ind.weight.g, disturbed) %>%
+  dplyr::select(plot, backgroundspp, backgrounddensity, phytometer, dry_wgt_g, stems, p.ind.wgt.g, disturbed) %>%
   # rename stem column in ANPP dataset to not confused with in situ stem column
-  rename(ANPP_stems = stems,
-         ANPP_disturbed = disturbed) %>%
+  rename(pANPP_stems = stems,
+         pANPP_disturbed = disturbed) %>%
   # join stem counts 
-  left_join(phyto.stems2[!colnames(phyto.stems2) %in% c("background", "position")])
+  left_join(phyto.stems2[!colnames(phyto.stems2) %in% c("background", "position")]) %>%
+  mutate(p_totwgt = round(p.ind.wgt.g*insitu_pstems,4))
 
 # logic check: do any ANPP stem counts exceed field stem counts? (should not)
-summary(phyto.dat3$ANPP_stems > phyto.dat3$insitu_stems)
+summary(phyto.dat3$pANPP_stems > phyto.dat3$insitu_pstems)
 # what are the NAs?
-View(phyto.dat3[is.na(phyto.dat3$ANPP_stems > phyto.dat3$field_stems),])
+View(phyto.dat3[is.na(phyto.dat3$pANPP_stems > phyto.dat3$insitu_pstems),])
 # these are true NAs for ANPP:
 # 1) VUMY was planted in place of BRHO
 # 2) ESCA wasn't clipped, but stems counted
