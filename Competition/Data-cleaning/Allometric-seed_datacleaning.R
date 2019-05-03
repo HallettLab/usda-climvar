@@ -4,6 +4,7 @@
 
 # script purpose:
 # derive allometric relationship of biomass to seed production (fecundity) by species by fall drought treatment
+# compile predicted values, confidence intervals and prediction intervals (using `predict`)
 # write out to competition cleaned data 
 
 # notes: 
@@ -21,6 +22,10 @@ options(stringsAsFactors = F)
 theme_set(theme_bw())
 na_vals = c("", " ", NA, "NA")
 datpath <- "~/Dropbox/ClimVar/Competition/Data/"
+
+# read in cleaned phytometer dataset
+phytodat <- read.csv(paste0(datpath, "Competition_CleanedData/Competition_phytometers_clean.csv"),
+                     na.strings = na_vals)
 
 # iterate through each tab in competition specimens 2017 workbook, read in and compile data.
 # all tabs have same headers, each species x dry/wet on its own tab
@@ -113,49 +118,74 @@ summary(lm(seeds~wgt_g, data = subset(specdat, species == "LACA" & clip_date == 
 # > LMH previously simplified each into separate datasets bc read in as separate list items
 # put it together!
 allo.tog <- specdat %>%
-  select(species, trt, specimen, seeds, wgt_g) %>%
-  filter(!is.na(wgt_g))
+  select(species, trt, specimen, clip_date, seeds, wgt_g) %>%
+  filter(!is.na(wgt_g)) # removes LACA plants that were bagged together before weighing
 
 # graph it all together!
 ggplot(allo.tog, aes(x=wgt_g, y=seeds, color = trt)) + geom_point() + geom_smooth(method = "lm", se =F) + 
   facet_wrap(~species, scales = "free") + geom_smooth(data = allo.tog, aes(x=wgt_g, y=seeds), method = "lm", se = F, color = "black")
 # treatment doesn't seem to have any effect, can group all together in models
 
-# long form way, don't care...
-l <- lm(seeds~wgt_g, data = subset(allo.tog, species == "LACA"))
-lacaout <- tidy(l) %>%
-  mutate(species = "LACA")
 
-l <- lm(seeds~wgt_g, data = subset(allo.tog, species == "AVFA"))
-avfaout <- tidy(l) %>%
-  mutate(species = "AVFA")
+# -- RUN LM LOOP -----
+# build loop that:
+# stores simple linear regression
+# captures lm results
+# captures predicted values based on field data with CIs and prediction intervals
 
-l <- lm(seeds~wgt_g, data = subset(allo.tog, species == "BRHO"))
-brhoout <- tidy(l) %>%
-  mutate(species = "BRHO")
+species <- sort(unique(allo.tog$species))
+# initiate data frames for storing:
+allo.out <- data.frame()
+predict_out <- data.frame()
 
-l <- lm(seeds~wgt_g, data = subset(allo.tog, species == "VUMY"))
-vumyout <- tidy(l) %>%
-  mutate(species = "VUMY")
-
-allo.out <- rbind(lacaout, avfaout, brhoout, vumyout)
-
-allo.out_tomerge <- allo.out %>%
-  select(species, term, estimate) %>%
-  spread(term, estimate) %>%
-  # keeps species codes to link to species lookup table (and traits potentially)
-  #mutate(species = recode(species, LACA = "Lasthenia", AVFA = "Avena", BRHO = "Bromus", VUMY = "Vulpia")) %>%
-  select(phytometer = species,
-         intercept = `(Intercept)`, 
-         slope = wgt_g) %>%
-  # join std error and pval on statistic (can plot seeds with CIs)
-  left_join(allo.out[grepl("wgt", allo.out$term), c("species", "estimate", "std.error", "p.value")],
-            by = c("phytometer" = "species", "slope" = "estimate")) %>%
-  rename(slope_se = std.error,
-         slope_pval = p.value)
-
+for(i in species){
+  print(paste("Iterating through", i, "regression"))
+  l <- lm(seeds~wgt_g, data = subset(allo.tog, species == i))
+  # store lm results
+  temp_lm <- cbind(phytometer = c(rep(i,2)), tidy(l))
+  temp_lm <- temp_lm[,-5]
+  colnames(temp_lm)[3:5] <- c("est", "se","pval")
+  temp_lm <- temp_lm %>%
+    #mutate(term = casefold(gsub("[(]|[)]", "", term))) %>%
+    gather(met,val, est:pval) %>%
+    unite(gosharks, term, met) %>%
+    spread(gosharks, val)
+  
+  # add to allo.out
+  allo.out <- rbind(allo.out, temp_lm)
+  
+  # compile predict results
+  temp_predict <- phytodat[phytodat$phytometer == i, c("plot", "backgroundspp", "backgrounddensity", "phytometer", "p_totwgt")]
+  colnames(temp_predict)[ncol(temp_predict)] <- "wgt_g"
+  CIs <- predict.lm(l, newdata = temp_predict ,interval = "confidence")
+  colnames(CIs)[2:3] <- paste0(colnames(CIs)[2:3],"CI.95") 
+  PIs <- predict.lm(l, newdata = temp_predict ,interval = "predict")
+  colnames(PIs)[2:3] <- paste0(colnames(PIs)[2:3],"PI.95") 
+  temp_predict <- cbind(temp_predict, CIs, PIs[,2:3]) %>%
+    rename(p_totwgt = wgt_g)
+  
+  # add to predict_out
+  predict_out <- rbind(predict_out, temp_predict)
+  
+  # if last species, clean up and print done
+  if(i == species[length(species)]){
+    allo.out <- allo.out[,c(1:2,4,3,5,7,6)]
+    # lower case colnames, remove parentheses and "_est" from beta colnames
+    colnames(allo.out) <- casefold(gsub("[(]|[)]|_est", "", colnames(allo.out)))
+    colnames(allo.out) <- gsub("wgt_g", "slope", colnames(allo.out))
+    rownames(allo.out) <- seq(1,nrow(allo.out),1)
+    rownames(predict_out) <- seq(1,nrow(predict_out),1)
+    print("lm results and predictions compiled!")
+  }
+}
 
 
 # -- FINISHING -----
+# merge phyodat and predicted values
+phytodat2 <- left_join(phytodat, predict_out) %>%
+  rename(p_totwgt_seedfit = fit)
+
 # write out allometric table
-write.csv(allo.out_tomerge, paste0(datpath,"Competition_CleanedData/Competition_allometric_clean.csv"), row.names = F)
+write.csv(allo.out, paste0(datpath,"Competition_CleanedData/Competition_allometric_clean.csv"), row.names = F)
+# write out phytodat with predicted values
+write.csv(phytodat2, paste0(datpath,"Competition_CleanedData/Competition_phytometers_predicted.csv"), row.names = F)
