@@ -38,8 +38,10 @@ spp <- spp[!grepl("succulentis|yellow|botrys|michros", spp$species),]
 spp$species <- with(spp, paste0(casefold(substr(species,1,1), upper = T), substr(species, 2, nchar(species))))
 spp$genus <- gsub(" .*", "", spp$species)
 spp$epithet <- gsub("^[A-Z][a-z]+ ", "", spp$species)
+# sp code used by LMH and CTW (upper case)
 spp$code4 <- casefold(paste0(substr(spp$genus,1,2), substr(spp$epithet,1,2)), upper = T)
-
+# sp code used by JL (to link with trait data) (lower case)
+spp$code6 <- casefold(paste0(substr(spp$genus,1,3), substr(spp$epithet,1,3)))
 # preserve experiment separately for writing out
 destination <- spp[,1:2]
 # remove experiment and duplicate species (seeded in both experiments)
