@@ -149,7 +149,8 @@ seed_key$species <- with(seed_key, paste0(casefold(substr(species, 1,1), upper =
 seed_key$code4 <- with(seed_key, casefold(paste0(substr(species, 1,2), substr(gsub("[A-Z][a-z]+ ", "", species),1,2)), upper = T))
 #reorder columns
 seed_key <- seed_key %>%
-  dplyr::select(experiment:species,code4, code6, treatment:seed_rate_g_m2, plot_area, final_wgt_seeded_g, mean_perseed_wgt_g, seeds_per_plot)
+  dplyr::select(experiment:species,code4, code6, treatment:seed_rate_g_m2, plot_area, final_wgt_seeded_g, mean_perseed_wgt_g, seeds_per_plot) %>%
+  ungroup() %>% as.data.frame()
 # add m2 to plot_area name for unit info
 colnames(seed_key)[colnames(seed_key) == "plot_area"] <- "plot_area_m2"
 
