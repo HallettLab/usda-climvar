@@ -25,6 +25,7 @@
 
 
 # -- SETUP -----
+rm(list = ls()) # clean environment
 library(readxl)
 library(tidyverse)
 options(stringsAsFactors = F)
@@ -111,9 +112,11 @@ field_seed_means <- field_seeds %>%
 # 1) prep germination seeding rates
 germ_seeding <- subset(seed_prep, grepl("germ", Experiment)) %>%
   # correct treatment for GA plots
-  mutate(Treatment = ifelse(conversion == 0.25, "GA (germination in ambient)", "recruitment")) %>%
+  mutate(Treatment = ifelse(conversion == 0.25, "GA (germination in ambient)", "recruitment"),
+         # correct spelling of Lupinus succulentus
+         Species = gsub("lentis", "lentus", Species)) %>%
   # remove spp not used in experiment
-  subset(!grepl("yello|microstach|botrys|lentis", Species)) %>%
+  subset(!grepl("yello|microstach|botrys", Species)) %>%
   dplyr::select(Experiment:'g/m2', finalwgt) %>%
   mutate(plot_area = ifelse(Treatment == "recruitment", 0.25*0.25, 0.5*0.5),
          code6 = paste0(substr(Species,1,3), substr(gsub("[a-z]+ ", "", Species), 1,3))) %>%
