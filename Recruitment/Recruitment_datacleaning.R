@@ -1,4 +1,6 @@
 # Clean and compile climvar 2017 recruitment data
+# author(s): CTW (caitlin.t.white@colorado.edu)
+# intiated: May 2019 (code may change over course of analysis)
 
 # Script purpose:
 ## 1. Read in raw recruitment experiment data
