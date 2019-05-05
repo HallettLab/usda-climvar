@@ -2,15 +2,19 @@
 
 # Script purpose:
 ## 1. Read in raw recruitment experiment data
-## 2. Scale stem counts to per meter density (average subsamples when applicable)
+## 2. Scale stem counts to miniplot scale
 ## 3. Join rainfall treatment data and seeding key
 ## 4. Calculate percent recruitment
-## 5. Write cleaned data to .csv in Cleaned_data DropBox folder
+## 5. Write cleaned data .csv to Recruitment_CleanedData subfolder in ClimVar/Recruitment dropbox
 
 # Notes: 
-## -- working directory set to DropBox/ClimVar/DATA/Plant_composition_data
 ## -- germination whole plot size = 25cm x 25cm, subsample size = 5cm x 5cm
 ## -- rule: defer to whole plot numbers when available (even when subsample data present)
+
+# > 2019-05-04, CTW: there are some projected plot stem counts and percent recruitment values that are unrealistic
+# > 14 values in total, most B. nigra. Cleaning script includes code for 2 QA figures and writes out figs to figures folder on dropbox
+# > sent figs to Julie and Lauren for feedback...
+
 
 
 # -- SETUP -----
@@ -214,14 +218,96 @@ if(sum(!repeats1$ID %in% unique(repeats_clean$ID))>0){
 
 # -- SCALE UP STEM AND HEAD COUNTS -----
 # assign plot area for scaling up (miniplot = 25x25cm)
-plot_area <- 25*25 # this should correspond to whatever we think the area seeded actually was
+# assume 1cm buffer on all sides
+plot_area <- (25*25) - (2*(1*25) + 2*(1*23)) # this should correspond to whatever we think the area seeded actually was
 plot_scale <- plot_area/(5*5) # subsample = 5x5cm
 
 recruit_clean3$plot_stems <- with(recruit_clean3, ifelse(stemct_wp == 0, stems*plot_scale, stems))
 recruit_clean3$plot_heads <- with(recruit_clean3, ifelse(headct_wp == 0, heads*plot_scale, heads))
 # manual corrections to scaling based on field notes..
+# review notes
 recruit_clean3$field_notes[!is.na(recruit_clean3$field_notes)]
-# 2 plots need manual corrections to scaling
+# 2 plots need manual corrections to scaling: 6LOMU, 7LOMU
+# only 10x20cm area covered in whole plot
+data.frame(recruit_clean3[grepl("10x20", recruit_clean3$field_notes),])
+fix <- grep("10x20", recruit_clean3$field_notes)
+recruit_clean3$plot_stems[fix] <- recruit_clean3$stems[fix] *((10*20)/(5*5))
+recruit_clean3$plot_heads[fix] <- recruit_clean3$heads[fix] *((10*20)/(5*5))
+# confirm correct
+data.frame(recruit_clean3[grepl("10x20", recruit_clean3$field_notes),]) #yes
+
+# review QA notes (okay to drop?)
+recruit_clean3[!is.na(recruit_clean3$QA_notes),11:12] # LMH was supposed to revew all.. assume done by now. okay to drop
+
+
+# -- ADD SEEDING, CALCULATE RECRUITMENT -----
+recruit_clean4 <- recruit_clean3 %>%
+  dplyr::select(-c(ID, QA_flag, QA_notes)) %>%
+  left_join(seedkey[seedkey$treatment == "recruitment", c("code4", "seeds_per_plot")]) %>%
+  rename(seedsAdded = seeds_per_plot) %>%
+  mutate(pctRecruit = round(100 * (plot_stems/seedsAdded),2),
+         flag_recruit = ifelse(pctRecruit>100, 1, 0),
+         disturbed = ifelse(is.na(disturbed), 0, 1))
+
+# look at distribution of percent recruitment by species
+ggplot(recruit_clean4, aes(code4, pctRecruit)) +
+  geom_hline(aes(yintercept = 100), col = "red") +
+  annotate(geom = "text", x = "LUSU", y = 105, vjust = 0, label = "100% recruited", color = "red") +
+  geom_boxplot() +
+  geom_point(data = subset(recruit_clean4, flag_recruit == 1), aes(code4, pctRecruit), col = "red", alpha = 0.8) +
+  labs(x = "Species",
+       y = "Percent recruited\n(#indiviuals/#seeded)*100",
+       title = paste("Percent recruitment QA:", 
+                     length(recruit_clean4$flag_recruit[recruit_clean4$flag_recruit == 1]),  
+                     "values exceed 100%"),
+       subtitle = paste(length(recruit_clean4$flag_recruit[recruit_clean4$flag_recruit == 1 & recruit_clean4$code4 == "BRNI"]),
+                        "of 16 BRNI observations flagged; flagged LOMU in plot invaded by outside LOMU"))
+# it doesn't look that bad.. a few species have outliers, BRNI looks overcounted on nearly half
+# LOMU outlier is due to outside LOMU invading plot, CTW could have overcounted TACA on some plots (e.g. one noted as being dense)
+# CLAM was pretty dense on some plot, not sure what to do about high TRIN..
+# write out figure to Recruitment dropbox folder
+ggsave(paste0(datpath,"Recruitment_Figures/QA_pctRecruit_boxplots_byspecies.pdf"),
+       height = 4, width = 6, scale = 1.1)
+
+
+# number of flags by species
+sapply(split(recruit_clean4$flag_recruit, recruit_clean4$code4), function(x) sum(x==1))
 
 
 # -- JOIN DROUGHT TREATMENT AND SPPLIST DATA -----
+# compile final dataset
+#final set
+recruit_combined <- recruit_clean4 %>%
+  left_join(treatment) %>%
+  left_join(spplist) %>%
+  mutate(falltreatment = ifelse(grepl("Rain|spring", treatment), "wet", "dry"))
+
+# is there any patterns to percent recruitment flags by drought treatment? (e.g. wet plots tend to have overcounts)
+ggplot(subset(recruit_combined, flag_recruit == 1), aes(treatment, pctRecruit, col = code4)) +
+  geom_jitter(aes(shape = as.factor(disturbed)), size = 2, height = 0, width = 0.2, alpha = 0.8) +
+  labs(x = "Drought treatment",
+       y = "Percent recruited\n(#indiviuals/#seeded)*100",
+       title = "Most overcounts in fall wet plots (except Brassica nigra)",
+       subtitle = "High LOMU = plot invaded by outside LOMU") +
+  scale_color_discrete(name = "Species") +
+  scale_shape_discrete(name = "Disturbed?")
+
+# sort of .. wetter plots (not dry in fall) tend to have overcounts 
+# BRNI overcounted in all treatment types, all other species in wetter plots (except 1 TRIN plot in fall dry)
+# .. control plots were super invaded generally
+# write out figure to Recruitment dropbox figures folder
+ggsave(paste0(datpath,"Recruitment_Figures/QA_flagged_pctRecruit_values.pdf"),
+       height = 4, width = 6)
+
+
+# -- FINISHING ----
+# re-arrange columns and write out
+names(recruit_combined)
+recruit_combined <- recruit_combined %>%
+  dplyr::select(plot, falltreatment, treatment:shelter, code4, code6, stems, stemct_wp, plot_stems, 
+               heads, headct_wp, plot_heads, seedsAdded:flag_recruit, sample_date:disturbed, species:nativity) %>%
+  #drop a few USDA Plants database cols
+  dplyr::select(-c(State_and_Province, Native_Status))
+
+#write out
+write.csv(recruit_combined, paste0(datpath, "Recruitment_CleanedData/Recruitment_cleaned.csv"), row.names = F)
