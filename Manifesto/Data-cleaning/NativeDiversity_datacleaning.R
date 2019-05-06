@@ -69,7 +69,8 @@ for(i in 1:length(sppfiles)){
 }
 
 
-# -- FIX TYPOS IN SPP LIST -----
+# -- DATA PREP/CORRECTIONS -----
+# FIX TYPOS IN SPP LIST
 fixlist <- list(c("Anagalis", "Anagallis"), #bad spelling, correct spelling
                 c("Cynosaurus", "Cynosurus"),
                 c("Fillago", "Filago"),
@@ -81,6 +82,10 @@ for(i in 1:length(fixlist)){
     gsub(fixlist[[i]][1], fixlist[[i]][2], x))
 }
 
+# add fall treatment to treatment key (wet in fall or dry in fall [relates to germination])
+trtkey <- mutate(trtkey, fallTreatment = ifelse(grepl("spring|control", treatment, ignore.case = T), "wet", "dry")) %>%
+  # reorder cols
+  dplyr::select(plot, treatment, fallTreatment, shelterBlock, shelter)                 
 
 # -- TIDY AND TRANSPOSE ENTERED COVER DATA -----
 # loop through cover data, transpose, and append to master cover dataset
@@ -180,6 +185,9 @@ for(i in c("cov2015", "cov2016")){
   vegdat3$col1 <- gsub("bufonious", "bufonius", vegdat3$col1)
   # correct SHAR spelling
   vegdat3$col1 <- gsub("arvense", "arvensis", vegdat3$col1) # there's only ANAR and SHAR, same epithet for both
+  # unknown forb seedling in 2016 was either CLAM or COHE (ctw reviewed notes)
+  ## change to "unknown native forb seedling" so can assign nativity and functional group
+  vegdat3$col1[grepl("forb seed", vegdat3$col1)] <- "Unknown native forb seedling (CLAM/COHE)"
   
   vegdat3 <- data.frame(t(vegdat3)) # transpose, change matrix to data frame
   colnames(vegdat3) <- vegdat3[1,] # set row 1 as colnames
@@ -298,8 +306,12 @@ for(p in spplist_master$species[spplist_master$unknown == 0]){
     spplist_master$nativity[grepl("L48 .I.",spplist_master$Native_Status)] <- "Exotic"
     spplist_master$nativity[grepl("L48 .N.",spplist_master$Native_Status)] <- "Native"
     
-    # add functional group, lifespan to unknown forb
-    spplist_master$fxnl_grp[spplist_master$code4 == "UNFO"] <- "Forb"
+    # add functional group, nativity and Duration to unknown native forb
+    # > unknown was either CLAM or COHE and both of those are Annual only
+    spplist_master$fxnl_grp[spplist_master$code4 == "UNNA"] <- "Forb"
+    spplist_master$Growth_Habit[spplist_master$code4 == "UNNA"] <- "Forb/herb"
+    spplist_master$nativity[spplist_master$code4 == "UNNA"] <- "Native"
+    spplist_master$Duration[spplist_master$code4 == "UNNA"] <- "Annual"
     
     # clean up environment
     rm(temp_df, templist, templist2, update_df, temp_epithet, temp_genus,p)
