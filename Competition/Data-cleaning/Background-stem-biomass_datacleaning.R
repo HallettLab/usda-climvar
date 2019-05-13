@@ -2,7 +2,12 @@
 # authors: LMH, CTW
 
 # script purpose:
-
+# read in background anpp and stems datasets, with background metadata and shelter key
+# clean ANPP: calculate individual weight
+# clean background density: project stem counts to plot level (using estimate actual area seeded)
+# combine both datasets and project total plot background ANPP based on individual weight and projected plot stem counts
+# join shelter treatment dataset
+# write combined dataset to Competition_CleanedData folder
 
 # notes:
 # sometimes stems subsampled but flowers counted in whole plot.. need to discuss how to treat that if use flower data
@@ -147,7 +152,7 @@ subset(background_stems, grepl("Ave|Bro|Vul", background)) %>%
   geom_point() +
   facet_wrap(~backgroundspp)
 
-# converted to area cm2 (comparing to 1300cm^2)
+# converted to area cm2 (comparing to 900cm^2)
 subset(background_stems, grepl("Ave|Bro|Vul", background)) %>%
   mutate(backgrounddensity = gsub(".*_", "", background),
          backgroundspp = gsub("_.*", "", background)) %>%
@@ -160,14 +165,14 @@ subset(background_stems, grepl("Ave|Bro|Vul", background)) %>%
   ggtitle("Background species area covered vs. estimated area seeded (red line)") +
   facet_wrap(~backgroundspp)
 # > 2019-05-01: sent LMH an email with this figure asking what she thinks we should do..
-# > will use 1300cm^2 seeded for now so can press on with code
+# > will use 900cm^2 seeded for now so can press on with code
 
 # avena sampled in 10x10cm when subsampled, all else in 5x5cm 
 
 
 # -- QUALITY CHECK DATASETS/TROUBLESHOOT NAs ----- 
 # decisions made for prepping data (for now, as of 2019-05-01):
-# area seeded = 1300cm^2 (10cm buffers on all sides)
+# area seeded = 900cm^2 (10cm buffers on all sides)
 # scale flowers up directly
 # exclude late-season data for forbs (since phytometer data only considers april counts)
 
