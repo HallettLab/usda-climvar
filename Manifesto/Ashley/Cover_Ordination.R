@@ -34,7 +34,9 @@ data <- tibble::rowid_to_column(data, "subplot")
 #LTM.env2 <-LTM.env[,-c(1:16)]
 ###standardize the environmental variables (scale function converts to z-scores)
 #LTM.env.z <- data.frame(scale(LTM.env2))
-
+soil<-read.csv ("~/Dropbox/ClimVar/DATA/Soil Extracts/Soil_CleanedData/ClimVar_soil_2015.csv")
+soil_all<- soil %>% filter (subplot=="XC" | subplot =="G" | subplot == "B" | subplot =="F", Depth == "1")  %>% 
+  arrange(treatment, shelterBlock, subplot) #arrange so all files used in PCA match
 
 Treatment<-data[,4]
 Year<-data[,3]
@@ -173,7 +175,7 @@ ordirgl (spp.mds, col=colb1)
 ##################
 
 data2<- cover %>% dplyr::select(-X, -species, -genus, -status, -func, -func2) %>% 
-  filter(subplot=="XC") %>% spread(species_name, cover) %>% arrange(treatment) 
+  filter(subplot=="XC") %>% spread(species_name, cover) %>% arrange(treatment, shelterBlock) 
 data2$ID <- seq.int(nrow(data2))
 data2$TB<-paste(data2$treatment,data2$shelterBlock,sep=".")
 data2<-data2 %>% dplyr::select(-Unknown)
@@ -225,7 +227,7 @@ ordiplot(spp.mds0_2)
 #rotation of axes to maximize variance of site scores on axis 1
 #calculate species scores based on weighted averaging
 
-spp.mds2<-metaMDS(cover.relrow2, trace = T, autotransform=F, trymax=999, k=2) #runs several with different starting configurations
+spp.mds2<-metaMDS(cover.relrow2, trace = T, autotransform=F, trymax=999, k=4) #runs several with different starting configurations
 
 #trace= TRUE will give output for step by step what its doing
 #default is 2 dimensions, can put k=4 for 4 dimensions
@@ -257,7 +259,6 @@ text(spp.mds2, display = "species", cex=0.5, col=colspec) #label species
 legend("bottomright",legend=levels(Treatment2), col=cols1, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
 # add legend for year
 legend("topright",legend=levels(as.factor(as.character(Year2))), col="black", pch=shapes, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
-help(ordiplot)
 
 #plots colored based on year
 xc.plot2 <- ordiplot(spp.mds2,choices=c(1,2), type = "none")   #Set up the plot
@@ -355,9 +356,28 @@ for (i in 1:length(tplot_levels2a)){
   lengths
 }
 
+veclength<-read.csv("~/Desktop/veclength_xc.csv")
 
+ggplot(data=veclength, aes(x=treatment, y=veclength, fill=treatment))+
+  geom_boxplot()+
+  scale_fill_manual(values = c("sienna","royalblue2","peachpuff", "lightsteelblue1"))
 
-################################
+ggplot(data=veclength, aes(x=shelterBlock, y=veclength, fill=shelterBlock))+
+  geom_boxplot()
+
+library(nlme)
+v<-lme(veclength ~ treatment, random=~1|shelterBlock, veclength, na.action=na.exclude)
+summary(v)
+anova(v)
+r.squaredGLMM(v) 
+qqnorm(residuals(v))
+qqline(residuals(v))
+shapiro.test(residuals(v))
+#normal
+jLS<-lsmeans(v, ~treatment)
+contrast(jLS, "pairwise") 
+
+ ################################
 ###NMDS to compare grass-forb-both treatments
 ################################
 data3<- cover %>% dplyr::select(-X, -species, -genus, -status, -func, -func2) %>% 
