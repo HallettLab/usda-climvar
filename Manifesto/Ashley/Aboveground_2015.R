@@ -89,9 +89,10 @@ ggplot(d=May_ANPP_2015_noXC, aes(x=treatment, y=weight_g_m, fill=treatment)) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1))+
   geom_boxplot(aes(y=weight_g_m), shape=16)
 
-ggplot(d=May_ANPP_2015_noXC, aes(x=subplot, y=weight_g_m, fill = treatment)) +
+ggplot(d=May_ANPP_2015_noXC, aes(x=subplot, y=weight_g_m, fill = subplot)) +
   theme_linedraw()+
   labs(x="composition treatment", y="ANPP g/m2")+
+  annotate("text", x= c("B", "F","G"), y = c(925,925, 925), label = c("a", "b", "ab"), color = "#999999") +
   geom_boxplot(aes(y=weight_g_m), shape=16)
 
 ###################
