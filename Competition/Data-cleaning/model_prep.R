@@ -47,6 +47,20 @@ tog <- rbind(phyto.dat, back.dat) %>%
   select(-pcode4, -var) %>%
   spread(varnew, val)
   
+se <-function(x, na.rm = T){
+  x <- x[is.na(x)==F]
+  sd(x)/sqrt(length(x))
+}
+
+formarina <- rbind(phyto.dat, back.dat) %>%
+  filter(pcode4!= "TRHI") %>%
+  mutate(R = seedsOut/seedsIn) %>%
+  group_by(falltreatment, background, bdensity, pcode4) %>%
+  summarise_at(c("R", "seedsIn", "seedsOut"), c("mean", "se"), na.rm=T) 
+
+write_csv(formarina, "~/Dropbox/ClimVar/Competition/Data/Climvar_comp_seedprod.csv")
+
+#
 brvu <- tog %>%
   filter(background == "Bromus hordeaceus" | background == "Vulpia myuros" | is.na(background))
   
