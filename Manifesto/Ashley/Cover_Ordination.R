@@ -360,6 +360,9 @@ veclength<-read.csv("~/Desktop/veclength_xc.csv")
 
 ggplot(data=veclength, aes(x=treatment, y=veclength, fill=treatment))+
   geom_boxplot()+
+  theme_classic()+
+  theme(legend.position = "none")+
+  labs(x="Rainfall Treatment", y = "Vector Length")+
   scale_fill_manual(values = c("sienna","royalblue2","peachpuff", "lightsteelblue1"))
 
 ggplot(data=veclength, aes(x=shelterBlock, y=veclength, fill=shelterBlock))+
@@ -377,6 +380,29 @@ shapiro.test(residuals(v))
 jLS<-lsmeans(v, ~treatment)
 contrast(jLS, "pairwise") 
 
+boxplot(veclength$veclength~veclength$treatment)
+
+##From xc cluster analysis
+clust_xc<-May_all_XC %>% group_by(treatment, shelterBlock) %>% filter(year==2017) %>% summarize(clust=mean(clust2))
+veclength2<-merge(clust_xc,veclength) %>%filter(clust==1|clust==2)
+
+v2<-lme(veclength2 ~ clust, random=~1|treatment/shelterBlock, veclength, na.action=na.exclude)
+summary(v2)
+anova(v2)
+r.squaredGLMM(v2) 
+qqnorm(residuals(v2))
+qqline(residuals(v2))
+shapiro.test(residuals(v2))
+#normal
+ 
+ggplot(data=veclength2, aes(x=as.factor(clust), y=veclength, fill=as.factor(clust)))+
+  geom_boxplot()+
+  theme_classic()+
+  theme(legend.position="none")+
+  labs(x="Cluster Membership", y="Vector Length")+
+  annotate("text", x= c("1", "2"), y = c(1.5, 1.5), label = c("a", "b"), color = "black")+
+  #facet_wrap(~clust)+
+  scale_fill_manual(values = c("darkgrey","red"))
  ################################
 ###NMDS to compare grass-forb-both treatments
 ################################
