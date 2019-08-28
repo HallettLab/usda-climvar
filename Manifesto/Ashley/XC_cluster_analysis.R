@@ -1,5 +1,6 @@
 library(cluster)
 library(indicspecies)
+library(ggplot2)
 
 ####################
 #repeat ordination for control (XC) subplots only
@@ -114,14 +115,212 @@ clustmem
 
 #cluster membership can be treated like a categorical variable
 May_all_XC<-arrange(May_all_XC, treatment, shelterBlock)
-boxplot(May_all_XC$ANPPgm~clustmem$clust4)
-boxplot(May_all_XC$RaoQ~clustmem$clust4)
-boxplot(May_all_XC$CWM.Ht~clustmem$clust4)
+boxplot(May_all_XC$ANPPgm~clustmem$clust2)
+boxplot(May_all_XC$RaoQ~clustmem$clust2)
+boxplot(May_all_XC$CWM.Ht~clustmem$clust2)
+
+May_all_XC$clust4<-clustmem$clust4
+May_all_XC$clust2<-clustmem$clust2
+ggplot(data=May_all_XC, aes(y=ANPPgm, x=treatment, color=as.factor(clust2)))+
+  geom_boxplot()
+
+c<-lme(weight_g_m ~treatment, random=~1|year/shelterBlock, subset(May_all_XC, clust2=="1"), na.action=na.exclude)
+       summary(c)
+       anova(c) #treatment is significant
+       r.squaredGLMM(c) #12% of variation explained by fixed effects, 57% by whole model (interannual variation?)
+       qqnorm(residuals(c))
+       qqline(residuals(c))
+       shapiro.test(residuals(c))
+       #normally distributed, continue
+       LS.all2<-lsmeans(c, ~treatment)
+       contrast(LS.all2, "pairwise")
+
+#overlay cluster membership on nmds ordination
+plot(spp.mds2, choices=c(1,2), type="n")
+points(spp.mds2, display="sites", cex=0.8, pch=16, col=clustmem$clust2)
+
+##Creating an ordination plot with succession vectors
+xc.plot4 <- ordiplot(spp.mds2,choices=c(1,2), type = "none", xlim=c(-1.5,1.5), ylim=c(-1.5,1.5))   #Set up the plot
+cols <- rep(c("sienna","royalblue2","lightsteelblue3", "peachpuff2"), each = 12) 
+cols1 <- rep(c("sienna","royalblue2","lightsteelblue3", "peachpuff2"), each = 1) 
+cols2 <- rep(c("sienna","royalblue2","lightsteelblue3", "peachpuff2"), each = 4) 
+colspec<- rep(c("lightgrey", "lightgrey", "blue", "lightgrey", "lightgrey", "lightgrey", "lightgrey", "lightgrey", "lightgrey", "lightgrey", "lightgrey", "lightgrey", "blue", "lightgrey", "lightgrey","lightgrey", "blue", "lightgrey", "lightgrey", "lightgrey", "lightgrey", "lightgrey", "lightgrey", "lightgrey", "lightgrey", "lightgrey", "lightgrey", "lightgrey", "lightgrey", "lightgrey", "lightgrey", "lightgrey", "lightgrey", "lightgrey", "blue", "lightgrey", "lightgrey", "lightgrey", "lightgrey", "lightgrey", "lightgrey", "lightgrey", "lightgrey", "lightgrey", "lightgrey", "lightgrey", "lightgrey", "lightgrey", "lightgrey", "lightgrey", "lightgrey", "lightgrey", "lightgrey", "blue", "blue","lightgrey", "lightgrey"))
+shapes <- rep(c(15, 18, 17, 19), each=12) #shapes on trt
+shapes1 <- rep(c(15, 18, 17, 19), each=1) #shapes on trt
+points(spscoresall_2$NMDS1,spscoresall_2$NMDS2,col=clustmem$clust2,pch=shapes, cex=1.2)#Plot the ordination points 
+text(spp.mds2, display = "species", cex=0.6, col=colspec) #label species
+ordiarrows(spp.mds2, groups=TB, order.by=Year2, label=F, col="grey")
+legend("topright",legend=levels(as.factor(clustmem$clust2)), col=c("black", "red"), pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
+legend("bottomright",legend=levels(as.factor(data2$treatment)), col="black", pch=shapes1, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
+
+#clustmem is a dataframe with columns indicating group membership at different numbers of clusters
+#now create a dataframe showing how many significant indicator species at each clustering level
+alpha<-0.05 #can change alpha here
+c1<-colnames(clustmem)
+c2<-c()
+for (i in 1:length(clustmem)){
+  temp.isa<-multipatt(cover.relrow2,clustmem[,i],duleg=T)
+  nu.sig<-sum(temp.isa$sign$p.value<=alpha, na.rm=T)
+  c2<-c(c2,nu.sig)
+}
+data.frame(c1,c2)
+
+#indicator species by cluster membership
+xc_isa = multipatt(cover.relrow2, clustmem$clust2, control=how(nperm=999))
+summary(xc_isa)
+
+#indicator species by treatment
+trt_isa = multipatt(cover.relrow2, May_all_XC$treatment, control=how(nperm=999))
+summary(trt_isa)
+
+##within cluster 1, do compensatory dynamics occur?
+ggplot(May_all_XC, aes(y=propForb, x=treatment, fill=as.factor(clustmem$clust2)))+
+  geom_boxplot()
+
+ggplot(May_all_XC, aes(y=RaoQ, x=as.factor(clustmem$clust2)))+
+  geom_boxplot()
+
+ggplot(May_all_XC, aes(y=FDis, x=treatment2, fill=as.factor(clustmem$clust2)))+
+  geom_boxplot()
+
+ggplot(May_all_XC, aes(y=H, x=treatment2, fill=as.factor(clustmem$clust2)))+
+  geom_boxplot()
+
+ggplot(May_all_XC, aes(y=ANPPgm, x=treatment,  color=as.factor(clustmem$clust2)))+
+  geom_boxplot()+
+  geom_smooth(method="lm", se=F)
+
+May_all_XC <- May_all_XC %>% mutate(treatment=ordered(treatment, levels = c(controlRain="controlRain", springDry="springDry", fallDry="fallDry", consistentDry="consistentDry")))
+ggplot(May_all_XC, aes(y=forbCover, x=as.factor(clust2),  fill=treatment))+
+  geom_boxplot()+
+  scale_fill_manual(values = c("royalblue2","lightsteelblue1", "peachpuff", "sienna"), guide = guide_legend(title = "Treatment")) +
+  labs(x="Cluster Membership", y="Forb Cover (%)")+
+  theme_classic()
+
+ggplot(May_all_XC, aes(y=ANPPgm, x=as.factor(clust2),  fill=treatment))+
+  geom_boxplot()+
+  scale_fill_manual(values = c("royalblue2","lightsteelblue1", "peachpuff", "sienna"), guide = guide_legend(title = "Treatment")) +
+  labs(x="Cluster Membership", y="ANPP g/m2")+
+  theme_classic()
+
+May_all_XC_cv<-May_all_XC %>% group_by(treatment, shelterBlock, clust2) %>% summarize(CVanpp=sd(ANPPgm)/mean(ANPPgm)*100)
+ggplot(May_all_XC_cv, aes(y=CVanpp, x=as.factor(clust2),  color=treatment))+
+  geom_boxplot()+
+  scale_color_manual(values = c("royalblue2","lightsteelblue1", "peachpuff", "sienna"), guide = guide_legend(title = "Treatment")) +
+  labs(x="Cluster Membership", y="CV ANPP")+
+  theme_classic()
+
+
+c<-lme(weight_g_m ~treatment*as.factor(clust2), random=~1|year/shelterBlock, May_all_XC, na.action=na.exclude)
+summary(c)
+anova(c) #treatment is significant
+r.squaredGLMM(c) #12% of variation explained by fixed effects, 57% by whole model (interannual variation?)
+qqnorm(residuals(c))
+qqline(residuals(c))
+shapiro.test(residuals(c))
+#normally distributed, continue
+LS.all2<-lsmeans(c, ~treatment)
+contrast(LS.all2, "pairwise")
+
+May_all_XC<-May_all_XC%>%arrange(treatment, shelterBlock)
+May_ANPP_XC<-May_ANPP_XC%>%mutate(treatment=ordered(treatment, levels = c(controlRain="controlRain", springDry="springDry", fallDry="fallDry", consistentDry="consistentDry")))%>%
+  arrange(treatment, shelterBlock) #from Cover_dataanalyses.R
+ggplot(May_all_XC, aes(y=May_ANPP_XC$AvCover, x=as.factor(clust2)))+
+  geom_boxplot()+
+  scale_color_manual(values = c("royalblue2","lightsteelblue1", "peachpuff", "sienna"), guide = guide_legend(title = "Treatment")) +
+  labs(x="Cluster Membership", y="Avena Cover")+
+  theme_classic()
+
+ggplot(May_all_XC, aes(y=nbsp, x=as.factor(clust2)))+
+  geom_boxplot()+
+  scale_color_manual(values = c("royalblue2","lightsteelblue1", "peachpuff", "sienna"), guide = guide_legend(title = "Treatment")) +
+  labs(x="Cluster Membership", y="Species Richness")+
+  theme_classic()
+
+ggplot(May_all_XC, aes(y=RaoQ, x=as.factor(clust2)))+
+  geom_boxplot()+
+  scale_color_manual(values = c("royalblue2","lightsteelblue1", "peachpuff", "sienna"), guide = guide_legend(title = "Treatment")) +
+  labs(x="Cluster Membership", y="Functional Diversity (RaoQ)")+
+  theme_classic()
+
+
+
+#############
+#Cluster Analysis for all data (including composition plots)
+#############
+spp.clust.sing1 <- hclust(spp.bcd, "single") #using single (nearest neighbor) linkage
+plot(spp.clust.sing1, cex=0.8) #so many groups
+
+spp.clust.comp1 <- hclust(spp.bcd, "complete") #using complete (farthest neighbor) linkage
+plot(spp.clust.comp1, cex=0.8) #8-12 clusters
+
+#plot dendrograms side by side
+par(mfrow=c(1,2))
+plot(spp.clust.sing1, cex=0.5)
+plot(spp.clust.comp1, cex=0.5)
+par(mfrow=c(1,1))
+
+##flexible beta method
+spp.clust.beta1<-agnes(spp.bcd, method="flexible", par.method=0.625)#par.method as 0.625 is equivalent to beta -0.25
+spp.clust.beta1<-as.hclust(spp.clust.beta1)#match format of hclust
+plot(spp.clust.beta1, cex=0.8) #6-8 clusters
+
+##from dendrogram, define groups, either by specifying k (number of groups desired) or
+#by specifying h=height where to slice
+spp.clust.beta1.h1.8 <- cutree(spp.clust.beta1, h=1.8)
+spp.clust.beta1.h1.8 #6 groups
+
+spp.clust.beta.k4<-cutree(spp.clust.beta, k=6)
+spp.clust.beta.k4
+
+#loop calculates a df with cluster membership from k=2 to k=20
+clustmem1<-c()
+for (i in 2:20){
+  temp.clust<-cutree(spp.clust.beta1,k=i)
+  clustmem1<-cbind(clustmem1,temp.clust)
+}
+clustmem1<-data.frame(clustmem1)
+colnames(clustmem1)<-paste("clust",c(2:20),sep="")
+clustmem1
+
+#cluster membership can be treated like a categorical variable
+May_all<-arrange(traits, treatment, shelterBlock)
+boxplot(May_all$ANPPgm~clustmem1$clust6)
+boxplot(May_all$RaoQ~clustmem1$clust6)
+boxplot(May_all$CWM.Ht~clustmem1$clust6)
+
 
 May_all_XC$clust4<-clustmem$clust4
 May_all_XC$clust3<-clustmem$clust3
-ggplot(data=May_all_XC, aes(y=ANPPgm, x=treatment, color=as.factor(clust4)))+
-  geom_boxplot()
+May_all_XC$clust2<-clustmem$clust2
+ggplot(data=May_all_XC, aes(y=Avena, x=as.factor(clust2), fill=as.factor(clust2)))+
+  geom_boxplot()+
+  theme_classic(base_size = 14)+
+  scale_fill_manual(values = c("gray50", "red"))+
+  xlab("Cluster") +
+  ylab("Avena barbata (% cover)")
+
+ggplot(data=May_all_XC, aes(y=RaoQ, x=as.factor(clust2), fill=as.factor(clust2)))+
+  geom_boxplot()+
+  theme_classic(base_size = 14)+
+  scale_fill_manual(values = c("gray50", "red"))+
+  xlab("Cluster") +
+  ylab("Rao's Q")
+
+ggplot(data=May_all_XC, aes(y=RaoQ, x=as.factor(clust2), fill=as.factor(treatment)))+
+  geom_boxplot()+
+  theme_classic(base_size = 14)+
+  #scale_fill_manual(values = c("gray50", "red"))+
+  xlab("Cluster") +
+  ylab("Rao's Q")
+
+ggplot(data=May_all_XC, aes(y=nbsp, x=as.factor(clust2), fill=as.factor(clust2)))+
+  geom_boxplot()+
+  theme_classic(base_size = 14)+
+  scale_fill_manual(values = c("gray50", "red"))+
+  xlab("Cluster") +
+  ylab("Number of species")
+  
 
 #overlay cluster membership on nmds ordination
 plot(spp.mds2, choices=c(1,2), type="n")
@@ -132,13 +331,13 @@ xc.plot4 <- ordiplot(spp.mds2,choices=c(1,2), type = "none", xlim=c(-1.5,1.5), y
 cols <- rep(c("sienna","royalblue2","lightsteelblue3", "peachpuff2"), each = 12) 
 cols1 <- rep(c("sienna","royalblue2","lightsteelblue3", "peachpuff2"), each = 1) 
 cols2 <- rep(c("sienna","royalblue2","lightsteelblue3", "peachpuff2"), each = 4) 
-shapes <- rep(c(15, 3, 17), each=1) #shapes on year
-shapes1 <- rep(c(15, 3, 17), each=1) #shapes on year
+shapes <- rep(c(15, 3, 17, 19), each=12) #shapes on trt
+shapes1 <- rep(c(15, 3, 17, 19), each=1) #shapes on trt
 points(spscoresall_2$NMDS1,spscoresall_2$NMDS2,col=clustmem$clust4,pch=shapes, cex=1.2)#Plot the ordination points 
 text(spp.mds2, display = "species", cex=0.4, col="grey30") #label species
 ordiarrows(spp.mds2, groups=TB, order.by=Year2, label=F, col=cols2)
 legend("topright",legend=levels(data2$treatment), col=cols1, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
-legend("bottomright",legend=levels(as.factor(data2$year)), col="black", pch=shapes1, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
+legend("bottomright",legend=levels(as.factor(data2$treatment)), col="black", pch=shapes1, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
 
 #clustmem is a dataframe with columns indicating group membership at different numbers of clusters
 #now create a dataframe showing how many significant indicator species at each clustering level
