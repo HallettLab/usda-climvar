@@ -224,16 +224,16 @@ plot(envvec3, p.max=0.10, col="green3")
 plot <- ordiplot(trrda,choices=c(1,2), type = "none")   #Set up the plot
 colsT2 <- rep(c("sienna","royalblue2","peachpuff2", "lightsteelblue1"), each = 12) #color based on drought treatment
 cols1 <- rep(c("sienna","royalblue2","peachpuff2", "lightsteelblue1"))
-shapes <- rep(c(15, 8, 21,17 ), each=3) #shapes on shelterBlock
-shapes1 <- rep(c(15,8,21, 17), each = 1)
-points(siteout$PC1,siteout$PC2,col=colsT2,pch=shapes) 
+shapes <- rep(c(15, 3, 17, 19), each=12) #shapes on trt
+shapes1 <- rep(c(15, 3, 17, 19), each=1)
+points(siteout$PC1,siteout$PC2,col=May_all_XC$clust2,pch=shapes) 
 text(trrda, display = "species", cex=0.9, col="grey40") #label species
 plot(envvec3, p.max=0.10, col="red", cex=0.9)
 plot(envvec, p.max=0.02, col= "seagreen", cex=0.6)
 # add legend for treatment
-legend("topleft",legend=levels(data2_B$treatment), col=cols1, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
+legend("topleft",legend=levels(as.factor(May_all_XC$clust2)), col=c("black","red"), pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
 # add legend for year
-legend("bottomleft",legend=levels(data2$shelterBlock), col="black", pch=shapes1, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
+legend("bottomleft",legend=levels(data2$treatment), col="black", pch=shapes1, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
 help(ordiplot)
 
 #note: this section of code from http://www.sthda.com/english/articles/31-principal-component-methods-in-r-practical-guide/112-pca-principal-component-analysis-essentials/
