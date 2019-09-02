@@ -1,6 +1,6 @@
-veg <- read.csv("~/Dropbox/ClimVar/DATA/Plant_composition_data/Cover/Cover_CleanedData/ClimVar_2015_species-cover_wide.csv", header = TRUE)
-traits <- read.csv("~/Dropbox/ClimVar/DATA/Plant_composition_data/Traits/Traits_GHscreening_Brad/BradTraits_Cleaned.csv", header = TRUE)
-BNPP <- read.csv("~/Dropbox/ClimVar/DATA/Plant_composition_data/BNPP/BNPP_CleanedData/BNPP_MayHarvest_2015.csv", header = TRUE)
+veg <- read.csv("./Dropbox/ClimVar/DATA/Plant_composition_data/Cover/Cover_CleanedData/ClimVar_2015_species-cover_wide.csv", header = TRUE)
+traits <- read.csv("./Dropbox/ClimVar/DATA/Plant_composition_data/Traits/Traits_GHscreening_Brad/BradTraits_Cleaned.csv", header = TRUE)
+BNPP <- read.csv("./Dropbox/ClimVar/DATA/Plant_composition_data/BNPP/BNPP_CleanedData/BNPP_MayHarvest_2015.csv", header = TRUE)
 
 library(tidyverse)
 library(FD)
@@ -43,6 +43,7 @@ results <- dbFD(tr, comp, corr="cailliez")
 results <- as.data.frame(results) %>%
   tbl_df()
 Div <- cbind(veg_keys, results) #combine with keys
+write.csv(Div, "Belowground_CWM_traits.csv")
 
 #standardize Div dataset
 library(vegan)
@@ -84,7 +85,11 @@ stand_joined <- stand_Div %>%
 ggplot(data = joined, aes(x=RaoQ, y = agg_BNPP, col = subplot)) +
   geom_point() +
   geom_smooth(method = lm, size = 1, se = FALSE, fullrange = TRUE)+
-  theme_classic()
+  theme_bw() +
+  annotate("text", x = 1, y = 400, label = "R2 = 0.001", size = 4, color = "#F8766D") +
+  annotate("text", x = 5, y = 450, label = "R2 = 0.122", size = 4, color = "#00BFC4") +
+  annotate("text", x = 5, y = 250, label = "R2 = 0.011", size = 4, color = "#00ba38") +
+  labs(y = "BNPP g/m2 depth 0-30 cm", col = "treatment")
 #subset by subplot
 both <- joined %>%
   filter(subplot == "B")
@@ -128,7 +133,7 @@ summary(fit7)
 
 ###Relationships bw CWM of five root traits and BNPP
 library(ggpubr)
-p1 <- ggplot(data = joined, aes(x = CWM.Dens, y = agg_BNPP, col = subplot)) +
+p1 <- ggplot(data = joined, aes(x = CWM.Dens, y = agg_BNPP)) +
   geom_point() +
   theme_classic() +
   xlab("CWM Root Density") +
@@ -136,7 +141,7 @@ p1 <- ggplot(data = joined, aes(x = CWM.Dens, y = agg_BNPP, col = subplot)) +
   labs(y= NULL) +
   theme(legend.position="none")
 
-p2 <- ggplot(data = joined, aes(x = CWM.SRLF, y = agg_BNPP, col = subplot)) +
+p2 <- ggplot(data = joined, aes(x = CWM.SRLF, y = agg_BNPP)) +
   geom_point() +
   theme_classic() +
   xlab("CWM SRLF") +
@@ -144,7 +149,7 @@ p2 <- ggplot(data = joined, aes(x = CWM.SRLF, y = agg_BNPP, col = subplot)) +
   labs(y= NULL) +
   theme(legend.position= "none")
 
-p3 <- ggplot(data = joined, aes(x = CWM.SRLC, y = agg_BNPP, col = subplot)) +
+p3 <- ggplot(data = joined, aes(x = CWM.SRLC, y = agg_BNPP)) +
   geom_point() +
   theme_classic() +
   xlab("CWM SRLC") +
@@ -152,7 +157,7 @@ p3 <- ggplot(data = joined, aes(x = CWM.SRLC, y = agg_BNPP, col = subplot)) +
   labs(y= NULL) +
   theme(legend.position = "none")
 
-p4 <- ggplot(data = joined, aes(x = CWM.DiamC, y = agg_BNPP, col = subplot)) +
+p4 <- ggplot(data = joined, aes(x = CWM.DiamC, y = agg_BNPP)) +
   geom_point() +
   theme_classic() +
   xlab("CWM Diameter Coarse") +
@@ -160,7 +165,7 @@ p4 <- ggplot(data = joined, aes(x = CWM.DiamC, y = agg_BNPP, col = subplot)) +
   labs(y= NULL) +
   theme(legend.position = "none")
 
-p5 <- ggplot(data = joined, aes(x = CWM.PropF, y = agg_BNPP, col = subplot)) +
+p5 <- ggplot(data = joined, aes(x = CWM.PropF, y = agg_BNPP)) +
   geom_point() +
   theme_classic() +
   xlab("CWM Proportion of Fine") +
@@ -170,9 +175,9 @@ p5 <- ggplot(data = joined, aes(x = CWM.PropF, y = agg_BNPP, col = subplot)) +
 
 figure <- ggarrange(p1, p2, p3, p4, p5,
           ncol =3, nrow =2, common.legend = TRUE,
-          align = "v",labels = c("A", "B", "C", "D", "E"))
+          align = "v",labels = c("a)", "b)", "c)", "d)", "e)"))
 annotate_figure(figure, 
-                left = text_grob("Belowground biomass production (soil 0-30 cm)", rot = 90))
+                left = text_grob("BNPP g/m2 depth 0-30 cm", rot = 90))
 
 #Regression BNPP ~ CWM.Dens
 Dens_all <- lm(agg_BNPP ~ CWM.Dens, joined)
@@ -292,7 +297,7 @@ stand_rao <- decostand(rao, "standardize")
 stand_rao_plot <- as.data.frame(cbind(Dens_joined[,2:3],stand_rao))
 
 #Plot BNPP vs Raos Q of each trait
-f1 <- ggplot(data = Dens_joined, aes(x = RaoQ, y = agg_BNPP, col = subplot)) +
+f1 <- ggplot(data = Dens_joined, aes(x = RaoQ, y = agg_BNPP)) +
   geom_point() +
   theme_classic() +
   xlab("FD Root Density") +
@@ -300,7 +305,7 @@ f1 <- ggplot(data = Dens_joined, aes(x = RaoQ, y = agg_BNPP, col = subplot)) +
   labs(y= NULL) +
   theme(legend.position="none")
 
-f2 <- ggplot(data = SRLF_joined, aes(x = RaoQ, y = agg_BNPP, col = subplot)) +
+f2 <- ggplot(data = SRLF_joined, aes(x = RaoQ, y = agg_BNPP)) +
   geom_point() +
   theme_classic() +
   xlab("FD SRLF") +
@@ -308,7 +313,7 @@ f2 <- ggplot(data = SRLF_joined, aes(x = RaoQ, y = agg_BNPP, col = subplot)) +
   labs(y= NULL) +
   theme(legend.position="none")
 
-f3 <- ggplot(data = SRLC_joined, aes(x = RaoQ, y = agg_BNPP, col = subplot)) +
+f3 <- ggplot(data = SRLC_joined, aes(x = RaoQ, y = agg_BNPP)) +
   geom_point() +
   theme_classic() +
   xlab("FD SRLC") +
@@ -316,7 +321,7 @@ f3 <- ggplot(data = SRLC_joined, aes(x = RaoQ, y = agg_BNPP, col = subplot)) +
   labs(y= NULL) +
   theme(legend.position="none")
 
-f4 <- ggplot(data = DiamC_joined, aes(x = RaoQ, y = agg_BNPP, col = subplot)) +
+f4 <- ggplot(data = DiamC_joined, aes(x = RaoQ, y = agg_BNPP)) +
   geom_point() +
   theme_classic() +
   xlab("FD Diameter Coarse") +
@@ -324,7 +329,7 @@ f4 <- ggplot(data = DiamC_joined, aes(x = RaoQ, y = agg_BNPP, col = subplot)) +
   labs(y= NULL) +
   theme(legend.position="none")
 
-f5 <- ggplot(data = PropF_joined, aes(x = RaoQ, y = agg_BNPP, col = subplot)) +
+f5 <- ggplot(data = PropF_joined, aes(x = RaoQ, y = agg_BNPP)) +
   geom_point() +
   theme_classic() +
   xlab("FD Proportion Fine") +
@@ -334,9 +339,9 @@ f5 <- ggplot(data = PropF_joined, aes(x = RaoQ, y = agg_BNPP, col = subplot)) +
 
 figure2 <- ggarrange(f1, f2, f3, f4, f5,
                     ncol =3, nrow =2, common.legend = TRUE,
-                    labels = c("A", "B", "C", "D", "E"))
+                    labels = c("a)", "b)", "c)", "d)", "e)"))
 annotate_figure(figure2, 
-                left = text_grob("Belowground biomass production (soil 0-30 cm)", rot = 90))
+                left = text_grob("BNPP g/m2 depth 0-30 cm", rot = 90))
 
 #subset by subplot
 Dens_both <- Dens_joined %>%
@@ -416,26 +421,5 @@ summary(FDPropF_forb) #not significant
 FDPropF_grass <- lm(agg_BNPP ~ RaoQ, PropF_grass)
 summary(FDPropF_grass ) #not significant
 
-#Stepwise regression of BNPP ~ ind RaoQ
-stand_rao_both <- stand_rao_plot %>%
-  filter(subplot == "B")
-stand_rao_forb <- stand_rao_plot %>%
-  filter(subplot == "F")
-stand_rao_grass <- stand_rao_plot %>%
-  filter(subplot == "G")
 
-model4 <- lm(BNPP ~  SRLFRao, stand_rao)
-summary(model4)
-AIC(model4)
 
-model5 <- lm(BNPP ~ DensRao +  DiamCRao , stand_rao_both)
-summary(model5)
-AIC(model5)
-
-model6 <- lm(BNPP ~  DiamCRao , stand_rao_forb)
-summary(model6)
-AIC(model6)
-
-model7 <- lm(BNPP ~  DensRao, stand_rao_grass)
-summary(model7)
-AIC(model7)
