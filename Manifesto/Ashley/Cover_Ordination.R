@@ -34,7 +34,9 @@ data <- tibble::rowid_to_column(data, "subplot")
 #LTM.env2 <-LTM.env[,-c(1:16)]
 ###standardize the environmental variables (scale function converts to z-scores)
 #LTM.env.z <- data.frame(scale(LTM.env2))
-
+soil<-read.csv ("~/Dropbox/ClimVar/DATA/Soil Extracts/Soil_CleanedData/ClimVar_soil_2015.csv")
+soil_all<- soil %>% filter (subplot=="XC" | subplot =="G" | subplot == "B" | subplot =="F", Depth == "1")  %>% 
+  arrange(treatment, shelterBlock, subplot) #arrange so all files used in PCA match
 
 Treatment<-data[,4]
 Year<-data[,3]
@@ -173,7 +175,7 @@ ordirgl (spp.mds, col=colb1)
 ##################
 
 data2<- cover %>% dplyr::select(-X, -species, -genus, -status, -func, -func2) %>% 
-  filter(subplot=="XC") %>% spread(species_name, cover) %>% arrange(treatment) 
+  filter(subplot=="XC") %>% spread(species_name, cover) %>% arrange(treatment, shelterBlock) 
 data2$ID <- seq.int(nrow(data2))
 data2$TB<-paste(data2$treatment,data2$shelterBlock,sep=".")
 data2<-data2 %>% dplyr::select(-Unknown)
@@ -225,7 +227,7 @@ ordiplot(spp.mds0_2)
 #rotation of axes to maximize variance of site scores on axis 1
 #calculate species scores based on weighted averaging
 
-spp.mds2<-metaMDS(cover.relrow2, trace = T, autotransform=F, trymax=999, k=2) #runs several with different starting configurations
+spp.mds2<-metaMDS(cover.relrow2, trace = T, autotransform=F, trymax=999, k=4) #runs several with different starting configurations
 
 #trace= TRUE will give output for step by step what its doing
 #default is 2 dimensions, can put k=4 for 4 dimensions
@@ -257,7 +259,6 @@ text(spp.mds2, display = "species", cex=0.5, col=colspec) #label species
 legend("bottomright",legend=levels(Treatment2), col=cols1, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
 # add legend for year
 legend("topright",legend=levels(as.factor(as.character(Year2))), col="black", pch=shapes, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
-help(ordiplot)
 
 #plots colored based on year
 xc.plot2 <- ordiplot(spp.mds2,choices=c(1,2), type = "none")   #Set up the plot
@@ -298,26 +299,26 @@ pairwise.perm.manova(spp.bcd2, data2$shelterBlock, nperm=999)
 
 ##Creating an ordination plot with succession vectors
 xc.plot4 <- ordiplot(spp.mds2,choices=c(1,2), type = "none", xlim=c(-1.5,1.5), ylim=c(-1.5,1.5))   #Set up the plot
-cols <- rep(c("sienna","royalblue2","lightsteelblue3", "peachpuff2"), each = 12) 
-cols1 <- rep(c("sienna","royalblue2","lightsteelblue3", "peachpuff2"), each = 1) 
-cols2 <- rep(c("sienna","royalblue2","lightsteelblue3", "peachpuff2"), each = 4) 
-shapes <- rep(c(15, 3, 17, 19), each=3) #shapes on block
-shapes1 <- rep(c(15, 3, 17, 19), each=1) #shapes on block
+cols <- rep(c("sienna","royalblue2", "peachpuff2","lightsteelblue3"), each = 12) 
+cols1 <- rep(c("sienna","royalblue2", "peachpuff2","lightsteelblue3"), each = 1) 
+cols2 <- rep(c("sienna","royalblue2", "peachpuff2","lightsteelblue3"), each = 4) 
+shapes <- rep(c(15, 18, 17, 19), each=12) #shapes on block
+shapes1 <- rep(c(15, 18, 17, 19), each=1) #shapes on block
 points(spscoresall_2$NMDS1,spscoresall_2$NMDS2,col=cols,pch=shapes, cex=1.2)#Plot the ordination points 
 text(spp.mds2, display = "species", cex=0.4, col="grey30") #label species
 ordiarrows(spp.mds2, groups=TB, order.by=Year2, label=F, col=cols2)
 legend("topright",legend=levels(Treatment2), col=cols1, pch=19, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
-legend("bottomright",legend=levels(data2$shelterBlock), col="black", pch=shapes1, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
+legend("bottomright",legend=levels(data2$treatment), col="black", pch=shapes1, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
 
 #to color grasses and forbs labels:
 colspec<- rep(c("plum1", "plum1", "darkgreen", "palegreen", "palegreen", "palegreen", "palegreen", "palegreen", "palegreen", "palegreen", "palegreen", "plum1", "plum1", "plum1", "plum1","plum1", "palegreen", "palegreen", "plum1", "plum1", "plum1", "plum1", "plum1", "plum1", "plum1", "palegreen", "palegreen", "palegreen", "plum1", "plum1", "palegreen", "plum1", "plum1", "plum1", "palegreen", "plum1", "plum1", "plum1", "plum1", "plum1", "plum1", "plum1", "plum1", "plum1", "palegreen", "plum1", "plum4", "plum4", "plum4", "plum4", "plum4", "plum4", "plum1", "plum4", "palegreen","palegreen", "plum1"))
 ##Creating an ordination plot with succession vectors
 xc.plot4 <- ordiplot(spp.mds2,choices=c(1,2), type = "none", xlim=c(-1.5,1.5), ylim=c(-1.5,1.5))   #Set up the plot
-cols <- rep(c("sienna","royalblue2","lightsteelblue3", "peachpuff2"), each = 12) 
-cols1 <- rep(c("sienna","royalblue2","lightsteelblue3", "peachpuff2"), each = 1) 
-cols2 <- rep(c("sienna","royalblue2","lightsteelblue3", "peachpuff2"), each = 4) 
-shapes <- rep(c(15, 3, 17, 19), each=3) #shapes on block
-shapes1 <- rep(c(15, 3, 17, 19), each=1) #shapes on block
+cols <- rep(c("sienna","royalblue2", "peachpuff2","lightsteelblue3"), each = 12) 
+cols1 <- rep(c("sienna","royalblue2", "peachpuff2","lightsteelblue3"), each = 1) 
+cols2 <- rep(c("sienna","royalblue2", "peachpuff2","lightsteelblue3"), each = 4) 
+shapes <- rep(c(15, 18, 17, 19), each=3) #shapes on block
+shapes1 <- rep(c(15, 18, 17, 19), each=1) #shapes on block
 points(spscoresall_2$NMDS1,spscoresall_2$NMDS2,col=cols,pch=shapes, cex=1.2)#Plot the ordination points 
 text(spp.mds2, display = "species", cex=0.7, col=colspec) #label species
 ordiarrows(spp.mds2, groups=TB, order.by=Year2, label=F, col=cols2)
@@ -355,9 +356,54 @@ for (i in 1:length(tplot_levels2a)){
   lengths
 }
 
+veclength<-read.csv("~/Desktop/veclength_xc.csv")
 
+ggplot(data=veclength, aes(x=treatment, y=veclength, fill=treatment))+
+  geom_boxplot()+
+  theme_classic(base_size=14)+
+  theme(legend.position = "none")+
+  labs(x="Rainfall Treatment", y = "Vector Length")+
+  scale_fill_manual(values = c("sienna","royalblue2","peachpuff", "lightsteelblue1"))
 
-################################
+ggplot(data=veclength, aes(x=shelterBlock, y=veclength, fill=shelterBlock))+
+  geom_boxplot()
+
+library(nlme)
+v<-lme(veclength ~ treatment, random=~1|shelterBlock, veclength, na.action=na.exclude)
+summary(v)
+anova(v)
+r.squaredGLMM(v) 
+qqnorm(residuals(v))
+qqline(residuals(v))
+shapiro.test(residuals(v))
+#normal
+jLS<-lsmeans(v, ~treatment)
+contrast(jLS, "pairwise") 
+
+boxplot(veclength$veclength~veclength$treatment)
+
+##From xc cluster analysis
+clust_xc<-May_all_XC %>% group_by(treatment, shelterBlock) %>% filter(year==2015) %>% summarize(clust=mean(clust2))
+veclength2<-merge(clust_xc,veclength) %>%filter(clust==1|clust==2)
+
+v2<-lme(veclength2 ~ clust, random=~1|treatment/shelterBlock, veclength, na.action=na.exclude)
+summary(v2)
+anova(v2)
+r.squaredGLMM(v2) 
+qqnorm(residuals(v2))
+qqline(residuals(v2))
+shapiro.test(residuals(v2))
+#normal
+ 
+ggplot(data=veclength2, aes(x=as.factor(clust), y=veclength, fill=as.factor(clust)))+
+  geom_boxplot()+
+  theme_classic(base_size=14)+
+  #theme(legend.position="none")+
+  labs(x="Cluster", y="Vector Length")+
+  annotate("text", x= c("1", "2"), y = c(1.5, 1.5), label = c("a", "b"), color = "black")+
+  #facet_wrap(~clust)+
+  scale_fill_manual(values = c("darkgrey","red"))
+ ################################
 ###NMDS to compare grass-forb-both treatments
 ################################
 data3<- cover %>% dplyr::select(-X, -species, -genus, -status, -func, -func2) %>% 

@@ -1,0 +1,196 @@
+library(vegan)
+
+## PCA for a sense of trait groups; visualized by orgin and functional group ##
+## Uses "trait.dat" for trait_cleaning.R
+
+# Select out correlated traits(MD, actual_area, Total) and those I don't have as much faith in (RMF, RGR)
+all_trait2 <- all_trait %>%
+  dplyr::select(-MD, - Total, - actual_area, -RMF, - RGR, -Seed.mass.grams, -C.N.Ratio)
+all_trait2 <- all_trait2[-c(42:77), ]
+
+# Remove legumes from analysis if desired
+#trait.dat2 <- subset(trait.dat2, GF != "L")
+#trait.dat2$GF <- as.character(trait.dat2$GF)
+#trait.dat2$GF <- as.factor(trait.dat2$GF)
+
+# matrix for PCA
+traits <- as.matrix(all_trait2[,c(6:ncol(all_trait2))])
+row.names(traits) <- all_trait2$ID
+             
+# run PCA
+myrda <- rda(na.omit(traits), scale = TRUE)
+
+# extract values
+siteout <- as.data.frame(scores(myrda, choices=c(1,2), display=c("sites")))
+siteout$ID<-rownames(siteout)
+siteout$name <- siteout$ID
+
+enviroout<-as.data.frame(scores(myrda, choices=c(1,2), display=c("species")))
+enviroout$type<-"traits"
+enviroout$name<-rownames(enviroout)
+
+# merge PC axes with trait data
+tog <- left_join(all_trait2, siteout) %>%
+  mutate(func = paste(Origin, GF, sep = "_"))
+
+# Remove legumes from legend key (if running PCA without legumes)
+#tog <- subset(tog, GF != "L")
+
+#pdf("TraitPCA.pdf", width = 9, height = 7.5)
+#pdf("TraitPCA_noLegumes.pdf", width = 9, height = 7.5)
+
+ggplot(tog, aes(x=PC1, y=PC2))+ 
+  geom_hline(aes(yintercept=0), color="grey") + 
+  geom_vline(aes(xintercept=0), color="grey") +
+  geom_text(aes(label = name, color = func), size = 5) +
+ # scale_color_manual(values = c("grey20", "grey70")) +
+  geom_segment(data = enviroout,
+               aes(x = 0, xend =  PC1,
+                   y = 0, yend =  PC2),
+               arrow = arrow(length = unit(0.25, "cm")), colour = "black") + #grid is required for arrow to work.
+  geom_text(data = enviroout,
+            aes(x=  PC1*1.2, y =  PC2*1.2, #we add 10% to the text to push it slightly out from arrows
+                label = name), #otherwise you could use hjust and vjust. I prefer this option
+            size = 6,
+            hjust = 0.5, 
+            color="black") + 
+  theme_bw() +theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),
+                    text=element_text(size = 20))+ 
+  xlab(paste("Axis 1 (",sprintf("%.1f",myrda$CA$eig["PC1"]/myrda$tot.chi*100,3),"%)",sep="")) +
+  ylab(paste("Axis 2 (",sprintf("%.1f",myrda$CA$eig["PC2"]/myrda$tot.chi*100,3),"%)",sep="")) 
+
+ #dev.off()
+
+setwd("~/Desktop")
+cover15_fd2<-read.csv("cover_fd.csv") %>% dplyr::select(-X)
+#keep species that we have trait data for
+cover15_fd3 <- cover15_fd2 %>% dplyr::select(ACHMIL, AVEBAR, AVEFAT, BRADIS, BRODIA, BROHOR, BROMAD, CENSOL, CYNDAC, CYNECH, EROBOT, HORMUR,LACSER, LOLMUL, TAECAP,TRIHIR,VULMYU)
+cover15_fd3<-data.matrix(cover15_fd3)
+
+#remove excess rows from PCA scores
+siteout <- siteout[-c(15), ]
+siteout<- siteout %>% dplyr::select(-ID, -name)
+
+siteout_fd<-dbFD (siteout, cover15_fd3, w.abun = T, stand.x = F,
+                 calc.FRic = TRUE, m = "max", stand.FRic = FALSE,
+                 scale.RaoQ = FALSE, calc.FGR = FALSE, clust.type = "ward",
+                 km.inf.gr = 2, km.sup.gr = nrow(x) - 1, km.iter = 100, calc.CWM = TRUE,
+                 calc.FDiv = TRUE, print.pco = FALSE, messages = TRUE)
+siteout_fd<-as.data.frame(siteout_fd)
+
+traits_2015_2<- arrange(traits_2015, treatment, shelterBlock)
+siteout_fd$ANPPgm<-traits_2015_2$ANPPgm
+siteout_fd$shelterBlock<-traits_2015_2$shelterBlock
+siteout_fd$subplot<-traits_2015_2$subplot
+siteout_fd$treatment<-traits_2015_2$treatment
+
+ggplot(data=siteout_fd, aes(x=CWM.PC1, y=ANPPgm, group=subplot, color=subplot))+
+  stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) +
+  geom_point()+
+  theme_bw()+
+  #xlim(40,100)+
+  #ylim(0,100)
+  geom_smooth(method="lm", formula= y ~ x, se=FALSE, color="black", aes(group=1))
+
+ggplot(data=siteout_fd, aes(x=CWM.PC2, y=ANPPgm, group=subplot, color=subplot))+
+  stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) +
+  geom_point()+
+  theme_bw()+
+  #xlim(40,100)+
+  #ylim(0,100)
+  geom_smooth(method="lm", formula= y ~ x, se=FALSE, color="black", aes(group=1))
+
+siteout_fd<-merge(siteout_fd, BNPP1)
+
+ggplot(data=siteout_fd, aes(x=CWM.PC1, y=agg_BNPP, group=subplot, color=subplot))+
+  stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) +
+  geom_point()+
+  theme_bw()+
+  #xlim(40,100)+
+  #ylim(0,100)
+  geom_smooth(method="lm", formula= y ~ x, se=FALSE, color="black", aes(group=1))
+
+ggplot(data=siteout_fd, aes(x=CWM.PC2, y=agg_BNPP, group=subplot, color=subplot))+
+  stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) +
+  geom_point()+
+  theme_bw()+
+  #xlim(40,100)+
+  #ylim(0,100)
+  geom_smooth(method="lm", formula= y ~ x, se=FALSE, color="black", aes(group=1))
+
+
+##do again but for aboveground traits only
+
+# run PCA
+myrda2 <- rda(na.omit(abovetr15_fd2), scale = TRUE)
+
+# extract values
+siteout2 <- as.data.frame(scores(myrda2, choices=c(1,2), display=c("sites")))
+siteout2$ID<-rownames(siteout2)
+siteout2$name <- siteout2$ID
+
+enviroout2<-as.data.frame(scores(myrda2, choices=c(1,2), display=c("species")))
+enviroout2$type<-"traits"
+enviroout2$name<-rownames(enviroout2)
+
+# merge PC axes with trait data
+tog <- left_join(abovetr15, siteout2) %>%
+  mutate(func = paste(Origin, GF, sep = "_"))
+
+ggplot(tog, aes(x=PC1, y=PC2))+ 
+  geom_hline(aes(yintercept=0), color="grey") + 
+  geom_vline(aes(xintercept=0), color="grey") +
+  geom_text(aes(label = name, color = func), size = 5) +
+  # scale_color_manual(values = c("grey20", "grey70")) +
+  geom_segment(data = enviroout2,
+               aes(x = 0, xend =  PC1,
+                   y = 0, yend =  PC2),
+               arrow = arrow(length = unit(0.25, "cm")), colour = "black") + #grid is required for arrow to work.
+  geom_text(data = enviroout2,
+            aes(x=  PC1*1.2, y =  PC2*1.2, #we add 10% to the text to push it slightly out from arrows
+                label = name), #otherwise you could use hjust and vjust. I prefer this option
+            size = 6,
+            hjust = 0.5, 
+            color="black") + 
+  theme_bw() +theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),
+                    text=element_text(size = 20))+ 
+  xlab(paste("Axis 1 (",sprintf("%.1f",myrda2$CA$eig["PC1"]/myrda2$tot.chi*100,3),"%)",sep="")) +
+  ylab(paste("Axis 2 (",sprintf("%.1f",myrda2$CA$eig["PC2"]/myrda2$tot.chi*100,3),"%)",sep="")) 
+
+
+#keep species that we have trait data for
+cover15_fd4 <- cover15_fd2 %>% dplyr::select(AVEBAR, AVEFAT, BRADIS, BRIMIN, BRODIA, BROHOR, BROMAD, CARPYC, CERGLO, CLAPUR, CYNECH, EROBOT, EROMOS, FILGAL, GALPAR,HORMAR, HORMUR,HYPGLA, HYPRAD, LOLMUL, TAECAP,TORARV, TRIDUB,TRIHIR,TRISUB,VICSAT,VULBRO)
+cover15_fd4<-data.matrix(cover15_fd4)
+
+#remove excess rows from PCA scores
+#siteout2 <- siteout2[-c(15), ]
+siteout2<- siteout2 %>% dplyr::select(-ID, -name)
+
+siteout2_fd<-dbFD (siteout2, cover15_fd4, w.abun = T, stand.x = F,
+                  calc.FRic = TRUE, m = "max", stand.FRic = FALSE,
+                  scale.RaoQ = FALSE, calc.FGR = FALSE, clust.type = "ward",
+                  km.inf.gr = 2, km.sup.gr = nrow(x) - 1, km.iter = 100, calc.CWM = TRUE,
+                  calc.FDiv = TRUE, print.pco = FALSE, messages = TRUE)
+siteout2_fd<-as.data.frame(siteout2_fd)
+
+
+siteout2_fd$ANPPgm<-traits_2015_2$ANPPgm
+siteout2_fd$shelterBlock<-traits_2015_2$shelterBlock
+siteout2_fd$subplot<-traits_2015_2$subplot
+siteout2_fd$treatment<-traits_2015_2$treatment
+
+ggplot(data=siteout2_fd, aes(x=CWM.PC1, y=ANPPgm, group=subplot, color=subplot))+
+  stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) +
+  geom_point()+
+  theme_bw()+
+  #xlim(40,100)+
+  #ylim(0,100)
+  geom_smooth(method="lm", formula= y ~ x, se=FALSE, color="black", aes(group=1))
+
+ggplot(data=siteout2_fd, aes(x=CWM.PC2, y=ANPPgm, group=subplot, color=subplot))+
+  stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) +
+  geom_point()+
+  theme_bw()+
+  #xlim(40,100)+
+  #ylim(0,100)
+  geom_smooth(method="lm", formula= y ~ x, se=FALSE, color="black", aes(group=1))

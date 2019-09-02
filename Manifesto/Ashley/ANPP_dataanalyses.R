@@ -49,7 +49,7 @@ ggplot(d=May_XC, aes(x=treatment, y=weight_g_m)) +
 
 May_XC$treatment2 <- as.character(May_XC$treatment)
 #Then turn it back into a factor with the levels in the correct order
-May_XC$treatment2 <- factor(May_XC$treatment2, levels = c("controlRain","springDry", "fallDry","consistentDry"))
+May_XC$treatment2 <- factor(May_XC$treatment2, levels = c("controlRain", "fallDry","springDry","consistentDry"))
 ggplot(d=May_XC, aes(x=treatment2, y=weight_g_m)) +
   theme_linedraw()+
   labs(x="rainfall treatment", y="ANPP g/m2")+
@@ -58,7 +58,7 @@ ggplot(d=May_XC, aes(x=treatment2, y=weight_g_m)) +
 
 ggplot(May_XC, aes(x = treatment2, y = weight_g_m)) + 
   geom_boxplot(aes(fill = treatment2)) + 
-  scale_fill_manual(values = c("royalblue2","lightsteelblue1", "peachpuff", "sienna"), guide = guide_legend(title = "Treatment")) +
+  scale_fill_manual(values = c("royalblue2", "peachpuff", "lightsteelblue1", "sienna"), guide = guide_legend(title = "Treatment")) +
   geom_jitter(position=position_jitter(0.2), aes(color=year)) +
   #geom_jitter(position=position_jitter(0.2), aes(color=May_XC$shelterBlock, shape=as.factor(year))) +
   scale_color_manual(values = c("gray80","gray50", "black"), guide = guide_legend(title = "Year")) +
@@ -72,10 +72,32 @@ ggplot(d=May_XC, aes(x=year, y=weight_g_m)) +
   geom_boxplot(aes(y=weight_g_m, fill=year), shape=16)+
   scale_fill_manual(values = c("gray99","gray80", "gray50"), guide = guide_legend(title = "Year")) +
   geom_jitter(position=position_jitter(0.2), aes(color=treatment2)) +
-  scale_color_manual(values = c("royalblue2","lightsteelblue1", "peachpuff", "sienna"), guide = guide_legend(title = "Treatment")) +
+  scale_color_manual(values = c("royalblue2", "peachpuff","lightsteelblue1", "sienna"), guide = guide_legend(title = "Treatment")) +
   labs(x="", y="ANPP g/m2")+
   annotate("text", x= c("2015", "2016","2017"), y = c(900, 975, 975), label = c("a", "b", "b"), color = "black") +
   theme_linedraw()
+
+m1<-lme(weight_g_m ~treatment*year, random=~1|shelterBlock, May_XC, na.action=na.exclude)
+summary(m1)
+anova(m1) #treatment is significant
+r.squaredGLMM(m1) #45% of variation explained by fixed effects, 59% by whole model (interannual variation?)
+qqnorm(residuals(m1))
+qqline(residuals(m1))
+shapiro.test(residuals(m1))
+#normally distributed, continue
+LS1<-lsmeans(m1, ~treatment*year)
+contrast(LS1, "pairwise")
+
+
+ggplot(d=May_XC, aes(x=year, y=weight_g_m, fill=treatment2)) +
+  geom_boxplot(aes(y=weight_g_m), shape=16)+
+  scale_fill_manual(values = c("royalblue2","lightsteelblue1", "peachpuff", "sienna"), guide = guide_legend(title = "Treatment")) +
+  #geom_jitter(position=position_jitter(0.2), aes(x=year, y=weight_g_m, color=treatment2)) +
+  #scale_color_manual(values = c("lightgrey", "lightgrey","lightgrey", "lightgrey")) +
+  labs(x="", y="ANPP g/m2")+
+  annotate("text", x= c("2015", "2016","2017"), y = c(900, 1000, 1000), label = c("a", "b", "b"), color = "black") +
+  annotate("segment", c(0.7, 1.7, 2.7), xend = c(1.3,2.3,3.3), c(875,975,975), yend = c(875,975,975))+
+  theme_classic()
 
 ##2. Does seasonality of rainfall affect forage production (H1)?
 ##Expect peak ANPP to be highest when rainfall occurs during peak season or consistently

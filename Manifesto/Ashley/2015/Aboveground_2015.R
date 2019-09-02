@@ -79,19 +79,23 @@ r.squaredGLMM(m3a)#32% of variation explained by fixed effects, 32% by whole mod
 qqnorm(residuals(m3a))
 qqline(residuals(m3a))
 shapiro.test(residuals(m3a)) #normal
-LS3a<-lsmeans(m3a, ~subplot)
+LS3a<-lsmeans(m3a, ~subplot*treatment)
 contrast(LS3a, "pairwise") #mixed plots have greater biomass than forb, but not grass
 
-ggplot(d=May_ANPP_2015_noXC, aes(x=treatment, y=weight_g_m, fill=treatment)) +
-  facet_wrap(~subplot)+
-  theme_linedraw()+
-  labs(x="drought treatment", y="ANPP g/m2")+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+May_ANPP_2015_noXC$treatment <- factor(May_ANPP_2015_noXC$treatment, levels = c("controlRain","springDry", "fallDry","consistentDry"))
+ggplot(d=May_ANPP_2015_noXC, aes(x=subplot, y=weight_g_m, fill=treatment)) +
+  #facet_wrap(~treatment)+
+  theme_classic()+
+  labs(fill = "Drought\nTreatment", x="Community Treatment", y="ANPP g/m2")+
+  theme(axis.text.x = element_text(angle = 0, hjust = 0.5))+
+  scale_fill_manual(values = c("#56B4E9","#999999","#E69F00","red")) +
+  annotate("text", x=c("B", "F", "G"), y= c(925,925, 925), label = c("a", "b", "ab"))+
   geom_boxplot(aes(y=weight_g_m), shape=16)
 
-ggplot(d=May_ANPP_2015_noXC, aes(x=subplot, y=weight_g_m, fill = treatment)) +
+ggplot(d=May_ANPP_2015_noXC, aes(x=subplot, y=weight_g_m, fill = subplot)) +
   theme_linedraw()+
   labs(x="composition treatment", y="ANPP g/m2")+
+  annotate("text", x= c("B", "F","G"), y = c(925,925, 925), label = c("a", "b", "ab"), color = "#999999") +
   geom_boxplot(aes(y=weight_g_m), shape=16)
 
 ###################

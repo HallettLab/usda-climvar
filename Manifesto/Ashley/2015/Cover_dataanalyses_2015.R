@@ -99,7 +99,7 @@ gfproportion_2015_noXC<-gfproportion_2015 %>% filter(subplot!="XC")
 ggplot((gfproportion_2015_noXC), aes(x=treatment, y = percentForb, fill=subplot)) + 
   geom_boxplot()
 
-a<-lme(percentForb ~ treatment, random=~1|shelterBlock/subplot, data=gfproportion_2015_noXC,
+a<-lme(percentForb ~ treatment*subplot, random=~1|shelterBlock, data=gfproportion_2015_noXC,
        contrasts=list(treatment=contr.treatment))
 
 summary(a) 
@@ -109,18 +109,18 @@ summary(glht(a,linfct=mcp(treatment="Tukey")), alternative="Bonferonni")
 
 
 gfproportion_graph_2015_noXC <- gfproportion_2015 %>%
-  group_by(treatment) %>% filter(subplot!="XC")%>%
+  group_by(treatment, subplot) %>% filter(subplot!="XC")%>%
   summarize(meanprop=mean(percentForb), seprop=sd(percentForb)/sqrt(length(percentForb)))
 
-ggplot(gfproportion_graph_2015_noXC, aes(x=treatment, y=meanprop)) + 
-  geom_bar(stat="identity", position="dodge", fill = "gray") + 
+ggplot(gfproportion_graph_2015_noXC, aes(x=treatment, y=meanprop, fill=subplot)) + 
+  geom_bar(stat="identity", position="dodge") + 
   theme_bw() + 
   geom_errorbar(aes(ymax = meanprop+seprop, ymin = meanprop-seprop), width=.25, position=position_dodge(width=0.9)) + 
   labs(x="Treatment", y="Percent forbs") +
   theme(text = element_text(size=20))
 
-ggplot(gfproportion_2015_noXC, aes(x=percentForb, y=totcover, color = treatment))+
-  geom_point() + geom_smooth(method = "lm")
+ggplot(gfproportion_2015_noXC, aes(x=percentForb, y=totcover, color = subplot))+
+  geom_point() + geom_smooth(method = "lm") #+facet_wrap(~treatment)
 
 ggplot(gfproportion_2015_noXC, aes(x=percentForb, y=totcover, color = treatment))+
   facet_grid(~subplot)+
@@ -637,6 +637,12 @@ cover.pa <- cover.Bio %>% mutate_each(funs(ifelse(.>0,1,0)), 1:57)
 May_2015$H <- diversity(cover.Bio)
 #calculate pielou's J
 May_2015$J <- May_2015$H/log(specnumber(cover.Bio))
+
+ggplot(data=May_2015, aes(y=weight_g_m, x=totcover, color=subplot))+
+  geom_point()+facet_wrap(~treatment)+geom_smooth(aes(group=1), color="black", method="lm", se=F)
+
+ggplot(data=May_2015, aes(y=weight_g_m, x=J, color=subplot))+
+  geom_point()+facet_wrap(~treatment)
 
 #make bray-curtis dissimilarity matrix
 spp.bcd <- vegdist(cover.relrow)
@@ -1182,7 +1188,7 @@ enviroout$name<-rownames(enviroout)
 # merge PC axes with trait data
 tog <- left_join(trait.dat2, siteout) 
 
-pdf("CompTraitPCA_2015.pdf", width = 9, height = 7.5)
+#pdf("CompTraitPCA_2015.pdf", width = 9, height = 7.5)
 
 ggplot(tog, aes(x=PC1, y=PC2))+ 
   geom_hline(aes(yintercept=0), color="grey") + 

@@ -1,5 +1,6 @@
 library(vegan)
 library(tidyverse)
+library(lsmeans)
 
 ###check trait differences
 #does functional diversity change with precipitation variability (drought vs. control) or seasonability (drought treatments)?
@@ -12,8 +13,8 @@ May_ANPP <- May_ANPP %>%filter( subplot!="C") %>% mutate(AvDom = if_else(Avena >
 May_ANPP$AvDom<-as.factor(as.character(May_ANPP$AvDom))
 May_all_XC <- May_ANPP %>% filter (subplot=="XC")
 
-ggplot(May_all_XC, aes(y=RaoQ, x=forbCover, color = treatment))+
-  facet_wrap(~as.factor(as.character(year)))+
+ggplot(May_all_XC, aes(y=ANPPgm, x=RaoQ, color = treatment))+
+  #facet_wrap(~as.factor(as.character(shelterBlock)))+
   geom_point()+
   geom_smooth(method="lm",se=F)
 #scale_colour_gradient(low="magenta", high="plum4")
@@ -22,14 +23,16 @@ gf_graph_grass <- May_all_XC %>%
   group_by(treatment, year) %>%
   summarize(Grass=mean(grassCover), GrassSE=sd(grassCover)/sqrt(length(grassCover)))
 
-gf_graph_forb <- May_all_XC %>%
+gf_graph_forb <- May_all_XC %>% 
   group_by(treatment, year) %>%
   summarize(Forb=mean(forbCover), ForbSE=sd(forbCover)/sqrt(length(forbCover)))
 
 gf_graph_all <- merge(gf_graph_grass, gf_graph_forb)
 gf_graph_all1 <- gf_graph_all %>% dplyr::select(-ForbSE,-GrassSE) %>% gather(func, cover, -treatment, -year)
-gf_graph_all2 <- gf_graph_all %>% dplyr::select(-Forb,-Grass) %>% gather(func2, SE, -treatment, -year)
-gf_graph_all <- merge(gf_graph_all1, gf_graph_all2)
+gf_graph_all2 <- gf_graph_all %>% dplyr::select(-Forb,-Grass) %>% gather(func2, SE, -treatment, -year) %>%
+  mutate(func = recode(func2, "GrassSE"= "Grass", "ForbSE"="Forb"))%>% dplyr::select(-func2)
+
+gf_graph_all <- merge(gf_graph_all1, gf_graph_all2) 
 
 ggplot(gf_graph_all, aes(x=as.factor(year), y=cover, group = func, color=func)) + 
   geom_errorbar(aes(ymax = cover+SE, ymin = cover-SE), width=.25) + 
@@ -41,7 +44,7 @@ ggplot(gf_graph_all, aes(x=as.factor(year), y=cover, group = func, color=func)) 
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 #does functional diversity differ by subplot or treatment?
-Fd<-lme(FDis ~ treatment*AvDom, random=~1|year/shelterBlock, May_all_XC, na.action=na.exclude)
+Fd<-lme(FDis ~ treatment, random=~1|year/shelterBlock, May_all_XC, na.action=na.exclude)
 summary(Fd)
 anova(Fd)#no effects of treatment on fdis or year on fdis
 r.squaredGLMM(Fd)
@@ -49,14 +52,26 @@ qqnorm(residuals(Fd))
 qqline(residuals(Fd))
 shapiro.test(residuals(Fd))
 #normal
-FdLS<-lsmeans(Fd, ~AvDom)
-contrast(FdLS, "pairwise") #no dif
+FdLS<-lsmeans(Fd, ~treatment)
+contrast(FdLS, "pairwise") # dif
 
-ggplot(May_all_XC, aes(x=as.factor(treatment), y=FDis, fill=AvDom))+
+#calculate mean productivity and variance of productivity and stability (=mean/variance)
+May_XC_s1<-May_all_XC %>% group_by(treatment, shelterBlock) %>%
+  summarise(meanw=mean(weight_g_m), varw=var(weight_g_m), stability=meanw/varw, propF=mean(propForb),meanfd=mean(RaoQ), mAvDom=mean(Avena))
+
+ggplot(May_all_XC, aes(x=as.factor(year), y=FDis, fill=as.factor(treatment)))+
   #facet_wrap(~treatment)+
   geom_boxplot()
 
-Rao<-lme(RaoQ ~ treatment*AvDom, random=~1|year/shelterBlock, May_all_XC, na.action=na.exclude)
+ggplot(May_XC_s1, aes(x=mAvDom, y=varw))+
+  geom_point()+
+  geom_smooth(method="lm", se=F)
+
+stab<-lm(stability~mAvDom, data=May_XC_s1)
+summary(stab)
+  
+
+Rao<-lme(RaoQ ~ treatment, random=~1|year/shelterBlock, May_all_XC, na.action=na.exclude)
 summary(Rao)
 anova(Rao)
 r.squaredGLMM(Rao) 
@@ -94,18 +109,53 @@ shapiro.test(residuals(Fd2))
 fd2LS<-lsmeans(Fd2, ~treatment)
 contrast(fd2LS, "pairwise") #no differences
 
-ggplot(May_all_XC, aes(x=shelterBlock, y=FDis))+
-  facet_wrap(~year)+
+ggplot(May_all_XC, aes(x=as.factor(year), y=FDis))+
+  facet_wrap(~shelterBlock)+
   geom_boxplot()
+ggplot(May_all_XC, aes(x=RaoQ, y=ANPPgm, color=shelterBlock, shape=treatment))+
+  geom_point()
 #block A has higher functional dissimilarity
-#if niche complementarity is in effect, we'd expect block A to have highest ecosystem function
+#if niche complementarity is in effect, we'd expect block A to have highest ecosystem function 
+# we'd expect block A to respond the least to drought (more resilience)
 #let's test if block A has highest FDis
+ggplot(May_all_XC, aes(x=treatment, y=ANPPgm))+
+  facet_wrap(~shelterBlock)+
+  geom_boxplot()
+
+ Rao_summary<- May_all_XC %>%
+  group_by(shelterBlock, treatment) %>%
+  summarize(Rao.M=mean(RaoQ), Rao.SE=sd(RaoQ)/sqrt(length(RaoQ)))
 
 
-ggplot(May_all_XC, aes(x=treatment, y=RaoQ, color=treatment))+
-  facet_wrap(~year)+
+ggplot(May_all_XC, aes(x=shelterBlock, y=RaoQ, color=shelterBlock))+
+  facet_wrap(~treatment)+
   geom_boxplot()+
   geom_smooth(method="lm", se=F)
+
+ggplot(May_all_XC, aes(x=shelterBlock, y=grassCover, color=shelterBlock))+
+  facet_wrap(~year*treatment)+
+  geom_boxplot()+
+  geom_smooth(method="lm", se=F)
+
+RQ<-lme(RaoQ ~ treatment*shelterBlock, random=~1|year, May_all_XC, na.action=na.exclude)
+summary(RQ)
+anova(RQ)# treatment effect
+r.squaredGLMM(RQ) #14% of variation explained by fixed effects, 19% by whole model
+qqnorm(residuals(RQ))
+qqline(residuals(RQ))
+shapiro.test(residuals(RQ))# normal
+rqLS<-lsmeans(RQ, ~shelterBlock)#block A has significantly higher RaoQ than other blocks
+contrast(rqLS, "pairwise") #no dif
+
+library(ARPobservation)
+May_all_A<-May_all_XC %>% filter(shelterBlock=="A")
+logRespRatio(observations = May_all_A$ANPPgm, phase = May_all_A$fall, base_level = "1")
+May_all_B<-May_all_XC %>% filter(shelterBlock=="B")
+logRespRatio(observations = May_all_B$ANPPgm, phase = May_all_B$fall, base_level = "1")
+May_all_C<-May_all_XC %>% filter(shelterBlock=="C")
+logRespRatio(observations = May_all_C$ANPPgm, phase = May_all_C$fall, base_level = "1")
+May_all_D<-May_all_XC %>% filter(shelterBlock=="D")
+Dlrr<-logRespRatio(observations = May_all_D$ANPPgm, phase = May_all_D$fall, base_level = "1")
 
 #which traits are prevalent in each community?
 trait_graph_all1 <- traits %>%
@@ -145,6 +195,7 @@ DC_graph<-ggplot(subset(trait_graph_all1, trait=="CWM.DiamC"), aes(x=year, y=CWM
   geom_errorbar(aes(ymax=CWM.M+CWM.SE, ymin=CWM.M-CWM.SE), color="black")+
   geom_point(cex=4)
 DC_graph
+
 
 #Height
 mHt<-lme(CWM.Ht ~ treatment*year, random=~1|shelterBlock, May_all_XC, na.action=na.exclude)
@@ -479,7 +530,7 @@ ggplot(tog, aes(x=PC1, y=PC2))+
   geom_hline(aes(yintercept=0), color="grey") + 
   geom_vline(aes(xintercept=0), color="grey") +
   geom_text(aes(label = name, color = treatment), size = 5) +
-  scale_color_manual(values = c("sienna","royalblue2","lightsteelblue3", "peachpuff2")) +
+  scale_color_manual(values = c("sienna","royalblue2", "peachpuff2","lightsteelblue3")) +
   geom_segment(data = enviroout,
                aes(x = 0, xend =  PC1,
                    y = 0, yend =  PC2),
