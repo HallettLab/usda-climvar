@@ -30,6 +30,24 @@ summary <- BNPP_traits %>%
             mean_Ht = mean(CWM.Ht),
             mean_BNPP = mean(agg_BNPP))
 
+#visualize BNPP vs Avena cover
+BNPP_forbs <- BNPP_traits %>%
+  filter(subplot == "F")
+BNPP_grass <- BNPP_traits %>%
+  filter(subplot == "G")
+BNPP_both <- BNPP_traits %>%
+  filter(subplot == "B")
+m <- lm(agg_BNPP ~AvCover, BNPP_both)
+summary(m)
+ggplot(BNPP_traits, aes(x = AvCover, y = agg_BNPP, col = subplot)) +
+  geom_point() +
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE)+
+  theme_bw() +
+  annotate("text", x= 25, y = 400, label = "R2 = 0.002", color = "#F8766D") +
+  annotate("text", x= 35, y = 270, label = "R2 = 0.009", color = "#00BFC4") +
+  annotate("text", x= 50, y = 140, label = "R2 < 0.001", color = "#00ba38") +
+  labs(col = "treatment", y = "BNPP g/m2 depth 0-30 cm", x = "Avena % Cover")
+
 #visualize BNPP vs Proportion of fine roots
 p1 <- ggplot(BNPP_traits, aes(x = CWM.PropF, y = agg_BNPP, col = subplot, shape = treatment)) +
   geom_point() +
