@@ -202,7 +202,9 @@ p1 <- ggplot(Joined, aes(x = subplot, y = weight_g_m, fill = subplot)) +
   annotate("text", x = 1, y = 1000, label = "a", size = 4) +
   annotate("text", x = 2, y = 1000, label = "b", size = 4) +
   annotate("text", x = 3, y = 1000, label = "ab", size = 4) +
-  labs(y = "ANPP g/m2", x = "composition treatment", fill = "treatment")
+  labs(y = "ANPP g/m2", x = "composition treatment") +
+  scale_fill_discrete(name = "treatment", labels = c("Mixed", "Forb", "Grass")) +
+  scale_x_discrete(labels = c("Mixed", "Forb", "Grass"))
 
 p2 <- ggplot(Joined, aes(x = subplot, y = agg_BNPP, fill = subplot)) +
   geom_boxplot() +
@@ -210,22 +212,71 @@ p2 <- ggplot(Joined, aes(x = subplot, y = agg_BNPP, fill = subplot)) +
   annotate("text", x = 1, y = 800, label = "a", size = 4) +
   annotate("text", x = 2, y = 800, label = "b", size = 4) +
   annotate("text", x = 3, y = 800, label = "b", size = 4) +
-  labs(y = "BNPP g/m2 depth 0-30 cm", x = "composition treatment", fill = "treatment")
+  labs(y = "BNPP g/m2 depth 0-30 cm", x = "composition treatment") +
+  scale_fill_discrete(name = "treatment", labels = c("Mixed", "Forb", "Grass")) +
+  scale_x_discrete(labels = c("Mixed", "Forb", "Grass"))
 
 ggarrange(p1, p2, ncol = 2, nrow = 1, 
           common.legend = TRUE, legend = "right",
           align = "v",labels = c("a)", "b)"))
 
-#Biomass by rain treatment
-ggplot(Joined, aes(x = treatment, y = agg_BNPP, fill = treatment)) +
-  geom_boxplot() +
-  theme_bw() +
-  labs(y = "BNPP g/m2 depth 0-30 cm", x = "precip treatment", fill = "treatment") +
-  scale_fill_manual(values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))
+fitA <- lm(weight_g_m~subplot, Joined)
+TukeyHSD(aov(fitA))
+fitB <- lm(agg_BNPP~subplot, Joined)
+TukeyHSD(fitB)
 
-ggplot(Joined, aes(x = treatment, y = weight_g_m, fill = treatment)) +
-  geom_boxplot() +
-  theme_bw() +
-  theme(legend.position = "none") +
-  labs(y = "ANPP g/m2", x = "precip treatment", fill = "treatment") +
-  scale_fill_manual(values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))
+#Biomass by rain treatment
+p3 <- ggplot(Joined, aes(x = treatment, y = agg_BNPP, fill = treatment)) +
+        geom_boxplot() +
+        theme_bw() +
+        labs(y = "BNPP g/m2 depth 0-30 cm", x = "precip treatment", fill = "treatment") +
+        scale_fill_manual(values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))
+
+p4 <- ggplot(Joined, aes(x = treatment, y = weight_g_m, fill = treatment)) +
+        geom_boxplot() +
+        theme_bw() +
+        theme(legend.position = "none") +
+        labs(y = "ANPP g/m2", x = "precip treatment", fill = "treatment") +
+        scale_fill_manual(values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))
+
+ggarrange(p3, p4, ncol = 2, nrow = 1, 
+          common.legend = TRUE, legend = "right",
+          align = "v",labels = c("a)", "b)"))
+
+fit1 <- lm(weight_g_m~treatment*subplot, Joined)
+anova(fit1)
+fit2 <- lm(agg_BNPP~treatment*subplot, Joined)
+anova(fit2)
+
+#Regression ANPP ~ CWM.Ht
+Ht_all <- lm(weight_g_m ~ CWM.Ht, Joined)
+summary(Ht_all) #significant
+Ht_both<- lm(weight_g_m ~ CWM.Ht, Joined%>%filter(subplot == "B")) 
+summary(Ht_both) #significant
+Ht_forb <- lm(weight_g_m ~ CWM.Ht, Joined%>%filter(subplot == "F"))
+summary(Ht_forb) #not significant
+Ht_grass <- lm(weight_g_m ~ CWM.Ht, Joined%>%filter(subplot == "G"))
+summary(Ht_grass) #not significant
+
+#Regression ANPP ~ CWM.LDMC
+LDMC_all <- lm(weight_g_m ~ CWM.LDMC, Joined)
+summary(LDMC_all) #significant
+LDMC_both<- lm(weight_g_m ~ CWM.LDMC, Joined%>%filter(subplot == "B")) 
+summary(LDMC_both) #not significant
+LDMC_forb <- lm(weight_g_m ~ CWM.LDMC, Joined%>%filter(subplot == "F"))
+summary(LDMC_forb) #not significant
+LDMC_grass <- lm(weight_g_m ~ CWM.LDMC, Joined%>%filter(subplot == "G"))
+summary(LDMC_grass) #not significant
+
+#Regression ANPP ~ CWM.SLA
+SLA_all <- lm(weight_g_m ~ CWM.SLA, Joined)
+summary(SLA_all) #significant
+SLA_both<- lm(weight_g_m ~ CWM.SLA, Joined%>%filter(subplot == "B")) 
+summary(SLA_both) #not significant
+SLA_forb <- lm(weight_g_m ~ CWM.SLA, Joined%>%filter(subplot == "F"))
+summary(SLA_forb) #not significant
+SLA_grass <- lm(weight_g_m ~ CWM.SLA, Joined%>%filter(subplot == "G"))
+summary(SLA_grass) #not significant
+
+
+
