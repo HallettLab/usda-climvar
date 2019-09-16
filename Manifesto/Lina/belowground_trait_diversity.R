@@ -29,14 +29,14 @@ comp <- as.matrix(vegdat3[1:nrow(vegdat3), 1:ncol(vegdat3)])
 traits$ID <- as.character(traits$ID) #set ID column as character
 traits$ID <- ifelse(traits$ID == "AVEFAT", "AVESP", traits$ID) #use Avena fatua traits for Avena sp.
 traits$ID <- ifelse(traits$ID == "TRIREP", "TRISP", traits$ID) #use Trifolium repens traits for Trifolium sp. 
-below_traits <- traits %>%
+bg_traits <- traits %>%
   filter(ID %in% c("ACHMIL", "AVESP", "BRADIS", "BRODIA", "BROHOR", "BROMAD", 
                    "CENSOL", "CYNDAC", "CYNECH", "EROBOT", "HORMUR", "LACSER",
                    "LOLMUL", "TAECAP", "TRIHIR","TRISP", "VULMYU")) %>%
   select(ID, Dens, DiamC, SRLC, SRLF, PropF)
-dim(below_traits) #check the dimension of trait data
-tr <- as.matrix(below_traits[1:nrow(below_traits), 2:ncol(below_traits)])
-row.names(tr) <- below_traits$ID
+dim(bg_traits) #check the dimension of trait data
+tr <- as.matrix(bg_traits[1:nrow(bg_traits), 2:ncol(bg_traits)])
+row.names(tr) <- bg_traits$ID
 
 #Now the data is ready to calculate trait diversity
 results <- dbFD(tr, comp, corr="cailliez")
@@ -133,48 +133,65 @@ summary(fit7)
 
 ###Relationships bw CWM of five root traits and BNPP
 library(ggpubr)
+lbl1 <- expression("y = 656.3 - 6142.1 x," ~ r^2 ~ "= 0.03")
+lbl2 <- expression("y = 33.6 + 0.004 x," ~ r^2 ~ "= 0.02")
+lbl3 <- expression("y = 129 + 0.03 x," ~ r^2 ~ "= 0.04")
+lbl4 <- expression("y = 306.9 - 75.4 x," ~ r^2 ~ "= 0.03")
+lbl5 <- expression("y = 10291 - 10181 x," ~ r^2 ~ "= 0.07")
+
+
 p1 <- ggplot(data = joined, aes(x = CWM.Dens, y = agg_BNPP)) +
-  geom_point() +
-  theme_classic() +
+  geom_point(aes(color = as.factor(subplot))) +
+  theme_bw() +
   xlab("CWM Root Density") +
-  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE)+
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black")+
   labs(y= NULL) +
-  theme(legend.position="none")
+  theme(legend.position="none") +
+  scale_color_discrete(name = "treatment", labels = c("Mixed", "Forb", "Grass")) +
+  annotate("text", x = 0.065, y = 600, label = lbl1, size = 4, color = "black")
 
 p2 <- ggplot(data = joined, aes(x = CWM.SRLF, y = agg_BNPP)) +
-  geom_point() +
-  theme_classic() +
+  geom_point(aes(color = as.factor(subplot))) +
+  theme_bw() +
   xlab("CWM SRLF") +
-  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE)+
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black")+
   labs(y= NULL) +
-  theme(legend.position= "none")
+  theme(legend.position= "none")+
+  scale_color_discrete(name = "treatment", labels = c("Mixed", "Forb", "Grass")) +
+  annotate("text", x = 50000, y = 600, label = lbl2, size = 4, color = "black")
 
 p3 <- ggplot(data = joined, aes(x = CWM.SRLC, y = agg_BNPP)) +
-  geom_point() +
-  theme_classic() +
+  geom_point(aes(color = as.factor(subplot))) +
+  theme_bw() +
   xlab("CWM SRLC") +
-  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE)+
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black")+
   labs(y= NULL) +
-  theme(legend.position = "none")
+  theme(legend.position = "none")+
+  scale_color_discrete(name = "treatment", labels = c("Mixed", "Forb", "Grass")) +
+  annotate("text", x = 3000, y = 600, label = lbl3, size = 4, color = "black")
 
 p4 <- ggplot(data = joined, aes(x = CWM.DiamC, y = agg_BNPP)) +
-  geom_point() +
-  theme_classic() +
+  geom_point(aes(color = as.factor(subplot))) +
+  theme_bw() +
   xlab("CWM Diameter Coarse") +
-  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE)+
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black")+
   labs(y= NULL) +
-  theme(legend.position = "none")
+  theme(legend.position = "none")+
+  scale_color_discrete(name = "treatment", labels = c("Mixed", "Forb", "Grass")) +
+  annotate("text", x = 1, y = 600, label = lbl4, size = 4, color = "black")
 
 p5 <- ggplot(data = joined, aes(x = CWM.PropF, y = agg_BNPP)) +
-  geom_point() +
-  theme_classic() +
+  geom_point(aes(color = as.factor(subplot))) +
+  theme_bw() +
   xlab("CWM Proportion of Fine") +
   labs(y= NULL) +
-  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE)+
-  theme(legend.position = "none")
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black")+
+  theme(legend.position = "none")+
+  scale_color_discrete(name = "treatment", labels = c("Mixed", "Forb", "Grass")) +
+  annotate("text", x = 0.982, y = 600, label = lbl5, size = 4, color = "black")
 
 figure <- ggarrange(p1, p2, p3, p4, p5,
-          ncol =3, nrow =2, common.legend = TRUE,
+          ncol =3, nrow =2, common.legend = TRUE, legend = "bottom",
           align = "v",labels = c("a)", "b)", "c)", "d)", "e)"))
 annotate_figure(figure, 
                 left = text_grob("BNPP g/m2 depth 0-30 cm", rot = 90))
@@ -297,48 +314,60 @@ stand_rao <- decostand(rao, "standardize")
 stand_rao_plot <- as.data.frame(cbind(Dens_joined[,2:3],stand_rao))
 
 #Plot BNPP vs Raos Q of each trait
+lbl1 <- expression("y = 250.31 + 15.25 x," ~ r^2 ~ "= 0.001")
+lbl2 <- expression("y = 291.31 - 89.81 x," ~ r^2 ~ "= 0.02")
+lbl3 <- expression("y = 290.77 - 59.32 x," ~ r^2 ~ "= 0.03")
+lbl4 <- expression("y = 274.82 - 30.08 x," ~ r^2 ~ "= 0.01")
+lbl5 <- expression("y = 240.65 - 22.11 x," ~ r^2 ~ "= 0.004")
+
 f1 <- ggplot(data = Dens_joined, aes(x = RaoQ, y = agg_BNPP)) +
-  geom_point() +
-  theme_classic() +
-  xlab("FD Root Density") +
-  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE)+
-  labs(y= NULL) +
-  theme(legend.position="none")
+        geom_point(aes(color = as.factor(subplot))) +
+        theme_bw() +
+        xlab("Rao's Q Root Density") +
+        geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black")+
+        labs(y= NULL) +
+        theme(legend.position="none")+
+        scale_color_discrete(name = "treatment", labels = c("Mixed", "Forb", "Grass")) +
+        annotate("text", x = 1, y = 600, label = lbl1, size = 4, color = "black")
 
 f2 <- ggplot(data = SRLF_joined, aes(x = RaoQ, y = agg_BNPP)) +
-  geom_point() +
-  theme_classic() +
-  xlab("FD SRLF") +
-  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE)+
-  labs(y= NULL) +
-  theme(legend.position="none")
+        geom_point(aes(color = as.factor(subplot))) +
+        theme_bw() +
+        xlab("Rao's Q SRLF") +
+        geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black")+
+        labs(y= NULL) +
+        theme(legend.position="none") +
+        annotate("text", x = 0.75, y = 600, label = lbl2 , size = 4, color = "black")
 
 f3 <- ggplot(data = SRLC_joined, aes(x = RaoQ, y = agg_BNPP)) +
-  geom_point() +
-  theme_classic() +
-  xlab("FD SRLC") +
-  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE)+
-  labs(y= NULL) +
-  theme(legend.position="none")
+        geom_point(aes(color = as.factor(subplot))) +
+        theme_bw() +
+        xlab("Rao's Q SRLC") +
+        geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black")+
+        labs(y= NULL) +
+        theme(legend.position="none") +
+        annotate("text", x = 0.9, y = 600, label = lbl3, size = 4, color = "black")
 
 f4 <- ggplot(data = DiamC_joined, aes(x = RaoQ, y = agg_BNPP)) +
-  geom_point() +
-  theme_classic() +
-  xlab("FD Diameter Coarse") +
-  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE)+
-  labs(y= NULL) +
-  theme(legend.position="none")
+        geom_point(aes(color = as.factor(subplot))) +
+        theme_bw() +
+        xlab("Rao's Q Diameter Coarse") +
+        geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black")+
+        labs(y= NULL) +
+        theme(legend.position="none") +
+        annotate("text", x = 1.5, y = 600, label = lbl4, size = 4, color = "black")
 
 f5 <- ggplot(data = PropF_joined, aes(x = RaoQ, y = agg_BNPP)) +
-  geom_point() +
-  theme_classic() +
-  xlab("FD Proportion Fine") +
-  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE)+
-  labs(y= NULL) +
-  theme(legend.position="none")
+        geom_point(aes(color = as.factor(subplot))) +
+        theme_bw() +
+        xlab("Rao's Q Proportion Fine") +
+        geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black")+
+        labs(y= NULL) +
+        theme(legend.position="none") +
+        annotate("text", x = 0.85, y = 600, label = lbl5, size = 4, color = "black")
 
 figure2 <- ggarrange(f1, f2, f3, f4, f5,
-                    ncol =3, nrow =2, common.legend = TRUE,
+                    ncol =3, nrow =2, common.legend = TRUE, legend = "bottom",
                     labels = c("a)", "b)", "c)", "d)", "e)"))
 annotate_figure(figure2, 
                 left = text_grob("BNPP g/m2 depth 0-30 cm", rot = 90))
@@ -420,6 +449,3 @@ FDPropF_forb <- lm(agg_BNPP ~ RaoQ, PropF_forb)
 summary(FDPropF_forb) #not significant
 FDPropF_grass <- lm(agg_BNPP ~ RaoQ, PropF_grass)
 summary(FDPropF_grass ) #not significant
-
-
-
