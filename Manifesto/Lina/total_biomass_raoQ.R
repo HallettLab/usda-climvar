@@ -148,20 +148,114 @@ library(ggpubr)
 p1 <- ggplot(joined_rao, aes(x = RaoQ, y = weight_g_m, color = subplot)) +
   geom_point() +
   theme_bw() +
-  labs(y = "ANPP g/m2", x = "RaoQ", color = "treatment") +
+  labs(y = "ANPP g/m2", x = "Rao's Q", color = "treatment") +
   geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE) +
-  annotate("text", x = 3.5, y = 750, label = "R2 = 0.50", size = 4, color = "#F8766D") +
-  annotate("text", x = 1.5, y = 530, label = "R2 = 0.09", size = 4, color = "#00BFC4") +
-  annotate("text", x = 7, y = 300, label = "R2 = 0.03", size = 4, color = "#00ba38")
+  annotate("text", x = 3.5, y = 750, label = "R2 = 0.50", size = 4, color = "#f8766d") +
+  annotate("text", x = 1.5, y = 530, label = "R2 = 0.09", size = 4, color = "#619bff") +
+  annotate("text", x = 7, y = 300, label = "R2 = 0.03", size = 4, color = "#00ba38") +
+  scale_color_discrete(name = "treatment", labels = c("Mixed", "Forb", "Grass")) 
+
 p2 <- ggplot(joined_rao, aes(x = RaoQ, y = agg_BNPP, color = subplot)) +
   geom_point() +
   theme_bw() +
-  labs(y = "BNPP g/m2 depth 0-15 cm", x = "RaoQ", color = "treatment") +
+  labs(y = "BNPP g/m2 depth 0-30 cm", x = "Rao's Q", color = "treatment") +
   geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE) +
-  annotate("text", x = 2, y = 400, label = "R2 = <0.001", size = 4, color = "#F8766D") +
-  annotate("text", x = 3.8, y = 300, label = "R2 = 0.002", size = 4, color = "#00BFC4") +
-  annotate("text", x = 7, y = 210, label = "R2 = 0.15", size = 4, color = "#00ba38")
+  annotate("text", x = 2, y = 400, label = "R2 = <0.001", size = 4, color = "#f8766d") +
+  annotate("text", x = 3.8, y = 300, label = "R2 = 0.15", size = 4, color = "#619bff") +
+  annotate("text", x = 7, y = 210, label = "R2 = 0.002", size = 4, color = "#00ba38") +
+  scale_color_discrete(name = "treatment", labels = c("Mixed", "Forb", "Grass")) 
 
 ggarrange(p1, p2, ncol = 2, nrow = 1, 
           common.legend = TRUE, legend = "right",
           align = "v",labels = c("a)", "b)"))
+
+#community RaoQ with ANPP and BNPP
+fitB <- lm(weight_g_m ~ RaoQ, joined_rao%>%filter(subplot == "B")) 
+summary(fitB) 
+fitF <- lm(weight_g_m ~ RaoQ, joined_rao%>%filter(subplot == "F"))
+summary(fitF)
+fitG <- lm(weight_g_m ~ RaoQ, joined_rao%>%filter(subplot == "G"))
+summary(fitG)
+
+fitB <- lm(agg_BNPP ~ RaoQ, joined_rao%>%filter(subplot == "B")) 
+summary(fitB) 
+fitF <- lm(agg_BNPP ~ RaoQ, joined_rao%>%filter(subplot == "F"))
+summary(fitF)
+fitG <- lm(agg_BNPP ~ RaoQ, joined_rao%>%filter(subplot == "G"))
+summary(fitG)
+
+#ind trait RaoQ with ANPP and BNPP
+#Regression BNPP ~ Rao's Q for each trait
+FDSLA_all <- lm(weight_g_m ~ SLARaoQ, joined_rao)
+summary(FDSLA_all) #significant
+FDSLA_both<- lm(weight_g_m ~ SLARaoQ, joined_rao%>%filter(subplot == "B")) 
+summary(FDSLA_both) #significant
+FDSLA_forb <- lm(weight_g_m ~ SLARaoQ, joined_rao%>%filter(subplot == "F"))
+summary(FDSLA_forb) #not significant
+FDSLA_grass <- lm(weight_g_m ~ SLARaoQ, joined_rao%>%filter(subplot == "G"))
+summary(FDSLA_grass ) #not significant
+
+FDLDMC_all <- lm(weight_g_m ~ LDMCRaoQ, joined_rao)
+summary(FDLDMC_all) #not significant
+FDLDMC_both<- lm(weight_g_m ~ LDMCRaoQ, joined_rao%>%filter(subplot == "B")) 
+summary(FDLDMC_both) #significant
+FDLDMC_forb <- lm(weight_g_m ~ LDMCRaoQ, joined_rao%>%filter(subplot == "F"))
+summary(FDLDMC_forb) #not significant
+FDLDMC_grass <- lm(weight_g_m ~ LDMCRaoQ, joined_rao%>%filter(subplot == "G"))
+summary(FDLDMC_grass ) #not significant
+
+FDHt_all <- lm(weight_g_m ~ HtRaoQ, joined_rao)
+summary(FDHt_all) #not significant
+FDHt_both<- lm(weight_g_m ~ HtRaoQ, joined_rao%>%filter(subplot == "B")) 
+summary(FDHt_both) #not significant
+FDHt_forb <- lm(weight_g_m ~ HtRaoQ, joined_rao%>%filter(subplot == "F"))
+summary(FDHt_forb) #not significant
+FDHt_grass <- lm(weight_g_m ~ HtRaoQ, joined_rao%>%filter(subplot == "G"))
+summary(FDHt_grass ) #not significant
+
+FDDens_all <- lm(agg_BNPP ~ DensRaoQ, joined_rao)
+summary(FDDens_all) #not significant
+FDDens_both<- lm(agg_BNPP ~ DensRaoQ, joined_rao%>%filter(subplot == "B")) 
+summary(FDDens_both) #not significant
+FDDens_forb <- lm(agg_BNPP ~ DensRaoQ, joined_rao%>%filter(subplot == "F"))
+summary(FDDens_forb) #not significant
+FDDens_grass <- lm(agg_BNPP ~ DensRaoQ, joined_rao%>%filter(subplot == "G"))
+summary(FDDens_grass ) #significant
+
+FDSRLF_all <- lm(agg_BNPP ~ SRLFRaoQ, joined_rao)
+summary(FDSRLF_all) #not significant
+FDSRLF_both<- lm(agg_BNPP ~ SRLFRaoQ, joined_rao%>%filter(subplot == "B")) 
+summary(FDSRLF_both) #not significant
+FDSRLF_forb <- lm(agg_BNPP ~ SRLFRaoQ, joined_rao%>%filter(subplot == "F"))
+summary(FDSRLF_forb) #not significant
+FDSRLF_grass <- lm(agg_BNPP ~ SRLFRaoQ, joined_rao%>%filter(subplot == "G"))
+summary(FDSRLF_grass) #not significant
+
+FDSRLC_all <- lm(agg_BNPP ~ SRLCRaoQ, joined_rao)
+summary(FDSRLC_all) #not significant
+FDSRLC_both<- lm(agg_BNPP ~ SRLCRaoQ, joined_rao%>%filter(subplot == "B")) 
+summary(FDSRLC_both) #not significant
+FDSRLC_forb <- lm(agg_BNPP ~ SRLCRaoQ, joined_rao%>%filter(subplot == "F"))
+summary(FDSRLC_forb) #not significant
+FDSRLC_grass <- lm(agg_BNPP ~ SRLCRaoQ, joined_rao%>%filter(subplot == "G"))
+summary(FDSRLC_grass ) #not significant
+
+FDDiamC_all <- lm(agg_BNPP ~ DiamCRaoQ, joined_rao)
+summary(FDDiamC_all) #not significant
+FDDiamC_both<- lm(agg_BNPP ~ DiamCRaoQ, joined_rao%>%filter(subplot == "B")) 
+summary(FDDiamC_both) #not significant
+FDDiamC_forb <- lm(agg_BNPP ~ DiamCRaoQ, joined_rao%>%filter(subplot == "F"))
+summary(FDDiamC_forb) #not significant
+FDDiamC_grass <- lm(agg_BNPP ~ DiamCRaoQ, joined_rao%>%filter(subplot == "G"))
+summary(FDDiamC_grass ) #not significant
+
+FDPropF_all <- lm(agg_BNPP ~ PropFRaoQ, joined_rao)
+summary(FDPropF_all) #not significant
+FDPropF_both<- lm(agg_BNPP ~ PropFRaoQ, joined_rao%>%filter(subplot == "B")) 
+summary(FDPropF_both) #not significant
+FDPropF_forb <- lm(agg_BNPP ~ PropFRaoQ, joined_rao%>%filter(subplot == "F"))
+summary(FDPropF_forb) #not significant
+FDPropF_grass <- lm(agg_BNPP ~ PropFRaoQ, joined_rao%>%filter(subplot == "G"))
+summary(FDPropF_grass ) #not significant
+
+
