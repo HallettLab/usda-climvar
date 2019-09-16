@@ -1,4 +1,7 @@
 library(vegan)
+library(tidyverse)
+library(FD)
+library(gridExtra)
 
 ## PCA for a sense of trait groups; visualized by orgin and functional group ##
 ## Uses "trait.dat" for trait_cleaning.R
@@ -137,7 +140,7 @@ enviroout2$name<-rownames(enviroout2)
 tog <- left_join(abovetr15, siteout2) %>%
   mutate(func = paste(Origin, GF, sep = "_"))
 
-ggplot(tog, aes(x=PC1, y=PC2))+ 
+a.pca<-ggplot(tog, aes(x=PC1, y=PC2))+ 
   geom_hline(aes(yintercept=0), color="grey") + 
   geom_vline(aes(xintercept=0), color="grey") +
   geom_text(aes(label = name, color = func), size = 5) +
@@ -156,10 +159,10 @@ ggplot(tog, aes(x=PC1, y=PC2))+
                     text=element_text(size = 20))+ 
   xlab(paste("Axis 1 (",sprintf("%.1f",myrda2$CA$eig["PC1"]/myrda2$tot.chi*100,3),"%)",sep="")) +
   ylab(paste("Axis 2 (",sprintf("%.1f",myrda2$CA$eig["PC2"]/myrda2$tot.chi*100,3),"%)",sep="")) 
-
+a.pca
 
 #keep species that we have trait data for
-cover15_fd4 <- cover15_fd2 %>% dplyr::select(AVEBAR, AVEFAT, BRADIS, BRIMIN, BRODIA, BROHOR, BROMAD, CARPYC, CERGLO, CLAPUR, CYNECH, EROBOT, EROMOS, FILGAL, GALPAR,HORMAR, HORMUR,HYPGLA, HYPRAD, LOLMUL, TAECAP,TORARV, TRIDUB,TRIHIR,TRISUB,VICSAT,VULBRO)
+cover15_fd4 <- cover15_fd2 %>% dplyr::select(ACHMIL, AVEBAR, AVEFAT, BRADIS, BRIMIN, BRODIA, BROHOR, BROMAD, CARPYC, CENSOL, CERGLO, CLAPUR, CYNDAC, CYNECH, EROBOT, EROMOS, FILGAL, GALPAR,HORMAR, HORMUR,HYPGLA, HYPRAD, LACSER, LOLMUL, SILGAL, TAECAP,TORARV, TRIDUB,TRIGLO, TRIHIR,TRISP, TRISUB,VICSAT,VULBRO, VULMYU)
 cover15_fd4<-data.matrix(cover15_fd4)
 
 #remove excess rows from PCA scores
@@ -179,7 +182,94 @@ siteout2_fd$shelterBlock<-traits_2015_2$shelterBlock
 siteout2_fd$subplot<-traits_2015_2$subplot
 siteout2_fd$treatment<-traits_2015_2$treatment
 
-ggplot(data=siteout2_fd, aes(x=CWM.PC1, y=ANPPgm, group=subplot, color=subplot))+
+a.1<-ggplot(data=siteout2_fd, aes(x=CWM.PC1, y=ANPPgm, group=subplot, color=subplot))+
+  stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) +
+  geom_point()+
+  theme_bw()+
+  #xlim(40,100)+
+  #ylim(0,100)
+  geom_smooth(method="lm", formula= y ~ x, se=FALSE, color="black", aes(group=1))
+a.1
+
+a.2<-ggplot(data=siteout2_fd, aes(x=CWM.PC2, y=ANPPgm, group=subplot, color=subplot))+
+  stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) +
+  geom_point()+
+  theme_bw()+
+  #xlim(40,100)+
+  #ylim(0,100)
+  geom_smooth(method="lm", formula= y ~ x, se=FALSE, color="black", aes(group=1))
+a.2
+
+##do again but for BELOWGROUND traits only
+# select belowground traits
+traits.below<-as.data.frame(traits) %>% dplyr::select(Dens, DiamC, SRLC,SRLF, PropF)
+
+# run PCA
+myrda.b <- rda(na.omit(traits.below), scale = TRUE)
+
+# extract values
+siteout.b <- as.data.frame(scores(myrda.b, choices=c(1,2), display=c("sites")))
+siteout.b$ID<-rownames(siteout.b)
+siteout.b$name <- siteout.b$ID
+
+enviroout.b<-as.data.frame(scores(myrda.b, choices=c(1,2), display=c("species")))
+enviroout.b$type<-"traits"
+enviroout.b$name<-rownames(enviroout.b)
+
+# merge PC axes with trait data
+tog <- left_join(all_trait2, siteout.b) %>%
+  mutate(func = paste(Origin, GF, sep = "_"))
+
+# Remove legumes from legend key (if running PCA without legumes)
+#tog <- subset(tog, GF != "L")
+
+#pdf("TraitPCA.pdf", width = 9, height = 7.5)
+#pdf("TraitPCA_noLegumes.pdf", width = 9, height = 7.5)
+
+b.pca<-ggplot(tog, aes(x=PC1, y=PC2))+ 
+  geom_hline(aes(yintercept=0), color="grey") + 
+  geom_vline(aes(xintercept=0), color="grey") +
+  geom_text(aes(label = name, color = func), size = 5) +
+  # scale_color_manual(values = c("grey20", "grey70")) +
+  geom_segment(data = enviroout.b,
+               aes(x = 0, xend =  PC1,
+                   y = 0, yend =  PC2),
+               arrow = arrow(length = unit(0.25, "cm")), colour = "black") + #grid is required for arrow to work.
+  geom_text(data = enviroout.b,
+            aes(x=  PC1*1.2, y =  PC2*1.2, #we add 10% to the text to push it slightly out from arrows
+                label = name), #otherwise you could use hjust and vjust. I prefer this option
+            size = 6,
+            hjust = 0.5, 
+            color="black") + 
+  theme_bw() +theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),
+                    text=element_text(size = 20))+ 
+  xlab(paste("Axis 1 (",sprintf("%.1f",myrda.b$CA$eig["PC1"]/myrda.b$tot.chi*100,3),"%)",sep="")) +
+  ylab(paste("Axis 2 (",sprintf("%.1f",myrda.b$CA$eig["PC2"]/myrda.b$tot.chi*100,3),"%)",sep="")) 
+b.pca
+#dev.off()
+
+grid.arrange(a.pca, b.pca,  ncol = 2, widths = c(1.2,1.2))
+#remove excess rows from PCA scores
+siteout.b <- siteout[-c(15), ]
+siteout.b<- siteout.b %>% dplyr::select(-ID, -name)
+#keep species that we have trait data for
+cover15_fd3 <- cover15_fd2 %>% dplyr::select(ACHMIL, AVEBAR, AVEFAT, BRADIS, BRODIA, BROHOR, BROMAD, CENSOL, CYNDAC, CYNECH, EROBOT, HORMUR,LACSER, LOLMUL,TRIHIR,VULMYU)
+cover15_fd3<-data.matrix(cover15_fd3)
+
+siteout_fd.b<-dbFD (siteout.b, cover15_fd3, w.abun = T, stand.x = F,
+                  calc.FRic = TRUE, m = "max", stand.FRic = FALSE,
+                  scale.RaoQ = FALSE, calc.FGR = FALSE, clust.type = "ward",
+                  km.inf.gr = 2, km.sup.gr = nrow(x) - 1, km.iter = 100, calc.CWM = TRUE,
+                  calc.FDiv = TRUE, print.pco = FALSE, messages = TRUE)
+siteout_fd.b<-as.data.frame(siteout_fd.b)
+
+traits_2015_2<- arrange(traits_2015, treatment, shelterBlock)
+siteout_fd.b$ANPPgm<-traits_2015_2$ANPPgm
+siteout_fd.b$shelterBlock<-traits_2015_2$shelterBlock
+siteout_fd.b$subplot<-traits_2015_2$subplot
+siteout_fd.b$treatment<-traits_2015_2$treatment
+
+ggplot(data=siteout_fd.b, aes(x=CWM.PC1, y=ANPPgm, group=subplot, color=subplot))+
   stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) +
   geom_point()+
   theme_bw()+
@@ -187,10 +277,32 @@ ggplot(data=siteout2_fd, aes(x=CWM.PC1, y=ANPPgm, group=subplot, color=subplot))
   #ylim(0,100)
   geom_smooth(method="lm", formula= y ~ x, se=FALSE, color="black", aes(group=1))
 
-ggplot(data=siteout2_fd, aes(x=CWM.PC2, y=ANPPgm, group=subplot, color=subplot))+
+ggplot(data=siteout_fd.b, aes(x=CWM.PC2, y=ANPPgm, group=subplot, color=subplot))+
   stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) +
   geom_point()+
   theme_bw()+
   #xlim(40,100)+
   #ylim(0,100)
   geom_smooth(method="lm", formula= y ~ x, se=FALSE, color="black", aes(group=1))
+
+siteout_fd<-merge(siteout_fd.b, BNPP1)
+
+b.1<-ggplot(data=siteout_fd, aes(x=CWM.PC1, y=agg_BNPP, group=subplot, color=subplot))+
+  stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) +
+  geom_point()+
+  theme_bw()+
+  #xlim(40,100)+
+  #ylim(0,100)
+  geom_smooth(method="lm", formula= y ~ x, se=FALSE, color="black", aes(group=1))
+b.1
+
+b.2<-ggplot(data=siteout_fd, aes(x=CWM.PC2, y=agg_BNPP, group=subplot, color=subplot))+
+  stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) +
+  geom_point()+
+  theme_bw()+
+  #xlim(40,100)+
+  #ylim(0,100)
+  geom_smooth(method="lm", formula= y ~ x, se=FALSE, color="black", aes(group=1))
+b.2
+
+grid.arrange(a.1, a.2, b.1, b.2, ncol=2)
