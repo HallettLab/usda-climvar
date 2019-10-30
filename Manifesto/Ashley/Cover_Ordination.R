@@ -4,6 +4,8 @@ library(tidyverse)
 library(dplyr)
 library (vegan3d)
 library(RVAideMemoire) #for posthoc tests on permanova
+library(goeveg)#for scree plot of NMDS to test number of dimensions
+
 # Import csv file, transform to wide data, call it data
 setwd("~/Dropbox/ClimVar/DATA/Plant_composition_data")
 cover<-read.csv("Cover/Cover_CleanedData/ClimVar_species-cover.csv")
@@ -179,6 +181,7 @@ data2<- cover %>% dplyr::select(-X, -species, -genus, -status, -func, -func2) %>
 data2$ID <- seq.int(nrow(data2))
 data2$TB<-paste(data2$treatment,data2$shelterBlock,sep=".")
 data2<-data2 %>% dplyr::select(-Unknown)
+data2[is.na(data2)] <- 0
 
 ###some code to load and manipulate env variables (for later)
 #LTM_env<-data %>% select(-c(18:51))
@@ -227,10 +230,8 @@ ordiplot(spp.mds0_2)
 #rotation of axes to maximize variance of site scores on axis 1
 #calculate species scores based on weighted averaging
 
+dimcheckMDS(cover.relrow2, distance = "bray", k = 8, trymax = 20, autotransform = F) 
 spp.mds2<-metaMDS(cover.relrow2, trace = T, autotransform=F, trymax=999, k=4) #runs several with different starting configurations
-
-#trace= TRUE will give output for step by step what its doing
-#default is 2 dimensions, can put k=4 for 4 dimensions
 spp.mds2 #solution converged after 29 tries, stress is 8.70
 summary(spp.mds2)
 
@@ -244,9 +245,8 @@ tplots2<-as.factor(tplots2)
 tplot_levels2<-as.factor(levels(tplots2))
 spscoresall_2<-data.frame(tplots2,spscores1_2,spscores2_2)
 
-library(goeveg)
-## Select the 30% most frequent species with 50% best axis fit
-limited <- ordiselect(cover.relrow2, spp.mds, ablim = 0.3, fitlim=0.5, method="axes")
+## Select the 30% most frequent species with 50% best axis fit, using package goeveg
+limited <- ordiselect(cover.Bio2, spp.mds2, ablim = 0.3, fitlim=0.5, method="axes", freq=TRUE)
 
 #plots colored based on treatment
 xc.plot <- ordiplot(spp.mds2,choices=c(1,2), type = "none")   #Set up the plot
@@ -325,6 +325,22 @@ ordiarrows(spp.mds2, groups=TB, order.by=Year2, label=F, col=cols2)
 legend("topright",legend=levels(Treatment2), col=cols1, pch=19, cex=0.9,inset=0.01,bty="n",y.intersp=0.5,x.intersp=0.4,pt.cex=1.1)
 legend("bottomright",legend=levels(data2$shelterBlock), col="black", pch=shapes1, cex=0.9,inset=0.1,bty="n",y.intersp=0.5,x.intersp=0.8,pt.cex=1.1)
 
+vec1<-ggplot(spscoresall_2, aes(x=NMDS1, y=NMDS2))+
+  geom_point(cex=3, aes(shape=as.factor(data2$treatment), col=data2$treatment))+
+  ggtitle("a)")+
+  scale_color_manual(values=c("Black", "darkgrey","lightgrey", "orange"), guide = guide_legend(title = "Treatment"), #change legend title
+                     labels=c("Consistent Dry", "Control", "Early Drought", "Late Drought"))+ #change labels in the legend)+
+  scale_shape_manual(values=c(0,1,2,5),guide = guide_legend(title = "Treatment"))+
+  #geom_path(arrow=arrow(), aes(col=data2$treatment))+
+  theme_bw()+
+  theme(legend.position="none")+
+  theme(plot.title = element_text(color="black", size=14, face="bold.italic"))+
+theme(legend.position=c(0.8,0.8), legend.title=element_text(size=14), legend.text=element_text(size=12), axis.text=element_text(size=16), axis.title=element_text(size=16))+
+theme(legend.background = element_rect(colour = 'black', fill = 'white', linetype='solid'))
+vec1
+
+vec1<-vec1+geom_text(data=spc.e, mapping=aes(x=MDS1, y=MDS2, label=name), cex=1.5)
+vec1
 
 ##Make a 3 dimensional plot of this ordination
 ##color based on treatment
