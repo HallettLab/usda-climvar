@@ -15,8 +15,8 @@ setwd("~/Dropbox/ClimVar/DATA/Plant_composition_data")
 cover15<-read.csv("Cover/Cover_CleanedData/ClimVar_2015_species-cover_wide.csv")
 
 setwd("~/Desktop")
-trait.dat<-read.csv("BradTraits_Cleaned.csv") 
-trait.dat<-trait.dat%>%dplyr::select(-Taxon, -Trt,-GF, -Origin,-Ht,-LDMC,-SLA)
+trait.dat1<-read.csv("BradTraits_Cleaned.csv") 
+trait.dat<-trait.dat1%>%dplyr::select(-Taxon, -Trt,-GF, -Origin)
 abovetr15<-read.csv("Above_Traits_Cleaned_2015_2.csv")
 all_trait<-full_join(abovetr15,trait.dat, by="ID")
 levels(abovetr15$Taxon)
@@ -187,7 +187,12 @@ ht<-ggplot(aboveFD_2, aes(x=CWM.Ht, y=ANPPgm, group=subplot, color=subplot))+
   #stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE) +
   #annotate("text", x= c(50, 40, 15), y = c(750, 490, 400), label = c("R2=0.38", "R2=0.04", "R2=0.02"), color = c("brown2", "dodgerblue3","forestgreen")) +
   geom_point()+
+  #ggtitle("a)")+
   theme_bw()+
+  ylab("")+
+  xlab("CWM Height")+
+  scale_color_manual(values=c("tomato", "green3", "dodgerblue"), guide = guide_legend(title = "Treatment"), #change legend title
+                     labels=c("Mixed", "Forb", "Grass"))+ #change labels in the legend)+
   theme(legend.position = "none")+
   #xlim(40,100)+
   #ylim(0,100)
@@ -219,7 +224,12 @@ sla<- ggplot(aboveFD.z, aes(x=CWM.SLA, y=ANPPgm, group=subplot, color=subplot))+
   stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) +
   #annotate("text", x= c(225, 225, 275), y = c(750, 515, 250), label = c("R2=0.24", "R2=0.04", "R2=0.04"), color = c("brown2", "dodgerblue3","forestgreen")) +
   geom_point()+
+  #ggtitle("b)")+
   theme_bw()+
+  ylab("")+
+  xlab("CWM Specific Leaf Area")+
+  scale_color_manual(values=c("tomato", "green3", "dodgerblue"), guide = guide_legend(title = "Treatment"), #change legend title
+                     labels=c("Mixed", "Forb", "Grass"))+ #change labels in the legend)+
   theme(legend.position = "none")+
   #xlim(40,100)+
   #ylim(0,100)
@@ -252,7 +262,12 @@ shapiro.test(residuals(m_ldmc))
 ldmc<-ggplot(aboveFD.z, aes(x=CWM.LDMC, y=ANPPgm, group=subplot, color=subplot))+
   #annotate("text", x= c(0.3, 0.3, 0.2), y = c(625, 250, 375), label = c("R2=0.19", "R2=0.05", "R2=0.03"), color = c("brown2", "dodgerblue3","forestgreen")) +
   geom_point()+
+  #ggtitle("c)")+
   theme_bw()+
+  ylab("")+
+  xlab("CWM Leaf Dry Matter Content")+
+  scale_color_manual(values=c("tomato", "green3", "dodgerblue"), guide = guide_legend(title = "Treatment"), #change legend title
+                     labels=c("Mixed", "Forb", "Grass"))+ #change labels in the legend)+
   #xlim(40,100)+
   #ylim(0,100)
   geom_smooth(method='lm', se=FALSE, color="black", aes(group=1))+
@@ -268,6 +283,14 @@ ggplot(aboveFD_2, aes(x=CWM.LDMC, y=ANPPgm))+
 
 #compile FG plots 
 grid.arrange(ht, sla, ldmc, ncol = 3, widths = c(1.1,1.1,1.35))
+#save as 1200wX600h for PNG
+
+figureS4 <- ggarrange(ht, sla, ldmc,
+                    ncol =3, nrow =1, common.legend = TRUE, legend = "bottom",
+                    align = "v",labels = c("a)", "b)", "c)"))
+figureS4<-annotate_figure(figureS4, 
+                left = text_grob("ANPP g/m2", rot = 90))
+figureS4
 
 m_rq<-lme(ANPPgm ~ RaoQ, random=~1|shelterBlock, aboveFD_2, na.action=na.exclude)
 summary(m_rq)
@@ -317,10 +340,14 @@ qqline(residuals(m_rht))
 shapiro.test(residuals(m_rht))
 #close to normal
 
-rht<-ggplot(aboveFD.z, aes(x=Rht, y=ANPPgm, group=subplot, color=subplot))+
+rht<-ggplot(aboveFD_2, aes(x=Rht, y=ANPPgm, group=subplot, color=subplot))+
   #annotate("text", x= c(100,400,200), y = c(625, 375, 250), label = c("R2=0.05", "R2=0.01", "R2=0.04"), color = c("brown2", "dodgerblue3","forestgreen")) +
   geom_point()+
   theme_bw()+
+  ylab("")+
+  xlab("Rao's Q Height")+
+  scale_color_manual(values=c("tomato", "green3", "dodgerblue"), guide = guide_legend(title = "Treatment"), #change legend title
+                     labels=c("Mixed", "Forb", "Grass"))+ #change labels in the legend)+
   theme(legend.position = "none")+
   #xlim(40,100)+
   #ylim(0,100)
@@ -328,14 +355,14 @@ rht<-ggplot(aboveFD.z, aes(x=Rht, y=ANPPgm, group=subplot, color=subplot))+
   stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1))
 rht
 
-ggplot(aboveFD.z, aes(x=Rht, y=ANPPgm))+
+ggplot(aboveFD_2, aes(x=Rht, y=ANPPgm))+
   stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE) +
   geom_point()+
   #xlim(40,100)+
   #ylim(0,100)
   geom_smooth(method="lm", formula= y ~ x, se=FALSE)
 
-m_rsla<-lme(ANPPgm ~ Rsla, random=~1|shelterBlock, aboveFD.z, na.action=na.exclude)
+m_rsla<-lme(ANPPgm ~ Rsla, random=~1|shelterBlock, aboveFD_2, na.action=na.exclude)
 summary(m_rsla)
 anova(m_rsla)
 r.squaredGLMM(m_rsla) #30% of variation explained by fixed effects, 38% by whole model (spatial variation?)
@@ -344,10 +371,14 @@ qqline(residuals(m_rsla))
 shapiro.test(residuals(m_rsla))
 #close to normal
 
-rsla<-ggplot(aboveFD.z, aes(x=Rsla, y=ANPPgm, group=subplot, color=subplot))+
+rsla<-ggplot(aboveFD_2, aes(x=Rsla, y=ANPPgm, group=subplot, color=subplot))+
   #annotate("text", x= c(2500, 7500, 6250), y = c(750, 500, 225), label = c("R2=0.31", "R2=0.04", "R2=0.09"), color = c("brown2", "dodgerblue3","forestgreen")) +
   geom_point()+
   theme_bw()+
+  ylab("")+
+  xlab("Rao's Q Specific Leaf Area")+
+  scale_color_manual(values=c("tomato", "green3", "dodgerblue"), guide = guide_legend(title = "Treatment"), #change legend title
+                     labels=c("Mixed", "Forb", "Grass"))+ #change labels in the legend)+
   theme(legend.position = "none")+
   #xlim(40,100)+
   #ylim(0,100)
@@ -355,7 +386,7 @@ rsla<-ggplot(aboveFD.z, aes(x=Rsla, y=ANPPgm, group=subplot, color=subplot))+
   stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) 
 rsla
 
-ggplot(aboveFD.z, aes(x=Rsla, y=ANPPgm))+
+ggplot(aboveFD_2, aes(x=Rsla, y=ANPPgm))+
   stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE) +
   geom_point()+
   theme_bw()+
@@ -364,7 +395,7 @@ ggplot(aboveFD.z, aes(x=Rsla, y=ANPPgm))+
   #ylim(0,100)
   geom_smooth(method="lm", formula= y ~ x, se=FALSE)
 
-m_rldmc<-lme(ANPPgm ~ Rldmc, random=~1|shelterBlock, aboveFD.z, na.action=na.exclude)
+m_rldmc<-lme(ANPPgm ~ Rldmc, random=~1|shelterBlock, aboveFD_2, na.action=na.exclude)
 summary(m_rldmc)
 anova(m_rldmc)
 r.squaredGLMM(m_rldmc) #30% of variation explained by fixed effects, 38% by whole model (spatial variation?)
@@ -373,11 +404,15 @@ qqline(residuals(m_rldmc))
 shapiro.test(residuals(m_rldmc))
 #close to normal
 
-rldmc<-ggplot(aboveFD.z, aes(x=Rldmc, y=ANPPgm, group=subplot, color=subplot))+
+rldmc<-ggplot(aboveFD_2, aes(x=Rldmc, y=ANPPgm, group=subplot, color=subplot))+
   stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) +
   #annotate("text", x= c(0.0025, 0.0012, 0.008), y = c(750, 600, 420), label = c("R2=0.51", "R2=0.05", "R2=0.03"), color = c("brown2", "dodgerblue3","forestgreen")) +
   geom_point()+
   theme_bw()+
+  ylab("")+
+  xlab("Rao's Q Leaf Dry Matter Content")+
+  scale_color_manual(values=c("tomato", "green3", "dodgerblue"), guide = guide_legend(title = "Treatment"), #change legend title
+                     labels=c("Mixed", "Forb", "Grass"))+ #change labels in the legend)+
   #xlim(40,100)+
   #ylim(0,100)
   geom_smooth(method='lm', se=FALSE, color="black", aes(group=1))
@@ -391,6 +426,13 @@ ggplot(aboveFD.z, aes(x=Rldmc, y=ANPPgm))+
   geom_smooth(method="lm", formula= y ~ x, se=FALSE)
 
 grid.arrange(rht,rsla,rldmc, ncol = 3, widths = c(1.1,1.1,1.35))
+
+figureS2 <- ggarrange(rht, rsla, rldmc,
+                      ncol =3, nrow =1, common.legend = TRUE, legend = "bottom",
+                      align = "v",labels = c("a)", "b)", "c)"))
+figureS2<-annotate_figure(figureS2, 
+                          left = text_grob("ANPP g/m2", rot = 90))
+figureS2
 
 library(MASS)
 fit <- lm(ANPPgm~CWM.Ht+CWM.SLA+CWM.LDMC+Rht+Rsla+Rldmc,data=aboveFD_2)
