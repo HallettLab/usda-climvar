@@ -8,8 +8,8 @@ library(gridExtra)
 
 # Select out correlated traits(MD, actual_area, Total) and those I don't have as much faith in (RMF, RGR)
 all_trait2 <- all_trait %>%
-  dplyr::select(-MD, - Total, - actual_area, -RMF, - RGR, -Seed.mass.grams, -C.N.Ratio)
-all_trait2 <- all_trait2[-c(42:77), ]
+  dplyr::select( -Seed.mass.grams, -C.N.Ratio)
+#all_trait2 <- all_trait2[-c(42:77), ]
 
 # Remove legumes from analysis if desired
 #trait.dat2 <- subset(trait.dat2, GF != "L")
@@ -91,6 +91,10 @@ ggplot(data=siteout_fd, aes(x=CWM.PC1, y=ANPPgm, group=subplot, color=subplot))+
   stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) +
   geom_point()+
   theme_bw()+
+  scale_color_manual(values=c("tomato", "green3", "dodgerblue"), guide = guide_legend(title = "Treatment"), #change legend title
+                    labels=c("Mixed", "Forb", "Grass"))+ #change labels in the legend)+
+  xlab("Community Weighted Means of PC1 Scores")+
+  ylab("ANPP g/m2")+
   #xlim(40,100)+
   #ylim(0,100)
   geom_smooth(method="lm", formula= y ~ x, se=FALSE, color="black", aes(group=1))
@@ -99,6 +103,8 @@ ggplot(data=siteout_fd, aes(x=CWM.PC2, y=ANPPgm, group=subplot, color=subplot))+
   stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) +
   geom_point()+
   theme_bw()+
+  xlab("Community Weighted Means of PC2 Scores")+
+  ylab("ANPP g/m2")+
   #xlim(40,100)+
   #ylim(0,100)
   geom_smooth(method="lm", formula= y ~ x, se=FALSE, color="black", aes(group=1))
@@ -141,10 +147,11 @@ tog <- left_join(abovetr15, siteout2) %>%
   mutate(func = paste(Origin, GF, sep = "_"))
 
 a.pca<-ggplot(tog, aes(x=PC1, y=PC2))+ 
+  ggtitle("a) PCA on aboveground traits")+
   geom_hline(aes(yintercept=0), color="grey") + 
   geom_vline(aes(xintercept=0), color="grey") +
-  geom_text(aes(label = name, color = func), size = 5) +
-  # scale_color_manual(values = c("grey20", "grey70")) +
+  geom_text(aes(label = name, color = GF), size = 5) +
+  scale_color_manual(values = c("mediumpurple", "seagreen3","sienna1"), labels=c("Forb","Grass", "Legume"), guide = guide_legend(title = "Functional Group")) +
   geom_segment(data = enviroout2,
                aes(x = 0, xend =  PC1,
                    y = 0, yend =  PC2),
@@ -156,7 +163,7 @@ a.pca<-ggplot(tog, aes(x=PC1, y=PC2))+
             hjust = 0.5, 
             color="black") + 
   theme_bw() +theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),
-                    text=element_text(size = 20))+ 
+                    text=element_text(size = 20), legend.position="none")+ 
   xlab(paste("Axis 1 (",sprintf("%.1f",myrda2$CA$eig["PC1"]/myrda2$tot.chi*100,3),"%)",sep="")) +
   ylab(paste("Axis 2 (",sprintf("%.1f",myrda2$CA$eig["PC2"]/myrda2$tot.chi*100,3),"%)",sep="")) 
 a.pca
@@ -184,17 +191,29 @@ siteout2_fd$treatment<-traits_2015_2$treatment
 
 a.1<-ggplot(data=siteout2_fd, aes(x=CWM.PC1, y=ANPPgm, group=subplot, color=subplot))+
   stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) +
+  #ggtitle("a)")+
   geom_point()+
   theme_bw()+
+  theme(legend.position="none")+
+  scale_color_manual(values=c("tomato", "green3", "dodgerblue"), guide = guide_legend(title = "Treatment"), #change legend title
+                     labels=c("Mixed", "Forb", "Grass"))+ #change labels in the legend)+
+  xlab("Community Weighted Means of Aboveground PC1 Scores")+
+  ylab("ANPP g/m2")+
   #xlim(40,100)+
   #ylim(0,100)
   geom_smooth(method="lm", formula= y ~ x, se=FALSE, color="black", aes(group=1))
 a.1
 
 a.2<-ggplot(data=siteout2_fd, aes(x=CWM.PC2, y=ANPPgm, group=subplot, color=subplot))+
+  #ggtitle("b)")+
   stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) +
   geom_point()+
   theme_bw()+
+  theme(legend.position="none")+
+  scale_color_manual(values=c("tomato", "green3", "dodgerblue"), guide = guide_legend(title = "Treatment"), #change legend title
+                     labels=c("Mixed", "Forb", "Grass"))+ #change labels in the legend)+
+  xlab("Community Weighted Means of Aboveground PC1 Scores")+
+  ylab("")+
   #xlim(40,100)+
   #ylim(0,100)
   geom_smooth(method="lm", formula= y ~ x, se=FALSE, color="black", aes(group=1))
@@ -202,14 +221,17 @@ a.2
 
 ##do again but for BELOWGROUND traits only
 # select belowground traits
-traits.below<-as.data.frame(traits) %>% dplyr::select(Dens, DiamC, SRLC,SRLF, PropF)
+traits.below<-as.data.frame(trait.dat) %>% dplyr::select(Dens, DiamC, SRLC,SRLF, PropF)
+row.names(traits.below) <- trait.dat$ID
+#remove species from traits so matches cover data
+traits.below <- traits.below[c(1,5,6,7,10,11,12,14,16,17,23,29,31,33,51,54,35), ]
 
 # run PCA
 myrda.b <- rda(na.omit(traits.below), scale = TRUE)
 
 # extract values
 siteout.b <- as.data.frame(scores(myrda.b, choices=c(1,2), display=c("sites")))
-siteout.b$ID<-rownames(siteout.b)
+siteout.b$ID<-row.names(siteout.b)
 siteout.b$name <- siteout.b$ID
 
 enviroout.b<-as.data.frame(scores(myrda.b, choices=c(1,2), display=c("species")))
@@ -217,7 +239,7 @@ enviroout.b$type<-"traits"
 enviroout.b$name<-rownames(enviroout.b)
 
 # merge PC axes with trait data
-tog <- left_join(all_trait2, siteout.b) %>%
+tog <- left_join(trait.dat1, siteout.b) %>%
   mutate(func = paste(Origin, GF, sep = "_"))
 
 # Remove legumes from legend key (if running PCA without legumes)
@@ -227,10 +249,11 @@ tog <- left_join(all_trait2, siteout.b) %>%
 #pdf("TraitPCA_noLegumes.pdf", width = 9, height = 7.5)
 
 b.pca<-ggplot(tog, aes(x=PC1, y=PC2))+ 
+  ggtitle("b) PCA on belowground traits")+
   geom_hline(aes(yintercept=0), color="grey") + 
   geom_vline(aes(xintercept=0), color="grey") +
-  geom_text(aes(label = name, color = func), size = 5) +
-  # scale_color_manual(values = c("grey20", "grey70")) +
+  geom_text(aes(label = name, color = GF), size = 5) +
+  scale_color_manual(values = c("mediumpurple","seagreen3", "sienna1"), labels=c("Forb","Grass", "Legume"), guide = guide_legend(title = "Functional Group:")) +
   geom_segment(data = enviroout.b,
                aes(x = 0, xend =  PC1,
                    y = 0, yend =  PC2),
@@ -248,9 +271,16 @@ b.pca<-ggplot(tog, aes(x=PC1, y=PC2))+
 b.pca
 #dev.off()
 
-grid.arrange(a.pca, b.pca,  ncol = 2, widths = c(1.2,1.2))
+grid.arrange(a.pca, b.pca,  ncol = 2, widths = c(1,1.3))
+
+
+figure3 <- ggarrange(a.pca, b.pca,
+                      ncol =2, nrow =1, common.legend = TRUE, legend = "bottom",
+                      align = "v")
+figure3
+
 #remove excess rows from PCA scores
-siteout.b <- siteout[-c(15), ]
+siteout.b <- siteout.b[-c(17), ]
 siteout.b<- siteout.b %>% dplyr::select(-ID, -name)
 #keep species that we have trait data for
 cover15_fd3 <- cover15_fd2 %>% dplyr::select(ACHMIL, AVEBAR, AVEFAT, BRADIS, BRODIA, BROHOR, BROMAD, CENSOL, CYNDAC, CYNECH, EROBOT, HORMUR,LACSER, LOLMUL,TRIHIR,VULMYU)
@@ -285,24 +315,71 @@ ggplot(data=siteout_fd.b, aes(x=CWM.PC2, y=ANPPgm, group=subplot, color=subplot)
   #ylim(0,100)
   geom_smooth(method="lm", formula= y ~ x, se=FALSE, color="black", aes(group=1))
 
+#run Lina's BNPP_exploratory_analysis.R script to get BNPP1
 siteout_fd<-merge(siteout_fd.b, BNPP1)
 
 b.1<-ggplot(data=siteout_fd, aes(x=CWM.PC1, y=agg_BNPP, group=subplot, color=subplot))+
   stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) +
+  scale_color_manual(values=c("tomato", "green3", "dodgerblue"), guide = guide_legend(title = "Treatment"), #change legend title
+                     labels=c("Mixed", "Forb", "Grass"))+ #change labels in the legend)+
+  xlab("Community Weighted Means of Belowground PC1 Scores")+
+  ylab("BNPP g/m2")+
+    #ggtitle("c)")+
   geom_point()+
   theme_bw()+
   #xlim(40,100)+
   #ylim(0,100)
-  geom_smooth(method="lm", formula= y ~ x, se=FALSE, color="black", aes(group=1))
+  geom_smooth(method="lm", formula= y ~ x, se=FALSE, color="black", aes(group=1))+
+  theme(legend.position="none")
 b.1
 
 b.2<-ggplot(data=siteout_fd, aes(x=CWM.PC2, y=agg_BNPP, group=subplot, color=subplot))+
   stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) +
+  scale_color_manual(values=c("tomato", "green3", "dodgerblue"), guide = guide_legend(title = "Treatment"), #change legend title
+                     labels=c("Mixed", "Forb", "Grass"))+ #change labels in the legend)+
+  xlab("Community Weighted Means of Belowground PC2 Scores")+
+  ylab("")+
+  #ggtitle("d)")+
   geom_point()+
   theme_bw()+
   #xlim(40,100)+
   #ylim(0,100)
-  geom_smooth(method="lm", formula= y ~ x, se=FALSE, color="black", aes(group=1))
+  geom_smooth(method="lm", formula= y ~ x, se=FALSE, color="black", aes(group=1))+
+  theme(legend.position="none")
 b.2
 
-grid.arrange(a.1, a.2, b.1, b.2, ncol=2)
+b.3<-ggplot(data=siteout_fd, aes(x=CWM.PC2, y=agg_BNPP, group=subplot, color=subplot))+
+  #stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) +
+  scale_color_manual(values=c("tomato", "green3", "dodgerblue"), guide = guide_legend(title = "Treatment:"), #change legend title
+                     labels=c("Mixed", "Forb", "Grass"))+ #change labels in the legend)+
+  xlab("Community Weighted Means of Belowground PC2 Scores")+
+  ylab("BNPP g/m2")+
+  #ggtitle("d)")+
+  geom_point()+
+  theme_bw()+
+  #xlim(40,100)+
+  #ylim(0,100)
+  #geom_smooth(method="lm", formula= y ~ x, se=FALSE, color="black", aes(group=1))+
+  theme(legend.position="bottom")
+b.3
+
+g_legend<-function(a.gplot){
+  tmp <- ggplot_gtable(ggplot_build(a.gplot))
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+  legend <- tmp$grobs[[leg]]
+  return(legend)}
+
+mylegend<-g_legend(b.3)
+
+lay <- rbind(c(1,1,2,2),
+             c(1,1,2,2),
+             c(3,3,4,4),
+             c(3,3,4,4),
+             c(NA,5,5,NA))
+
+grid.arrange(a.1, a.2, b.1, b.2,mylegend,layout_matrix = lay)
+
+figure4 <- ggarrange(a.1, a.2, b.1, b.2,
+                      ncol =2, nrow =2, common.legend = TRUE, legend = "bottom",
+                      align = "v",labels = c("a)", "b)", "c)", "d)"))
+figure4
