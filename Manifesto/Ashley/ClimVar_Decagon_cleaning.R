@@ -88,7 +88,7 @@ controldat<-subset(dat2, subplot=="XC")
 controlgraph<-ggplot(data=controldat, aes(x=time,
                      y=sm, color=treatment, group=treatment)) + geom_line() + facet_grid(~shelterBlock)  + 
   scale_y_continuous(breaks=c(seq(-.4,.8,.1)))
-
+controlgraph
 controlAC<-subset(controldat, shelterBlock=="A" | shelterBlock=="C")
 controlAC$shelterBlock<-as.character(controlAC$shelterBlock)
 controlgraph2<-ggplot(data=controlAC, aes(x=time,
@@ -141,8 +141,8 @@ ggplot(subset(smdat2), aes(x=doy4, y=sm,  color = subplot, group = (subplot))) +
   geom_line(size = .5) + theme_bw() + facet_wrap(subplot~plot) # facet_grid(shelterBlock~treatment) 
 
 #really weird data in plot 10, subplot B - did a sensor malfunction? remove plot 10, subplot B, year 2016 from the dataset
-smdat4<-smdat2 %>% 
-  mutate_all(.funs = function(x) replace(x, which(x < 0 ), NA))
+smdat4<-smdat2 %>% filter(plot!="10")
+  #mutate_all(.funs = function(x) replace(x, which(x < 0 ), NA))
 
 smdat5 <- smdat4 %>%
   group_by(subplot, treatment, year, doy4, doy3) %>%
@@ -157,10 +157,93 @@ smdat4 %>%
   summarize(meansm = mean(sm, na.rm=T))
 
 #create a new variable for growing season?
-smdat4<-smdat4 %>% mutate( season=ifelse(doy4 %in% 2014:2015.5, "one", ifelse(doy4 %in% 2015.8:2016.5, "two", ifelse(doy4 %in% 2016.8:2017.5, "three", "summer"))))
+smdat4<-smdat4 %>% mutate(season=ifelse(doy4 < 2015.5, "2015", ifelse(doy4 >2015.8 & doy4 < 2016.5, "2016", ifelse(doy4 > 2016.8 & doy4 < 2017.5, "2017", "summer"))))
+
+#summarize by season
+sm_season<-smdat4 %>%
+  group_by(treatment, season) %>% filter(season!="summer") %>%
+  summarize(meansm = mean(sm, na.rm=T))
 
 CV <- function(x){(sd(x)/mean(x))*100}
-moistCV<-aggregate(sm ~ treatment*shelterBlock*subplot*year, data= smdat4, FUN = CV)
+moistCV<-aggregate(sm ~ treatment*shelterBlock*subplot*season, data= smdat4, FUN = CV) %>% filter(season!="summer")
 colnames(moistCV)[colnames(moistCV)=="sm"] <- "sm_cv"
+sm<-smdat4%>%group_by(treatment, season,shelterBlock,subplot) %>% filter(season!="summer") %>% summarize(meansm=mean(sm), sesm=(sd(sm)/sqrt(length(sm)))) 
+sm<-merge(sm,moistCV)
+sm_XC<-filter(sm, subplot=="XC")
+May_ANPP_XC<-merge(sm_XC, May_ANPP_XC)
+
+ggplot(May_ANPP_XC, x=treatment, y=meansm, fill=treatment)+
+  annotate("text", x= c("consistentDry", "controlRain","fallDry","springDry"), y = c(0.4, 0.47, 0.45,0.45), label = c("a", "b", "c", "c"), color = "black") +
+  geom_boxplot(aes(x=treatment, y=meansm, fill = treatment), shape=16)+
+  theme_bw()+
+  scale_fill_manual(values = c("sienna", "royalblue2","lightsteelblue1", "peachpuff" ), guide = guide_legend(title = "Treatment"))+
+  xlab("Rainfall Treatment") +
+  ylab("Volumetric soil moisture")
+
+ggplot(May_ANPP_XC, aes(x=reorder(treatment, sm_cv, FUN=mean), y=sm_cv, fill=treatment))+
+  annotate("text", x= c("consistentDry", "controlRain","fallDry","springDry"), y = c(0.4, 0.47, 0.45,0.45), label = c("a", "b", "c", "c"), color = "black") +
+  geom_boxplot(aes(fill = treatment))+
+  theme_bw()+
+  scale_fill_manual(values = c("sienna", "royalblue2","lightsteelblue1", "peachpuff" ), guide = guide_legend(title = "Treatment"))+
+  xlab("Rainfall Treatment") +
+  ylab("Soil moisture CV")
+
+ggplot(May_ANPP_XC, x=shelterBlock, y=meansm )+
+  #annotate("text", x= c("consistentDry", "controlRain","fallDry","springDry"), y = c(0.4, 0.47, 0.45,0.45), label = c("a", "b", "c", "c"), color = "black") +
+  geom_boxplot(aes(x=shelterBlock, y=meansm), shape=16)+
+  theme_bw()+
+  scale_fill_manual(values = c("sienna", "royalblue2","lightsteelblue1", "peachpuff" ), guide = guide_legend(title = "Treatment"))+
+  xlab("Rainfall Treatment") +
+  ylab("Volumetric soil moisture")
+
+ggplot(May_ANPP_XC, aes(x=meansm, y=percentGrass, color=treatment))+
+  geom_point()+
+  geom_smooth(method="lm", se=F)
+
+sm1<-lme(meansm ~ treatment, random=~1|season/shelterBlock, data=May_ANPP_XC, na.action=na.exclude)
+summary(sm1)
+anova(sm1)
+r.squaredGLMM(sm1) #26% of variation explained by fixed effects, 37% by whole model 
+qqnorm(residuals(sm1))
+qqline(residuals(sm1))
+shapiro.test(residuals(sm1))
+#normally distributed, continue
+LSsm1<-lsmeans(sm1, ~treatment)
+contrast(LSsm1, "pairwise")
+
+sm2<-lme(log(sm_cv+1) ~ treatment, random=~1|season/shelterBlock, data=May_ANPP_XC, na.action=na.exclude)
+summary(sm2)
+anova(sm2)
+r.squaredGLMM(sm2) #26% of variation explained by fixed effects, 37% by whole model 
+qqnorm(residuals(sm2))
+qqline(residuals(sm2))
+shapiro.test(residuals(sm2))
+#normally distributed, continue
+LSsm2<-lsmeans(sm2, ~treatment)
+contrast(LSsm2, "pairwise")
 
 
+#create a new variable for growing season?
+smdat4<-smdat4 %>% mutate(season=ifelse(doy4 < 2015.5, "2015", ifelse(doy4 >2015.8 & doy4 < 2016.5, "2016", ifelse(doy4 > 2016.8 & doy4 < 2017.5, "2017", "summer"))))
+
+#summarize by season
+sm_2015<-smdat4 %>% filter(year=="2015")%>%
+  group_by(treatment, subplot, shelterBlock) %>% filter(subplot!="C", subplot !="XC") %>%
+  summarize(meansm = mean(sm, na.rm=T))
+
+sm_anpp_2015<- merge(sm_2015, May_ANPP_2015)
+
+m4<-lme(weight_g_m ~subplot*meansm, random=~1|shelterBlock, sm_anpp_2015, na.action=na.exclude)
+summary(m4)
+anova(m4)
+r.squaredGLMM(m4)
+qqnorm(residuals(m4))
+qqline(residuals(m4))
+shapiro.test(residuals(m4)) #normal
+LS4<-lsmeans(m4, ~subplot*meansm)
+contrast(LS4, "pairwise")
+
+ggplot(sm_anpp_2015, aes(x=meansm, y=weight_g_m, color=subplot))+ #color=subplot, shape=AvDom))+
+  geom_point()+
+  facet_wrap(~AvDom)+
+  geom_smooth(method="lm", se=F)
