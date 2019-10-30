@@ -32,7 +32,7 @@ cover_noC<-filter(cover, subplot!='C')
 ####################################################
 ##rerun following block of code from Lauren's old code:
 vegAv <- cover_noC %>%
-  group_by(plot, subplot, treatment, shelterBlock) %>%
+  group_by(plot, subplot, treatment, shelterBlock, year) %>%
   mutate(totcover = sum(cover)) %>%
   mutate(AvCover = cover/totcover * 100) %>%
   filter(species_name == "Avena barbata") %>%
@@ -79,6 +79,42 @@ gfproportion <- gf %>%
   filter(func == "forb") %>%
   dplyr::select(-func)
 
+gfproportion_g <- gf %>%
+  group_by(plot, subplot, treatment, shelterBlock, year) %>%
+  mutate(totcover = sum(cover)) %>%
+  mutate(percentGrass = (cover/totcover)*100) %>%
+  filter(func == "grass") %>%
+  dplyr::select(-func, -cover, -totcover)
+
+gfproportion<-merge(gfproportion, gfproportion_g)
+
+gfproportion$gfratio=(gfproportion$percentGrass)/(gfproportion$percentForb+1)
+
+gfratio_graph<-gfproportion %>% 
+  group_by(subplot, treatment) %>%
+  summarize(meangf=mean(gfratio), seratio=sd(gfratio)/sqrt(length(gfratio)))
+
+gfratio_graph$treatment2 <- as.character(gfratio_graph$treatment)
+#Then turn it back into a factor with the levels in the correct order
+gfratio_graph$treatment2 <- factor(gfratio_graph$treatment2, levels = c("controlRain","springDry", "fallDry","consistentDry"))
+
+ggplot(data=subset(gfratio_graph, subplot=='XC'), aes(x=treatment2, y=meangf, fill=treatment))+
+  geom_bar(stat="identity")+
+  scale_fill_manual(values = c("sienna","royalblue2","peachpuff", "lightsteelblue1"), guide = guide_legend(title = "Treatment")) +
+  geom_errorbar(aes(ymin=meangf-seratio, ymax=meangf+seratio))+
+  labs(x="Treatment", y="Grass:Forb") 
+
+m_gf<-lme(log(gfratio) ~treatment, random=~1|year/shelterBlock, subset(gfproportion, subplot=="XC"), na.action=na.exclude)
+summary(m_gf)
+anova(m_gf)#treatment significant
+r.squaredGLMM(m_gf) #12% of variation explained by fixed effects, 50% by whole model (interannual variation?)
+qqnorm(residuals(m_gf))
+qqline(residuals(m_gf))
+shapiro.test(residuals(m_gf))
+#normally distributed, continue
+LSgf<-lsmeans(m_gf, ~treatment)
+contrast(LSgf, "pairwise") #no differences
+
 gf_graphic <- gf %>%
   group_by(subplot, func, treatment) %>%
   summarize(meancover=mean(cover), secover=sd(cover)/sqrt(length(cover)))
@@ -94,7 +130,8 @@ ggplot(gf_graphic, aes(x=treatment, y=meancover, fill=func)) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 ggplot((gfproportion), aes(x=treatment, y = percentForb)) + 
-  geom_boxplot()
+  geom_boxplot()+
+  facet_grid(~subplot)
 
 a<-lme(percentForb ~ treatment, random=~1|shelterBlock/subplot, data=gfproportion,
          contrasts=list(treatment=contr.treatment))
@@ -146,6 +183,22 @@ ggplot(data = subset(gf_graphic2, subplot %in% c("XC")), aes(x=year, y=meancover
 
 ggplot(gfproportion, aes(x=percentForb, y=totcover, color = treatment))+
   geom_point() + geom_smooth(method = "lm")
+
+gfproportion<-merge(May_ANPP_noC, gfproportion)
+
+ggplot(subset(gfproportion, subplot=="XC" & treatment=="controlRain"), aes(x=percentGrass, y=weight_g_m))+
+  geom_point() + geom_smooth(method = "lm", se=F)+
+  stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE) #+
+  #scale_color_manual(values = c("sienna","royalblue2","peachpuff", "lightsteelblue1"))
+
+gfproportion<-merge(vegAv, gfproportion)
+
+
+ggplot(subset(gfproportion, subplot=="XC"), aes(x=gfratio, y=weight_g_m, color = treatment))+
+  geom_point() + geom_smooth(method = "lm", se=F)+
+  stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE)+
+  theme_bw()+
+  scale_color_manual(values = c("sienna","royalblue2","peachpuff", "lightsteelblue1"))
 
 ggplot(gfproportion, aes(x=percentForb, y=totcover, color = treatment))+
   facet_grid(~subplot)+
@@ -286,6 +339,28 @@ ggplot(gf4_graph, aes(fill=genus, colour=func2,  y=cover, x=treatment)) +
   geom_bar( stat="identity", position='stack')+
   facet_wrap(~shelterBlock*year, ncol=3)+
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+gf4_clust<-merge(gf4,May_all_XC)
+gf4_clust_graph <- gf4_clust %>%
+  group_by(treatment,genus, func2, clust2) %>%
+  summarise(cover=mean(percentCov), secover=sd(percentCov)/sqrt(length(percentCov)))
+
+gf4_clust_graph <- gf4_clust_graph %>% arrange(func2, genus) %>% filter(cover>0.01)
+gf4_clust_graph$func2 <- factor(gf4_clust_graph$func2, c("forb","Nfixer","grass"))
+gf4_clust_graph$genus<- factor(gf4_clust_graph$genus, c("Centaurea", "Convolvulus", "Erodium","Hypochaeris","Trifolium","Vicia","Avena","Bromus","Cynodon","Hordeum","Lolium", "Taeniatherum"))
+ggplot(gf4_clust_graph, aes(fill=genus, colour=func2,  y=cover, x=treatment)) +
+  theme_classic()+
+  facet_wrap(~as.factor(clust2))+
+  scale_fill_manual(values = c("orange", "orangered", "firebrick","indianred4", "palegreen", "green4", "lightblue", "skyblue2", "skyblue4", "dodgerblue3", "royalblue3","navy"))+
+  geom_bar( stat="identity", position='stack')+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+ggplot(subset(gf4_clust_graph, genus=="Centaurea"), aes(x=treatment, y=cover))+
+  geom_point()+
+  geom_errorbar(aes(ymax = cover+secover, ymin = cover-secover))
+                  
+
 
 #look at block variation for control only using genera with > 1% cover
 gf6_graph <- gf6_graph %>% arrange(func2, genus) %>% filter(cover>0.01, genus!="NA")
