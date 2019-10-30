@@ -49,7 +49,7 @@ ggplot(d=May_XC, aes(x=treatment, y=weight_g_m)) +
 
 May_XC$treatment2 <- as.character(May_XC$treatment)
 #Then turn it back into a factor with the levels in the correct order
-May_XC$treatment2 <- factor(May_XC$treatment2, levels = c("controlRain", "fallDry","springDry","consistentDry"))
+May_XC$treatment2 <- factor(May_XC$treatment2, levels = c("controlRain", "springDry","fallDry","consistentDry"))
 ggplot(d=May_XC, aes(x=treatment2, y=weight_g_m)) +
   theme_linedraw()+
   labs(x="rainfall treatment", y="ANPP g/m2")+
