@@ -67,7 +67,7 @@ ggplot(tog, aes(x=PC1, y=PC2))+
 setwd("~/Desktop")
 cover15_fd2<-read.csv("cover_fd.csv") %>% dplyr::select(-X)
 #keep species that we have trait data for
-cover15_fd3 <- cover15_fd2 %>% dplyr::select(ACHMIL, AVEBAR, AVEFAT, BRADIS, BRODIA, BROHOR, BROMAD, CENSOL, CYNDAC, CYNECH, EROBOT, HORMUR,LACSER, LOLMUL, TAECAP,TRIHIR,VULMYU)
+cover15_fd3 <- cover15_fd2 %>% dplyr::select(ACHMIL, AVEBAR, AVEFAT, BRADIS,BRIMIN, BRODIA, BROHOR, BROMAD, CENSOL,CERGLO, CYNDAC, CYNECH, EROBOT, FILGAL, HORMAR, HORMUR, HYPGLA, HYPRAD, LACSER, LOLMUL, SILGAL, TAECAP,TORARV,TRIHIR,TRIDUB,TRIGLO,TRISP,VICSAT,VULBRO,VULMYU)
 cover15_fd3<-data.matrix(cover15_fd3)
 
 #remove excess rows from PCA scores
@@ -131,7 +131,8 @@ ggplot(data=siteout_fd, aes(x=CWM.PC2, y=agg_BNPP, group=subplot, color=subplot)
 ##do again but for aboveground traits only
 
 # run PCA
-myrda2 <- rda(na.omit(abovetr15_fd2), scale = TRUE)
+abovetr15_fd2a<-abovetr15_fd2 %>% dplyr::select(-Seed.mass.grams, -C.N.Ratio)
+myrda2 <- rda(na.omit(abovetr15_fd2a), scale = TRUE)
 
 # extract values
 siteout2 <- as.data.frame(scores(myrda2, choices=c(1,2), display=c("sites")))
@@ -143,7 +144,7 @@ enviroout2$type<-"traits"
 enviroout2$name<-rownames(enviroout2)
 
 # merge PC axes with trait data
-tog <- left_join(abovetr15, siteout2) %>%
+tog <- left_join(abovetr15_fd2a, siteout2) %>%
   mutate(func = paste(Origin, GF, sep = "_"))
 
 a.pca<-ggplot(tog, aes(x=PC1, y=PC2))+ 
@@ -212,7 +213,7 @@ a.2<-ggplot(data=siteout2_fd, aes(x=CWM.PC2, y=ANPPgm, group=subplot, color=subp
   theme(legend.position="none")+
   scale_color_manual(values=c("tomato", "green3", "dodgerblue"), guide = guide_legend(title = "Treatment"), #change legend title
                      labels=c("Mixed", "Forb", "Grass"))+ #change labels in the legend)+
-  xlab("Community Weighted Means of Aboveground PC1 Scores")+
+  xlab("Community Weighted Means of Aboveground PC2 Scores")+
   ylab("")+
   #xlim(40,100)+
   #ylim(0,100)
