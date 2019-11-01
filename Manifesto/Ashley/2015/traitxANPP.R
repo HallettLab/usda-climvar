@@ -37,7 +37,7 @@ cover15_fd3<-data.matrix(cover15_fd3)
 #remove species from traits so matches cover data
 abovetr15_fd2 <- abovetr15_fd[-c(16,20,27,28,37,38), ]
 row.names(abovetr15_fd2)<-abovetr15_fd2$ID 
-abovetr15_fd2 <- abovetr15_fd2 %>% dplyr::select(-ID)
+abovetr15_fd2 <- abovetr15_fd2 %>% dplyr::select(-ID, -Seed.mass.grams, -C.N.Ratio)
 
 
 
@@ -340,7 +340,7 @@ qqline(residuals(m_rht))
 shapiro.test(residuals(m_rht))
 #close to normal
 
-rht<-ggplot(aboveFD_2, aes(x=Rht, y=ANPPgm, group=subplot, color=subplot))+
+rht<-ggplot(aboveFD.z, aes(x=Rht, y=ANPPgm, group=subplot, color=subplot))+
   #annotate("text", x= c(100,400,200), y = c(625, 375, 250), label = c("R2=0.05", "R2=0.01", "R2=0.04"), color = c("brown2", "dodgerblue3","forestgreen")) +
   geom_point()+
   theme_bw()+
@@ -371,7 +371,7 @@ qqline(residuals(m_rsla))
 shapiro.test(residuals(m_rsla))
 #close to normal
 
-rsla<-ggplot(aboveFD_2, aes(x=Rsla, y=ANPPgm, group=subplot, color=subplot))+
+rsla<-ggplot(aboveFD.z, aes(x=Rsla, y=ANPPgm, group=subplot, color=subplot))+
   #annotate("text", x= c(2500, 7500, 6250), y = c(750, 500, 225), label = c("R2=0.31", "R2=0.04", "R2=0.09"), color = c("brown2", "dodgerblue3","forestgreen")) +
   geom_point()+
   theme_bw()+
@@ -404,7 +404,7 @@ qqline(residuals(m_rldmc))
 shapiro.test(residuals(m_rldmc))
 #close to normal
 
-rldmc<-ggplot(aboveFD_2, aes(x=Rldmc, y=ANPPgm, group=subplot, color=subplot))+
+rldmc<-ggplot(aboveFD.z, aes(x=Rldmc, y=ANPPgm, group=subplot, color=subplot))+
   stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) +
   #annotate("text", x= c(0.0025, 0.0012, 0.008), y = c(750, 600, 420), label = c("R2=0.51", "R2=0.05", "R2=0.03"), color = c("brown2", "dodgerblue3","forestgreen")) +
   geom_point()+
