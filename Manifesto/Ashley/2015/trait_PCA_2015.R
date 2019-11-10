@@ -3,8 +3,12 @@ library(tidyverse)
 library(FD)
 library(gridExtra)
 
-## PCA for a sense of trait groups; visualized by orgin and functional group ##
-## Uses "trait.dat" for trait_cleaning.R
+## PCA for trait groups by plant species; visualized by orgin and functional group ##
+## Followed by CMW of PCA scores, regressed against ANPP and BNPP
+
+
+## NOTE: Uses all_trait, abovetr15_fd2, cover15_fd2 from traitxANPP.R and BNPP1 from Lina's BNPP_exploratory_analysis.R
+
 
 # Select out correlated traits(MD, actual_area, Total) and those I don't have as much faith in (RMF, RGR)
 all_trait2 <- all_trait %>%
@@ -16,6 +20,7 @@ all_trait2 <- all_trait %>%
 #trait.dat2$GF <- as.character(trait.dat2$GF)
 #trait.dat2$GF <- as.factor(trait.dat2$GF)
 
+# First a PCA for ALL TRAITS (ABOVE AND BELOW)
 # matrix for PCA
 traits <- as.matrix(all_trait2[,c(6:ncol(all_trait2))])
 row.names(traits) <- all_trait2$ID
@@ -53,7 +58,7 @@ ggplot(tog, aes(x=PC1, y=PC2))+
                arrow = arrow(length = unit(0.25, "cm")), colour = "black") + #grid is required for arrow to work.
   geom_text(data = enviroout,
             aes(x=  PC1*1.2, y =  PC2*1.2, #we add 10% to the text to push it slightly out from arrows
-                label = name), #otherwise you could use hjust and vjust. I prefer this option
+                label = name), #otherwise you could use hjust and vjust
             size = 6,
             hjust = 0.5, 
             color="black") + 
@@ -64,15 +69,12 @@ ggplot(tog, aes(x=PC1, y=PC2))+
 
  #dev.off()
 
-setwd("~/Desktop")
-cover15_fd2<-read.csv("cover_fd.csv") %>% dplyr::select(-X)
 #keep species that we have trait data for
-cover15_fd3 <- cover15_fd2 %>% dplyr::select(ACHMIL, AVEBAR, AVEFAT, BRADIS,BRIMIN, BRODIA, BROHOR, BROMAD, CENSOL,CERGLO, CYNDAC, CYNECH, EROBOT, FILGAL, HORMAR, HORMUR, HYPGLA, HYPRAD, LACSER, LOLMUL, SILGAL, TAECAP,TORARV,TRIHIR,TRIDUB,TRIGLO,TRISP,VICSAT,VULBRO,VULMYU)
+cover15_fd3 <- cover15_fd2 %>% dplyr::select(ACHMIL, AVEFAT, BRADIS, BRODIA, BROHOR, BROMAD, CENSOL, CYNDAC, CYNECH, EROBOT, HORMUR, LACSER, LOLMUL, TAECAP,TRIHIR,VULMYU)
 cover15_fd3<-data.matrix(cover15_fd3)
 
-#remove excess rows from PCA scores
-siteout <- siteout[-c(15), ]
-siteout<- siteout %>% dplyr::select(-ID, -name)
+siteout<- siteout %>% dplyr::select(-ID, -name) 
+siteout <- siteout[-c(14), ] #drop LUPBIC from PCA scores bc it has 0 % cover in any plot 
 
 siteout_fd<-dbFD (siteout, cover15_fd3, w.abun = T, stand.x = F,
                  calc.FRic = TRUE, m = "max", stand.FRic = FALSE,
@@ -127,12 +129,10 @@ ggplot(data=siteout_fd, aes(x=CWM.PC2, y=agg_BNPP, group=subplot, color=subplot)
   #ylim(0,100)
   geom_smooth(method="lm", formula= y ~ x, se=FALSE, color="black", aes(group=1))
 
+#############################################
+##run PCA again but for aboveground traits only
 
-##do again but for aboveground traits only
-
-# run PCA
-abovetr15_fd2a<-abovetr15_fd2 %>% dplyr::select(-Seed.mass.grams, -C.N.Ratio)
-myrda2 <- rda(na.omit(abovetr15_fd2a), scale = TRUE)
+myrda2 <- rda(na.omit(abovetr15_fd2), scale = TRUE)
 
 # extract values
 siteout2 <- as.data.frame(scores(myrda2, choices=c(1,2), display=c("sites")))
@@ -159,7 +159,7 @@ a.pca<-ggplot(tog, aes(x=PC1, y=PC2))+
                arrow = arrow(length = unit(0.25, "cm")), colour = "black") + #grid is required for arrow to work.
   geom_text(data = enviroout2,
             aes(x=  PC1*1.2, y =  PC2*1.2, #we add 10% to the text to push it slightly out from arrows
-                label = name), #otherwise you could use hjust and vjust. I prefer this option
+                label = name), #otherwise you could use hjust and vjust
             size = 6,
             hjust = 0.5, 
             color="black") + 
@@ -222,10 +222,7 @@ a.2
 
 ##do again but for BELOWGROUND traits only
 # select belowground traits
-traits.below<-as.data.frame(trait.dat) %>% dplyr::select(Dens, DiamC, SRLC,SRLF, PropF)
-row.names(traits.below) <- trait.dat$ID
-#remove species from traits so matches cover data
-traits.below <- traits.below[c(1,5,6,7,10,11,12,14,16,17,23,29,31,33,51,54,35), ]
+traits.below<-as.data.frame(traits) %>% dplyr::select(Dens, DiamC, SRLC,SRLF, PropF)
 
 # run PCA
 myrda.b <- rda(na.omit(traits.below), scale = TRUE)
@@ -281,10 +278,10 @@ figure3 <- ggarrange(a.pca, b.pca,
 figure3
 
 #remove excess rows from PCA scores
-siteout.b <- siteout.b[-c(17), ]
+siteout.b <- siteout.b[-c(14), ] #remove LUPBIC
 siteout.b<- siteout.b %>% dplyr::select(-ID, -name)
 #keep species that we have trait data for
-cover15_fd3 <- cover15_fd2 %>% dplyr::select(ACHMIL, AVEBAR, AVEFAT, BRADIS, BRODIA, BROHOR, BROMAD, CENSOL, CYNDAC, CYNECH, EROBOT, HORMUR,LACSER, LOLMUL,TRIHIR,VULMYU)
+cover15_fd3 <- cover15_fd2 %>% dplyr::select(ACHMIL, AVEFAT, BRADIS, BRODIA, BROHOR, BROMAD, CENSOL, CYNDAC, CYNECH, EROBOT, HORMUR, LACSER, LOLMUL, TAECAP,TRIHIR,VULMYU)
 cover15_fd3<-data.matrix(cover15_fd3)
 
 siteout_fd.b<-dbFD (siteout.b, cover15_fd3, w.abun = T, stand.x = F,
