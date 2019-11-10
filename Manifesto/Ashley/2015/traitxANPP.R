@@ -1,6 +1,5 @@
 library(tidyverse)
 library(nlme)
-library(ggplot2)
 library(dplyr)
 library(multcomp)
 library(lsmeans)
@@ -10,15 +9,14 @@ library(RColorBrewer)
 library(gridExtra)
 library(FD)
 
+##Run Aboveground_2015_2.R and Lina's BNPP_exploratory_analysis.R scripts first for ANPP and BNPP objects
 
 setwd("~/Dropbox/ClimVar/DATA/Plant_composition_data")
 cover15<-read.csv("Cover/Cover_CleanedData/ClimVar_2015_species-cover_wide.csv")
-
-setwd("~/Desktop")
-trait.dat1<-read.csv("BradTraits_Cleaned.csv") 
-trait.dat<-trait.dat1%>%dplyr::select(-Taxon, -Trt,-GF, -Origin)
-abovetr15<-read.csv("Above_Traits_Cleaned_2015_2.csv")
-all_trait<-full_join(abovetr15,trait.dat, by="ID")
+trait.dat1<-read.csv("Traits/Traits_GHscreening_Brad/BradTraits_Cleaned.csv") 
+trait.dat<-trait.dat1%>%dplyr::select(-Taxon, -Origin, -GF, -Trt, -Ht, -LDMC, -SLA)
+abovetr15<-read.csv("Traits/Above_Traits_Cleaned_2015_2.csv")
+all_trait<-left_join(abovetr15,trait.dat, by="ID")
 levels(abovetr15$Taxon)
 names(cover15)<-str_replace_all(names(cover15), c("\\." = "_"))
 cover15_2<- cover15 %>% dplyr::select(-Anagalis_arvensis, -Bromus_sp_, -Bromus_sterilis, -Convolvulus_arvensis, 
@@ -27,10 +25,10 @@ cover15_2<- cover15 %>% dplyr::select(-Anagalis_arvensis, -Bromus_sp_, -Bromus_s
                           -Sherardia_arvensis, -Sonchus_oleraceus, -Zeltnera_muehlenbergii)
 cover15_fd<- cover15_2 %>% dplyr::select(-plot, -subplot, -treatment, -shelterBlock, -shelter, -year, -X)
 abovetr15_fd<-abovetr15 %>% filter(Ht > 0) %>% dplyr::select(-Taxon, -source, -GF, -Origin) 
+cover15_fd2 <- cover15_fd %>% rename(ACHMIL=Achillea_millefolium, AVEBAR=Avena_barbata, AVEFAT=Avena_fatua, BRADIS=Brachypodium_distachyon, BRIMIN=Briza_minor, BRODIA=Bromus_diandrus, BROHOR=Bromus_hordeaceus, BROMAD=Bromus_madritensis_madritensis, CARPYC=Carduus_pycnocephalus, CENSOL=Centaurea_solstitialis, CERGLO=Cerastium_glomeratum, CLAPUR=Clarkia_amoena, CYNDAC=Cynodon_dactylon, CYNECH=Cynosaurus_echinatus,
+                                     EROBOT=Erodium_botrys, EROCIC=Erodium_cicutarium, EROMOS=Erodium_moschatum, FILGAL=Fillago_gallica, GALPAR=Galium_parisiense, GERMOL=Geranium_sp_, HORMAR=Hordeum_marinum, HORMUR=Hordeum_murinum, HYPGLA=Hypochaeris_glabra, HYPRAD=Hypochaeris_radicata, LACSER=Lactuca_serriola, LOLMUL=Lolium_multiflorum, LUPBIC=Lupinus_bicolor, SENVUL=Senecio_vulgaris,
+                                     SILGAL=Silene_gallica, TAECAP=Taeniatherum_caput_medusae, TORARV=Torilis_arvensis, TRIDUB=Trifolium_dubium, TRIGLO=Trifolium_glomeratum, TRIHIR=Trifolium_hirtum, TRISP=Trifolium_sp_,  TRISUB=Trifolium_subterraneum, TRIWIL=Trifolium_wildenovii, TRIHYA=Triteleia_hyacintha, VICSAT=Vicia_sativa, VULBRO=Vulpia_bromoides, VULMYU=Vulpia_myuros)
 
-
-
-cover15_fd2<-read.csv("cover_fd.csv") %>% dplyr::select(-X)
 #remove species that do not occur in any community
 cover15_fd3 <- cover15_fd2 %>% dplyr::select(-EROCIC, -GERMOL, -LUPBIC, -SENVUL, -TRIWIL, -TRIHYA)
 cover15_fd3<-data.matrix(cover15_fd3)
