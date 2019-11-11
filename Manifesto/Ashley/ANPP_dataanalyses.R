@@ -28,7 +28,7 @@ May_ANPP[,'shelter'] <- as.factor(as.character(May_ANPP[,'shelter']))
 #create subset with no species manipulations (control community) only
 May_XC<-filter(May_ANPP, subplot=='XC')
 
-m1<-lme(weight_g_m ~treatment, random=~1|year/shelterBlock, May_XC, na.action=na.exclude)
+m1<-lme(weight_g_m ~treatment*year, random=~1|shelterBlock, May_XC, na.action=na.exclude)
 summary(m1)
 anova(m1) #treatment is significant
 r.squaredGLMM(m1) #12% of variation explained by fixed effects, 57% by whole model (interannual variation?)
