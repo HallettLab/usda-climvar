@@ -1,8 +1,17 @@
 library(tidyverse)
+library(ggplot2)
 
 ## Set working directory
 setwd("~/Dropbox/ClimVar/DATA/Plant_composition_data")
 shelterkey <- read.csv("ANPP/ANPP_EnteredData/Shelter_key.csv")
+
+theme_set(theme_bw())
+theme_update( panel.grid.major=element_blank(), panel.grid.minor=element_blank(),
+              strip.background = element_blank(),
+              text = element_text(size = 16),
+              strip.text= element_text(size = 14), 
+              axis.text = element_text(size = 12))
+
 
 ###############
 #2015 Phenology
@@ -111,4 +120,28 @@ ggplot(data=pheno_all_xc, aes(x=time, y=meanPG, color=treatment))+
   theme_bw()+
   scale_color_manual(values = c( "sienna", "royalblue2","peachpuff","lightsteelblue3"), guide = guide_legend(title = "Treatment"))
 
+pheno_clust<- merge(pheno_all, data2)
+pheno_clust_sum<-pheno_clust %>% filter(subplot=="XC") %>%
+  group_by(time, clust, treatment) %>%
+  summarize(meanPG=mean(Percent.Green), sePG=sd(Percent.Green)/sqrt(length(Percent.Green)))
 
+ggplot(data=pheno_clust_sum, aes(x=time, y=meanPG, color=treatment))+
+  facet_wrap(~as.factor(clust))+
+  geom_point(aes(cex=1.5))+
+  geom_errorbar(aes(ymax = meanPG+sePG, ymin = meanPG-sePG), width=.25)+
+  geom_line()+
+  labs(x="Time", y="Greenness (%)") +
+  theme(text = element_text(size=15))+
+  scale_color_manual(values = c( "sienna", "royalblue2","peachpuff","lightsteelblue3"), guide = guide_legend(title = "Treatment"))
+
+#test for differences in %green
+m1<-lme(Percent.Green ~treatment*as.factor(time), random=~1|year/shelterBlock, pheno_clust, na.action=na.exclude)
+summary(m1)
+anova(m1) #treatment is significant
+r.squaredGLMM(m1) #12% of variation explained by fixed effects, 57% by whole model (interannual variation?)
+qqnorm(residuals(m1))
+qqline(residuals(m1))
+shapiro.test(residuals(m1))
+#normally distributed, continue
+LS1<-lsmeans(m1, ~treatment*time)
+contrast(LS1, "pairwise")
