@@ -6,7 +6,8 @@ theme_set(theme_bw())
 na_vals = c(" ","", NA, "NA")
 
 # set pathway to climvar dropbox competition data folder
-datpath <- "~/Dropbox/ClimVar/Competition/Data/"
+# datpath <- "~/Dropbox/ClimVar/Competition/Data/" LH
+datpath <- "~/Dropbox/Shared/ClimVar/Competition/Data/"
 
 # read in data
 # cleaned, combined competition dataset (cleaned background, phytometers, predicted vals, plot treatments)
@@ -22,7 +23,7 @@ allodat <- read.csv(paste0(datpath,"Competition_CleanedData/Competition_allometr
 phyto.dat <- comp.dat %>%
   select(plot:bdensity, insitu_bdisturbed, phytometer, pcode4, insitu_pstems, p_totwgt_seedfit ) %>%
   filter(!is.na(p_totwgt_seedfit)) %>%
-  mutate(p_totwgt_seedfit = ifelse(insitu_pstems == 0, 0, p_totwgt_seedfit)) %>%
+  mutate(p_totwgt_seedfit = ifelse(insitu_pstems == 0, 0, p_totwgt_seedfit), seedsIn = NA) %>%
   select(-phytometer, -bcode4) %>%
   rename(stemsIn = insitu_pstems, seedsOut = p_totwgt_seedfit, disturbed = insitu_bdisturbed,
          block = shelterBlock) 
@@ -40,7 +41,7 @@ back.dat <- left_join(back.dat0, allodat) %>%
          stemsIn = insitu_plot_bdensity, disturbed = insitu_bdisturbed,
          block = shelterBlock) %>%
   filter(!is.na(seedsOut)) %>%
-  select(plot, falltreatment, treatment, block, shelter, background, bdensity, disturbed, pcode4, stemsIn, seedsOut)
+  select(plot, falltreatment, treatment, block, shelter, background, bdensity, disturbed, pcode4, stemsIn, seedsOut, seedsIn)
 
 
 ## check that always the right number of seeds added 
@@ -49,11 +50,11 @@ ggplot(back.dat, aes(x= seedsIn, y = stemsIn)) + geom_point() + geom_abline(inte
 # calculate stems in
 stems.in <- rbind(phyto.dat, back.dat) %>%
   filter(pcode4 != "TRHI") %>%
-  select(-seedsOut) %>%
+  select(-seedsOut, -seedsIn) %>%
   mutate(varnew = paste(pcode4, "stemsIn", sep = "_")) %>%
   select(-pcode4) %>%
   spread(varnew, stemsIn, fill = 0) %>%
-  select(plot, falltreatment, treatment, block, disturbed:VUMY_stemsIn)
+  select(plot, falltreatment, treatment, block, disturbed:VUMY_stemsIn, background, bdensity)
 
 # calculate seeds out 
 seeds.out <-  rbind(phyto.dat, back.dat) %>%
