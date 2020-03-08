@@ -63,3 +63,5 @@ seeds.out <-  rbind(phyto.dat, back.dat) %>%
 
 stemsin.seedsout <- left_join(seeds.out, stems.in)
 
+rm(allodat, back.dat, back.dat0, comp.dat, phyto.dat, seeds.out, stems.in)
+
