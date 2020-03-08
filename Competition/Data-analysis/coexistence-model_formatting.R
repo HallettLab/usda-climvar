@@ -6,9 +6,17 @@ theme_set(theme_bw())
 na_vals = c(" ","", NA, "NA")
 
 # set pathway to climvar dropbox competition data folder
-# datpath <- "~/Dropbox/ClimVar/Competition/Data/" LH
-datpath <- "~/Dropbox/Shared/ClimVar/Competition/Data/"
 
+# specify dropbox pathway (varies by user -- tweak when share with Caitlin)
+if(file.exists("~/Dropbox/Shared/ClimVar/Competition/Data/")){
+  # LGS
+  datpath <- "~/Dropbox/Shared/ClimVar/Competition/Data/"
+  # LMH
+}else{
+  datpath <- "~/Dropbox/ClimVar/Competition/Data/"
+}
+
+### FECUNDITY ### 
 # read in data
 # cleaned, combined competition dataset (cleaned background, phytometers, predicted vals, plot treatments)
 comp.dat <- read.csv(paste0(datpath, "Competition_CleanedData/Competition_combined_clean.csv"),
@@ -20,14 +28,19 @@ allodat <- read.csv(paste0(datpath,"Competition_CleanedData/Competition_allometr
                     na.strings = na_vals, strip.white = T) %>%
   rename(bcode4 = phytometer)
 
+# isolate the phytometer data
 phyto.dat <- comp.dat %>%
   select(plot:bdensity, insitu_bdisturbed, phytometer, pcode4, insitu_pstems, p_totwgt_seedfit ) %>%
   filter(!is.na(p_totwgt_seedfit)) %>%
-  mutate(p_totwgt_seedfit = ifelse(insitu_pstems == 0, 0, p_totwgt_seedfit), seedsIn = NA) %>%
-  select(-phytometer, -bcode4) %>%
+  mutate(p_totwgt_seedfit = ifelse(insitu_pstems == 0, 0, p_totwgt_seedfit)) %>%
+  select(-phytometer, -bcode4, -shelter) %>%
   rename(stemsIn = insitu_pstems, seedsOut = p_totwgt_seedfit, disturbed = insitu_bdisturbed,
-         block = shelterBlock) 
+         block = shelterBlock) %>%
+  mutate(seedsIn = ifelse(pcode4 == "AVFA" | pcode4 == "TRHI", 10, 12),
+         seedsIn = ifelse(pcode4 == "LACA" | pcode4 == "ESCA", 15, seedsIn),
+         seedsIn = ifelse(stemsIn > seedsIn, stemsIn, seedsIn))
 
+# islate the background data
 back.dat0 <- comp.dat %>%
   filter(!is.na(background)) %>%
   select(plot:bdensity,insitu_bdisturbed, b.ind.wgt.g, seedsAdded, insitu_plot_bdensity) %>%
@@ -41,7 +54,7 @@ back.dat <- left_join(back.dat0, allodat) %>%
          stemsIn = insitu_plot_bdensity, disturbed = insitu_bdisturbed,
          block = shelterBlock) %>%
   filter(!is.na(seedsOut)) %>%
-  select(plot, falltreatment, treatment, block, shelter, background, bdensity, disturbed, pcode4, stemsIn, seedsOut, seedsIn)
+  select(plot, falltreatment, treatment, block, background, bdensity, disturbed, pcode4, stemsIn, seedsOut, seedsIn)
 
 
 ## check that always the right number of seeds added 
@@ -56,13 +69,76 @@ stems.in <- rbind(phyto.dat, back.dat) %>%
   spread(varnew, stemsIn, fill = 0) %>%
   select(plot, falltreatment, treatment, block, disturbed:VUMY_stemsIn, background, bdensity)
 
+
+# calculate seeds in
+seeds.added <- rbind(phyto.dat, back.dat) %>%
+  filter(pcode4 != "TRHI") %>%
+  select( -stemsIn, -seedsOut) %>%
+  mutate(varnew = paste(pcode4, "seedsIn", sep = "_")) %>%
+  select(-pcode4) %>%
+  spread(varnew, seedsIn, fill = 0) %>%
+  select(plot, falltreatment, treatment, block, disturbed:VUMY_seedsIn, background, bdensity)
+
+
 # calculate seeds out 
 seeds.out <-  rbind(phyto.dat, back.dat) %>%
   filter(pcode4 != "TRHI") %>%
   select(plot, falltreatment, treatment, block, seedsOut, pcode4, background, bdensity) %>%
   rename(species = pcode4)
 
+# stemsin.seedsout for model
 stemsin.seedsout <- left_join(seeds.out, stems.in)
 
-rm(allodat, back.dat, back.dat0, comp.dat, phyto.dat, seeds.out, stems.in)
 
+# seedsin.seedsout for model
+seedsin.seedsout <- left_join(seeds.out, seeds.added)
+
+
+
+
+
+# If we want to break up by recruitment windows ---------------------------
+
+
+### RECRUITMENT ###
+recruit.dat <- read.csv(paste0(datpath, "Competition_CleanedData/ClimVar_Comp_background-recruitment.csv"),
+                     na.strings = na_vals, strip.white = T) %>%
+  tbl_df() %>%
+  rename(block = shelterBlock,
+         genus = backgroundspp, 
+         bdensity = backgrounddensity,
+         stemsRecruit = density) %>%
+  select(plot, falltreatment, treatment, block, genus, bdensity, stemsRecruit) 
+
+
+
+tomerge <- back.dat %>%
+  select(background) %>%
+  unique() %>%
+  mutate(background2 = background) %>%
+  separate(background2, c("genus", "species"))
+
+back.dat <- left_join(back.dat, tomerge)
+
+### SURVIVAL ###
+together <- left_join(recruit.dat, back.dat) %>%
+  filter(!is.na(background), background != "Trifolium hirtum") %>%
+  mutate(perRecruit = stemsRecruit/seedsIn)
+
+
+
+ggplot(together, aes(x= seedsIn, y = stemsRecruit, color = falltreatment)) + geom_point() +
+  facet_wrap(~background,  scales = "free") + 
+  geom_abline(intercept = 0, slope = 1)
+
+ggplot(together, aes(x= genus, y = perRecruit, color = falltreatment)) + geom_boxplot() +
+  facet_wrap(~bdensity)
+
+ggplot(together, aes(x= stemsRecruit, y = stemsIn, color = falltreatment)) + geom_point() +
+  facet_wrap(~background,  scales = "free") + 
+  geom_abline(intercept = 0, slope = 1)
+
+# remove unnecessary
+rm(allodat, back.dat, back.dat0, comp.dat, phyto.dat, seeds.out, stems.in, seeds.added, tomerge, recruit.dat, together)
+
+  
