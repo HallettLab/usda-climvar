@@ -139,6 +139,6 @@ ggplot(together, aes(x= stemsRecruit, y = stemsIn, color = falltreatment)) + geo
   geom_abline(intercept = 0, slope = 1)
 
 # remove unnecessary
-rm(allodat, back.dat, back.dat0, comp.dat, phyto.dat, seeds.out, stems.in)
+rm(allodat, back.dat, back.dat0, comp.dat, phyto.dat, seeds.out, stems.in, seeds.added, tomerge, recruit.dat, together)
 
   
