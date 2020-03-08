@@ -14,10 +14,15 @@ data{
 
 parameters{
   real<lower = 0> lambda;
-  real<lower = 0>  alpha_avfa;
-  real<lower = 0>  alpha_brho;
-  real<lower = 0>  alpha_laca;
-  real<lower = 0>  alpha_vumy;
+  //real<lower = 0>  alpha_avfa;
+  //real<lower = 0>  alpha_brho;
+  //real<lower = 0>  alpha_laca;
+  //real<lower = 0>  alpha_vumy;
+
+  real alpha_avfa;
+  real alpha_brho;
+  real alpha_laca;
+  real alpha_vumy;
 
 }
 
@@ -35,7 +40,7 @@ model{
 
   // implement the biological model
   for(i in 1:N){
-    F_hat[i] = lambda*intra[i] / (1 + alpha_avfa*avfa[i] + alpha_brho*brho[i]+ alpha_laca*laca[i]+ alpha_vumy*vumy[i]);
+    F_hat[i] = lambda*intra[i] / (1 + exp(alpha_avfa)*avfa[i] + exp(alpha_brho)*brho[i] + exp(alpha_laca)*laca[i] + exp(alpha_vumy)*vumy[i]);
   }
 
   // calculate the likelihood

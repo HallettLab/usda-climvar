@@ -23,7 +23,7 @@ alpha_avfa <- .1
 alpha_brho <- .02
 alpha_esca <- .1
 alpha_laca <- .01
-alpha_trhi <- .04
+alpha_trhi <- .01
 alpha_vumy <- .09
 
 focals <- sample.int(3, size=50*6, replace=TRUE)
