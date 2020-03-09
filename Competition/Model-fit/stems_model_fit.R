@@ -1,7 +1,7 @@
 # Run experimental data with fecundity model
 
 # source data
-setwd("/Users/lash1937/Documents/GitHub/Usda-climvar/Competition/Data-analysis")
+setwd("/Users/hallett/Repositories/usda-climvar/Competition/Data-analysis")
 source("coexistence-model_formatting.R")
 
 
@@ -9,7 +9,7 @@ library(rstan)
 options(mc.cores = parallel::detectCores())
 rstan_options(auto_write = TRUE)
 
-setwd("/Users/lash1937/Documents/GitHub/Usda-climvar/Competition/Model-fit")
+setwd("/Users/hallett/Repositories/usda-climvar/Competition/Model-fit")
 
 data <- stemsin.seedsout
 # ---------------------------------------------------------------------------------------------
@@ -39,7 +39,7 @@ vumy <- vumy[-remove]
 intra <- avfa
 
 initials <- list(lambda=10, alpha_avfa=0.03, alpha_brho=0.03, alpha_laca=0.03, alpha_vumy=0.03)
-initials1<- list(initials)
+initials1<- list(initials, initials, initials)
 
 stems_avfa_wet <- stan(file = "Generic_four_species_BH_model.stan", data = c("N", "Fecundity", "intra", "avfa", "brho",
                                                    "laca", "vumy"),
