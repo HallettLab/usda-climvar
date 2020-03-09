@@ -1,4 +1,4 @@
-# run coexistence models
+# extract posteriors
 library(rstan)
 library(bayesplot)
 library(ggplot2)
