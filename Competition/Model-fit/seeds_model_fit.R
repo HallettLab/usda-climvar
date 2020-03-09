@@ -194,9 +194,9 @@ N <- as.integer(length(Fecundity))
 
 intra <- vumy
 
-seeds_vumy_dry <- stan(file = "Generic_four_species_BH_model.stan", data = c("N", "Fecundity", "intra", "avfa", "brho",
+seeds_vumy_dry <- stan(file = "Four_species_BH_model.stan", data = c("N", "Fecundity", "intra", "avfa", "brho",
                                                                        "laca", "vumy"),
-                       iter = 6000, chains = 3, thin = 2, control = list(adapt_delta = 0.95, max_treedepth = 20), 
+                       iter = 3000, chains = 3, thin = 3, control = list(adapt_delta = 0.8, max_treedepth = 20), 
                        init = initials1)
 
 save(seeds_vumy_dry, file = "vumy_dry_posteriors.rdata")
