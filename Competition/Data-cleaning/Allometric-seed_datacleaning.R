@@ -140,22 +140,22 @@ predict_out <- data.frame()
 
 for(i in species){
   print(paste("Iterating through", i, "regression"))
-  l <- lm(seeds~wgt_g, data = subset(allo.tog, species == i))
+  l <- lm(seeds~0 + wgt_g, data = subset(allo.tog, species == i))
   # store lm results
-  temp_lm <- cbind(phytometer = c(rep(i,2)), tidy(l))
+  temp_lm <- cbind(phytometer = c(rep(i,1)), tidy(l))
   temp_lm <- temp_lm[,-5]
   colnames(temp_lm)[3:5] <- c("est", "se","pval")
-  temp_lm <- temp_lm %>%
-    #mutate(term = casefold(gsub("[(]|[)]", "", term))) %>%
-    gather(met,val, est:pval) %>%
-    unite(gosharks, term, met) %>%
-    spread(gosharks, val)
+  # temp_lm <- temp_lm %>%
+  #   #mutate(term = casefold(gsub("[(]|[)]", "", term))) %>%
+  #   gather(met,val, est:pval) %>%
+  #   unite(gosharks, term, met) %>%
+  #   spread(gosharks, val)
   
   # add to allo.out
   allo.out <- rbind(allo.out, temp_lm)
   
   # compile predict results
-  temp_predict <- phytodat[phytodat$phytometer == i, c("plot", "backgroundspp", "backgrounddensity", "phytometer", "p_totwgt")]
+  temp_predict <- phytodat[phytodat$phytometer == i, c("plot", "backgroundspp", "backgrounddensity", "phytometer", "pdry_wgt_g")]
   colnames(temp_predict)[ncol(temp_predict)] <- "wgt_g"
   CIs <- predict.lm(l, newdata = temp_predict ,interval = "confidence")
   colnames(CIs)[2:3] <- paste0(colnames(CIs)[2:3],"CI.95") 
@@ -166,7 +166,7 @@ for(i in species){
   
   # add to predict_out
   predict_out <- rbind(predict_out, temp_predict)
-  
+   ggplot(predict_out, aes(x=backgroundspp, y = fit)) + geom_boxplot() +  facet_wrap(~backgrounddensity)
   # if last species, clean up and print done
   if(i == species[length(species)]){
     allo.out <- allo.out[,c(1:2,4,3,5,7,6)]
@@ -183,7 +183,24 @@ for(i in species){
 # -- FINISHING -----
 # merge phyodat and predicted values
 phytodat2 <- left_join(phytodat, predict_out) %>%
-  rename(p_totwgt_seedfit = fit)
+  rename(p_totwgt_seedfit = fit) %>%
+  tbl_df()
+
+allo.out$species <- allo.out$phytometer
+
+# graph it all together!
+ggplot(allo.tog, aes(x=wgt_g, y=seeds, color = trt)) + geom_point() + #geom_smooth(method = "lm", se =F) + 
+  facet_wrap(~species, scales = "free") +
+  geom_abline(data = allo.out, intercept = 0, slope = 19.37) +
+  geom_abline(data = allo.out, intercept = 0, slope = 155.05) +
+  geom_abline(data = allo.out, intercept = 0, slope = 1335.15) +
+  geom_abline(data = allo.out, intercept = 0, slope = 314.38)
+
+
+
+  
+  #+ geom_smooth(data = allo.tog, aes(x=wgt_g, y=seeds), method = "lm", se = F, color = "black")
+
 
 # write out allometric table
 write.csv(allo.out, paste0(datpath,"Competition_CleanedData/Competition_allometric_clean.csv"), row.names = F)
