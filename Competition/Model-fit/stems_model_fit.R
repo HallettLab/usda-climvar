@@ -1,16 +1,17 @@
 # Run experimental data with fecundity model
 
 # source data
-setwd("/Users/hallett/Repositories/usda-climvar/Competition/Data-analysis")
-source("coexistence-model_formatting.R")
-
+source("./Competition/Data-analysis/coexistence-model_formatting.R")
 
 library(rstan)
 options(mc.cores = parallel::detectCores())
 rstan_options(auto_write = TRUE)
 
+library(here)
+
 setwd("/Users/hallett/Repositories/usda-climvar/Competition/Model-fit")
 
+setwd(here("Competition", "Model-fit"))
 data <- stemsin.seedsout
 # ---------------------------------------------------------------------------------------------
 # avfa model fitting for wet
@@ -38,13 +39,16 @@ vumy <- vumy[-remove]
 
 intra <- avfa
 
-initials <- list(lambda=10, alpha_avfa=0.03, alpha_brho=0.03, alpha_laca=0.03, alpha_vumy=0.03)
+initials <- list(lambda=exp(10), alpha_avfa=exp(0.03), alpha_brho=exp(0.03), alpha_laca=exp(0.03), 
+                 alpha_vumy=exp(0.03))
 initials1<- list(initials, initials, initials)
 
 stems_avfa_wet <- stan(file = "Generic_four_species_BH_model.stan", data = c("N", "Fecundity", "intra", "avfa", "brho",
-                                                   "laca", "vumy"),
-                  iter = 3000, chains = 3, thin = 2, control = list(adapt_delta = 0.8, max_treedepth = 10))
+                                                                             "laca", "vumy"),
+                       iter = 9000, chains = 3, thin = 3, control = list(adapt_delta = 0.85, max_treedepth = 10),
+                       init = initials1)
 
+save(stems_avfa_wet, file = "stems_avfa_wet_posteriors.rdata")
 # ---------------------------------------------------------------------------------------------
 # avfa model fitting for dry
 
@@ -73,7 +77,8 @@ intra <- avfa
 
 stems_avfa_dry <- stan(file = "Generic_four_species_BH_model.stan", data = c("N", "Fecundity", "intra", "avfa", "brho",
                                                                        "laca", "vumy"),
-                 iter = 3000, chains = 3, thin = 2, control = list(adapt_delta = 0.8, max_treedepth = 10))
+                 iter = 9000, chains = 3, thin = 3, control = list(adapt_delta = 0.85, max_treedepth = 10),
+                 init = initials1)
 
 # ---------------------------------------------------------------------------------------------
 # brho model fitting for wet
@@ -101,9 +106,10 @@ vumy <- vumy[-remove]
 
 intra <- brho
 
-stems_brho_wet <- stan(file = "Generic_four_species_BH_model.stan", data = c("N", "Fecundity", "intra", "avfa", "brho",
+stems_brho_wet <- stan(file = "Four_species_BH_model.stan", data = c("N", "Fecundity", "intra", "avfa", "brho",
                                                                        "laca", "vumy"),
-                 iter = 9000, chains = 3, thin = 3, control = list(adapt_delta = 0.95, max_treedepth = 20))
+                 iter = 1000, chains = 1, thin = 3, control = list(adapt_delta = 0.85, max_treedepth = 20),
+                 init=initials)
 
 # ---------------------------------------------------------------------------------------------
 # brho model fitting for dry
