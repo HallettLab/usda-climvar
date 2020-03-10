@@ -78,8 +78,8 @@ bd <- as_tibble(do.call("cbind", brho_dry)) %>%
 posteriors <- rbind(vw, vd, aw, ad, bw, bd) %>%
   mutate(speciestreatment = paste(species, treatment, sep = " "))
 
-rm(list=setdiff(ls(), "posteriors")) 
-
+#rm(list=setdiff(ls(), "posteriors")) 
+rm(vw, vd, aw, ad, bw, bd)
 
 ggplot(posteriors, aes(x=lambda, fill = treatment, line = treatment)) + geom_density() + 
   facet_wrap(~species, ncol = 1, scales = "free_y")
