@@ -1,18 +1,17 @@
 # Run experimental data with fecundity model
 
 # source data
-setwd("/Users/lash1937/Documents/GitHub/Usda-climvar/Competition/Data-analysis")
-source("coexistence-model_formatting.R")
-
+source("./Competition/Data-analysis/coexistence-model_formatting.R")
 
 library(rstan)
 options(mc.cores = parallel::detectCores())
 rstan_options(auto_write = TRUE)
 
-setwd("/Users/lash1937/Documents/GitHub/Usda-climvar/Competition/Model-fit")
+library(here)
 
-data <- seedsin.seedsout
-
+setwd(here("Competition", "Model-fit"))
+disturbed <- which(seedsin.seedsout$disturbed == 1)
+data <- seedsin.seedsout[-disturbed,]
 
 initials <- list(lambda=20, alpha_avfa=.03, alpha_brho=.03, alpha_laca=.03, alpha_vumy=.03)
 initials1<- list(initials, initials, initials)
