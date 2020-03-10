@@ -84,3 +84,16 @@ ggplot(posteriors, aes(x=alpha_brho, fill = treatment, line = treatment)) + geom
 ggplot(posteriors, aes(x=alpha_vumy, fill = treatment, line = treatment)) + geom_density() + 
   facet_wrap(~species, ncol = 1, scales = "free_y")
 
+posteriors2 <- posteriors %>%
+  select(-lambda) %>%
+  gather(metric, value, alpha_avfa:alpha_vumy)
+
+ggplot(subset(posteriors2, species == "vumy" & metric != "alpha_laca"), aes(x=value, fill = treatment, line = treatment)) +
+  geom_density() + facet_wrap(~metric, ncol = 1, scales = "free_y") 
+
+ggplot(subset(posteriors2, species == "brho" & metric != "alpha_laca"), aes(x=value, fill = treatment, line = treatment)) +
+  geom_density() + facet_wrap(~metric, ncol = 1, scales = "free_y") 
+
+ggplot(subset(posteriors2, species == "avfa" & metric != "alpha_laca"), aes(x=value, fill = treatment, line = treatment)) +
+  geom_density() + facet_wrap(~metric, ncol = 1, scales = "free_y") 
+

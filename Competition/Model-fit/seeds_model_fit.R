@@ -13,7 +13,8 @@ setwd(here("Competition", "Model-fit"))
 disturbed <- which(seedsin.seedsout$disturbed == 1)
 data <- seedsin.seedsout[-disturbed,]
 
-initials <- list(lambda=20, alpha_avfa=.03, alpha_brho=.03, alpha_laca=.03, alpha_vumy=.03)
+initials <- list(lambda=exp(10), alpha_avfa=exp(0.03), alpha_brho=exp(0.03), alpha_laca=exp(0.03), 
+                 alpha_vumy=exp(0.03))
 initials1<- list(initials, initials, initials)
 # ---------------------------------------------------------------------------------------------
 # avfa model fitting for wet
@@ -32,12 +33,12 @@ N <- as.integer(length(Fecundity))
 
 intra <- avfa
 
-seeds_avfa_wet <- stan(file = "Generic_four_species_BH_model.stan", data = c("N", "Fecundity", "intra", "avfa", "brho",
-                                                   "laca", "vumy"),
-                  iter = 6000, chains = 3, thin = 2, control = list(adapt_delta = 0.95, max_treedepth = 20), 
-                  init = initials1)
+no_dist_seeds_avfa_wet <- stan(file = "Generic_four_species_BH_model.stan", data = c("N", "Fecundity", "intra", "avfa", "brho",
+                                                                             "laca", "vumy"),
+                       iter = 9000, chains = 3, thin = 3, control = list(adapt_delta = 0.85, max_treedepth = 10),
+                       init = initials1)
 
-save(seeds_avfa_wet, file = "avfa_wet_posteriors.rdata")
+save(no_dist_seeds_avfa_wet, file = "no_dist_avfa_wet_posteriors.rdata")
 # ---------------------------------------------------------------------------------------------
 # avfa model fitting for dry
 
@@ -55,12 +56,12 @@ N <- as.integer(length(Fecundity))
 
 intra <- avfa
 
-seeds_avfa_dry <- stan(file = "Generic_four_species_BH_model.stan", data = c("N", "Fecundity", "intra", "avfa", "brho",
-                                                                       "laca", "vumy"),
-                       iter = 6000, chains = 3, thin = 2, control = list(adapt_delta = 0.95, max_treedepth = 20), 
+no_dist_seeds_avfa_dry <- stan(file = "Generic_four_species_BH_model.stan", data = c("N", "Fecundity", "intra", "avfa", "brho",
+                                                                             "laca", "vumy"),
+                       iter = 9000, chains = 3, thin = 3, control = list(adapt_delta = 0.85, max_treedepth = 20),
                        init = initials1)
 
-save(seeds_avfa_dry, file = "avfa_dry_posteriors.rdata")
+save(no_dist_seeds_avfa_dry, file = "no_dist_avfa_dry_posteriors.rdata")
 # ---------------------------------------------------------------------------------------------
 # brho model fitting for wet
 
@@ -78,12 +79,12 @@ N <- as.integer(length(Fecundity))
 
 intra <- brho
 
-seeds_brho_wet <- stan(file = "Generic_four_species_BH_model.stan", data = c("N", "Fecundity", "intra", "avfa", "brho",
-                                                                       "laca", "vumy"),
-                       iter = 6000, chains = 3, thin = 2, control = list(adapt_delta = 0.95, max_treedepth = 20), 
+no_dist_seeds_brho_wet <- stan(file = "Generic_four_species_BH_model.stan", data = c("N", "Fecundity", "intra", "avfa", "brho",
+                                                                             "laca", "vumy"),
+                       iter = 9000, chains = 3, thin = 3, control = list(adapt_delta = 0.85, max_treedepth = 10),
                        init = initials1)
 
-save(seeds_brho_wet, file = "brho_wet_posteriors.rdata")
+save(no_dist_seeds_brho_wet, file = "no_dist_brho_wet_posteriors.rdata")
 # ---------------------------------------------------------------------------------------------
 # brho model fitting for dry
 
@@ -101,12 +102,12 @@ N <- as.integer(length(Fecundity))
 
 intra <- brho
 
-seeds_brho_dry <- stan(file = "Generic_four_species_BH_model.stan", data = c("N", "Fecundity", "intra", "avfa", "brho",
-                                                                       "laca", "vumy"),
-                       iter = 6000, chains = 3, thin = 2, control = list(adapt_delta = 0.95, max_treedepth = 20), 
+no_dist_seeds_brho_dry <- stan(file = "Generic_four_species_BH_model.stan", data = c("N", "Fecundity", "intra", "avfa", "brho",
+                                                                             "laca", "vumy"),
+                       iter = 9000, chains = 3, thin = 3, control = list(adapt_delta = 0.85, max_treedepth = 20),
                        init = initials1)
 
-save(seeds_brho_dry, file = "brho_dry_posteriors.rdata")
+save(no_dist_seeds_brho_dry, file = "no_dist_brho_dry_posteriors.rdata")
 # ---------------------------------------------------------------------------------------------
 # laca model fitting for dry
 
@@ -170,12 +171,12 @@ N <- as.integer(length(Fecundity))
 
 intra <- vumy
 
-seeds_vumy_wet <- stan(file = "Generic_four_species_BH_model.stan", data = c("N", "Fecundity", "intra", "avfa", "brho",
-                                                                       "laca", "vumy"),
-                       iter = 6000, chains = 3, thin = 2, control = list(adapt_delta = 0.95, max_treedepth = 20), 
+no_dist_seeds_vumy_wet <- stan(file = "Generic_four_species_BH_model.stan", data = c("N", "Fecundity", "intra", "avfa", "brho",
+                                                                             "laca", "vumy"),
+                       iter = 9000, chains = 3, thin = 3, control = list(adapt_delta = 0.85, max_treedepth = 20),
                        init = initials1)
 
-save(seeds_vumy_wet, file = "vumy_wet_posteriors.rdata")
+save(no_dist_seeds_vumy_wet, file = "no_dist_vumy_wet_posteriors.rdata")
 # ---------------------------------------------------------------------------------------------
 # vumy model fitting for dry
 
@@ -193,9 +194,9 @@ N <- as.integer(length(Fecundity))
 
 intra <- vumy
 
-seeds_vumy_dry <- stan(file = "Four_species_BH_model.stan", data = c("N", "Fecundity", "intra", "avfa", "brho",
-                                                                       "laca", "vumy"),
-                       iter = 3000, chains = 3, thin = 3, control = list(adapt_delta = 0.8, max_treedepth = 20), 
+no_dist_seeds_vumy_dry <- stan(file = "Generic_four_species_BH_model.stan", data = c("N", "Fecundity", "intra", "avfa", "brho",
+                                                                             "laca", "vumy"),
+                       iter = 9000, chains = 3, thin = 3, control = list(adapt_delta = 0.85, max_treedepth = 20),
                        init = initials1)
 
-save(seeds_vumy_dry, file = "vumy_dry_posteriors.rdata")
+save(no_dist_seeds_vumy_dry, file = "no_dist_vumy_dry_posteriors.rdata")
