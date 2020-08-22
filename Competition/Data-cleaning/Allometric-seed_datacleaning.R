@@ -43,6 +43,12 @@ specmeta <- specmeta[23:nrow(specmeta),]
 # set row one as colnames then remove
 colnames(specmeta) <- specmeta[1,]; specmeta <- specmeta[-1,]
 
+# update sep 2020: read in and append ESCA + TRHI dat after CTW and LMH process 2020 samples
+esca <- read.csv(paste0(datpath, "Competition_EnteredData/Competition_ESCAspecimens_spring2020.csv"), na.strings = na_vals) %>%
+# convert esca dates to date
+  mutate_at(c("clip_date", "wgh_date"), function(x) as.Date(x, format = "%m/%d/%y"))
+
+
 
 # -- READ IN AND COMPILE ALL SPECIMEN TABS -----
 # initiate df for storing specimen data
@@ -113,13 +119,27 @@ summary(lm(seeds~wgt_g, data = subset(specdat, species == "LACA")))
 summary(lm(seeds~wgt_g, data = subset(specdat, species == "LACA" & clip_date == as.Date("2017-04-19"))))
 
 
+# quick plot of esca
+## compare flower, pod, wgt relationships to seed
+select(esca, specimen, flowers, pods, seeds, wgt_g) %>%
+  gather(met, val, flowers, pods, wgt_g) %>%
+  ggplot(aes(val, seeds)) +
+  geom_point(aes(col = as.factor(specimen))) +
+  geom_smooth(method = "lm", col = "grey20") +
+  facet_wrap(~met)
+# what is the relationship of flowers to pods?
+plot(esca$flowers, esca$pods)
+
+
+
 # -- SIMPLIFY (PER LMH) AND JOIN WITH CLEANED COMPETITION BIOMASS -----
 # > note: ctw cleaned up code here significantly since all datasets compiled in for loop
 # > LMH previously simplified each into separate datasets bc read in as separate list items
 # put it together!
 allo.tog <- specdat %>%
   select(species, trt, specimen, clip_date, seeds, wgt_g) %>%
-  filter(!is.na(wgt_g)) # removes LACA plants that were bagged together before weighing
+  filter(!is.na(wgt_g)) %>% # removes LACA plants that were bagged together before weighing
+  rbind(data.frame(cbind(esca, trt = "ambient2020"))[names(.)])
 
 # graph it all together!
 ggplot(allo.tog, aes(x=wgt_g, y=seeds, color = trt)) + geom_point() + geom_smooth(method = "lm", se =F) + 
@@ -169,7 +189,7 @@ for(i in species){
    ggplot(predict_out, aes(x=backgroundspp, y = fit)) + geom_boxplot() +  facet_wrap(~backgrounddensity)
   # if last species, clean up and print done
   if(i == species[length(species)]){
-    allo.out <- allo.out[,c(1:2,4,3,5,7,6)]
+    #allo.out <- allo.out[,c(1:2,4,3,5,7,6)]
     # lower case colnames, remove parentheses and "_est" from beta colnames
     colnames(allo.out) <- casefold(gsub("[(]|[)]|_est", "", colnames(allo.out)))
     colnames(allo.out) <- gsub("wgt_g", "slope", colnames(allo.out))
@@ -186,21 +206,14 @@ phytodat2 <- left_join(phytodat, predict_out) %>%
   rename(p_totwgt_seedfit = fit) %>%
   tbl_df()
 
-allo.out$species <- allo.out$phytometer
-
 # graph it all together!
-ggplot(allo.tog, aes(x=wgt_g, y=seeds, color = trt)) + geom_point() + #geom_smooth(method = "lm", se =F) + 
-  facet_wrap(~species, scales = "free") +
-  geom_abline(data = allo.out, intercept = 0, slope = 19.37) +
-  geom_abline(data = allo.out, intercept = 0, slope = 155.05) +
-  geom_abline(data = allo.out, intercept = 0, slope = 1335.15) +
-  geom_abline(data = allo.out, intercept = 0, slope = 314.38)
+ggplot(allo.tog) + 
+  geom_point(aes(x=wgt_g, y=seeds, color = trt)) + 
+  geom_abline(data = allo.out, aes(intercept = 0, slope = est, lty = phytometer)) +
+  facet_wrap(~species, scales = "free")
 
-
-
-  
-  #+ geom_smooth(data = allo.tog, aes(x=wgt_g, y=seeds), method = "lm", se = F, color = "black")
-
+# lmh added this line after ctw wrote code.. keeping in case needed for bayes modeling
+allo.out$species <- allo.out$phytometer
 
 # write out allometric table
 write.csv(allo.out, paste0(datpath,"Competition_CleanedData/Competition_allometric_clean.csv"), row.names = F)
