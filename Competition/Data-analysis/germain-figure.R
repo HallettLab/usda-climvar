@@ -34,41 +34,45 @@ comp.dat <- read.csv(paste0(datpath, "Competition_CleanedData/Competition_combin
 #   facet_grid(pcode4~bdensity, scales = "free")
 
 # phyto.dat <- comp.dat %>%
-#   select(plot:bdensity, insitu_bdisturbed, phytometer, pcode4, insitu_pstems, p_totwgt_seedfit ) %>%
-#   filter(!is.na(p_totwgt_seedfit)) %>%
-#   mutate(p_totwgt_seedfit = ifelse(insitu_pstems == 0, 0, p_totwgt_seedfit)) %>%
+#   select(plot:bdensity, insitu_bdisturbed, phytometer, pcode4, insitu_pstems, p_seedfit, pfit_source) %>%
+#   filter(!is.na(p_seedfit)) %>%
+#   mutate(p_seedfit = ifelse(insitu_pstems == 0, 0, p_seedfit)) %>%
 #   select(-phytometer, -bcode4) %>%
-#   rename(seedsIn = insitu_pstems, seedsOut = p_totwgt_seedfit) %>%
+#   rename(seedsIn = insitu_pstems, seedsOut = p_seedfit) %>%
 #   mutate(R = seedsOut/seedsIn,
 #          R = ifelse(is.na(R), 0, R))
 
 
 # isolate the phytometer data
 phyto.dat0 <- comp.dat %>%
-  select(plot:bdensity, insitu_bdisturbed, phytometer, pcode4, insitu_pstems, p_totwgt_seedfit, p.ind.wgt.g, p_totwgt) %>%
-  filter(!is.na(p_totwgt_seedfit)) %>%
- # mutate(p_totwgt_seedfit = ifelse(insitu_pstems == 0, 0, p_totwgt_seedfit)) %>%
+  select(plot:bdensity, insitu_bdisturbed, phytometer, pcode4, insitu_pstems, p_seedfit, p.ind.wgt.g, p_totwgt, pfit_source) %>%
+  filter(!is.na(p_seedfit)) %>%
+ # mutate(p_seedfit = ifelse(insitu_pstems == 0, 0, p_seedfit)) %>%
   select(-phytometer, -bcode4, -shelter) %>%
   rename(stemsIn = insitu_pstems,  disturbed = insitu_bdisturbed,
          block = shelterBlock) %>%
   mutate(seedsIn = ifelse(pcode4 == "AVFA" | pcode4 == "TRHI", 10, 12),
          seedsIn = ifelse(pcode4 == "LACA" | pcode4 == "ESCA", 15, seedsIn),
-         seedsIn = ifelse(stemsIn > seedsIn, stemsIn, seedsIn)) 
+         seedsIn = ifelse(stemsIn > seedsIn, stemsIn, seedsIn)) %>%
+  # code to subset seedfit based on individual pwgt or total pwgt
+  subset(grepl("ind", pfit_source)) %>% # uncomment this line if want based on indidivual phyto wgt
+  #subset(grepl("tot", pfit_source)) %>% # uncomment this line if want based on total phyto wgt
+  select(-pfit_source) 
 
 # and bring back allodat
 allodat <- read.csv(paste0(datpath,"Competition_CleanedData/Competition_allometric_clean.csv"),
                     na.strings = na_vals, strip.white = T) %>%
-  rename(bcode4 = phytometer)
+  rename(bcode4 = species)
 
 allodat2 <- allodat %>%
   rename(pcode4 = bcode4)
 
 phyto.dat <- left_join(phyto.dat0, allodat2) %>%
   mutate(seedsOut = (intercept + p.ind.wgt.g*slope)*stemsIn) %>%
-  select(-p_totwgt_seedfit, -p.ind.wgt.g, -p_totwgt, -intercept:-slope_pval) %>%
-   mutate(R = seedsOut/seedsIn)
+  select(-p_seedfit, -p.ind.wgt.g, -p_totwgt, -intercept:-slope_se) %>%
+  mutate(R = seedsOut/seedsIn)
 
-# ggplot(phyto.dat, aes(x= seedsOut, y = p_totwgt_seedfit, color = pcode4)) + geom_point()+ facet_wrap(~pcode4)
+# ggplot(phyto.dat, aes(x= seedsOut, y = p_seedfit, color = pcode4)) + geom_point()+ facet_wrap(~pcode4)
 
 
 
@@ -79,10 +83,10 @@ back.dat0 <- comp.dat %>%
   unique() 
 
 back.dat <- left_join(back.dat0, allodat) %>%
-  mutate(p_totwgt_seedfit = (intercept + b.ind.wgt.g*slope)*insitu_plot_bdensity) %>%
-  mutate(p_totwgt_seedfit = ifelse(insitu_plot_bdensity == 0, 0, p_totwgt_seedfit)) %>%
-  select(plot:bdensity,insitu_bdisturbed,seedsAdded, p_totwgt_seedfit, insitu_plot_bdensity) %>%
-  rename(seedsIn = seedsAdded, seedsOut = p_totwgt_seedfit, pcode4 = bcode4,
+  mutate(p_seedfit = (intercept + b.ind.wgt.g*slope)*insitu_plot_bdensity) %>%
+  mutate(p_seedfit = ifelse(insitu_plot_bdensity == 0, 0, p_seedfit)) %>%
+  select(plot:bdensity,insitu_bdisturbed,seedsAdded, p_seedfit, insitu_plot_bdensity) %>%
+  rename(seedsIn = seedsAdded, seedsOut = p_seedfit, pcode4 = bcode4,
          stemsIn = insitu_plot_bdensity, disturbed = insitu_bdisturbed,
          block = shelterBlock) %>%
   filter(!is.na(seedsOut)) %>%
