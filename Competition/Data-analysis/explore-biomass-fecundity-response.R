@@ -32,8 +32,10 @@ spplist <- read.csv(paste0(datpath, "Competition_SpeciesKey.csv"),
 # -- VISUALIZE TRENDS -----
 # take the average across blocks
 comp.dat2 <- comp.dat %>%
+  select(plot:insitu_pdisturbed) %>%
+  distinct() %>%
   group_by(background, bcode4, bdensity, phytometer, pcode4, falltreatment) %>%
-  # filter(!is.na(disturbance)) %>%
+  # filter(!is.na(insitu_pdisturbed)) %>%
   summarize(phyto_mean_weight = mean(p.ind.wgt.g, na.rm = T)) %>%
   ungroup() %>%
   mutate(background = ifelse(is.na(background), "Control", background),
@@ -71,13 +73,16 @@ ggsave("~/Dropbox/ClimVar/Competition/Figures/Exploratory/grass-competition_May2
 
 #### fecundity trends #####
 # take the average across blocks
-comp.dat3 <- ungroup(comp.dat) %>%
+comp.dat3 <- comp.dat %>%
+  # choose whether want predicted seeds based on phytometer individual weight or total weight
+  subset(grepl("ind", pfit_source )) %>%  #uncomment if want individual-based
+  # subset(grepl("tot", pfit_source )) %>% #uncomment if want total-based
   group_by(background, bdensity, phytometer, falltreatment, seedsAdded) %>%
   # filter(!is.na(disturbance)) %>%
   summarize(b_mean_density = mean(insitu_plot_bdensity, na.rm = T),
             b_mean_weight = mean(b.ind.wgt.g, na.rm = T),
             phyto_mean_weight = mean(p.ind.wgt.g, na.rm = T),
-            phyto_mean_seed = mean(p_totwgt_seedfit, na.rm = T)) %>%
+            phyto_mean_seed = mean(p_seedfit, na.rm = T)) %>%
   ungroup() %>%
   mutate(background = ifelse(is.na(background), "Control", background),
          bdensity = ifelse(is.na(bdensity), "none", bdensity)) %>%
@@ -113,7 +118,7 @@ ggplot(comp.dat3, aes(x=bdensity, y = phyto_mean_seed, color = falltreatment, gr
   ggtitle("Phytomer mean fecundity") +
   facet_grid(phytometer~background, scales = "free")
 
-ggplot(subset(comp.dat, !is.na(insitu_plot_bdensity) & !pcode4 %in% c("ESCA", "TRHI")), aes(insitu_plot_bdensity, p_totwgt_seedfit)) +
+ggplot(subset(comp.dat, !is.na(insitu_plot_bdensity) & !pcode4 %in% c("ESCA", "TRHI")), aes(insitu_plot_bdensity, p_seedfit)) +
   geom_point(aes(col = background)) +
   labs(x = "Competitor plot density (# plants)",
        y = "Phytometer fecundity (# seeds)",
@@ -127,7 +132,7 @@ subset(comp.dat, !pcode4 %in% c("ESCA", "TRHI")) %>%
   ungroup() %>%
   mutate(background = ifelse(is.na(background), "Control", background),
          bdensity = ifelse(is.na(bdensity), "none", bdensity)) %>%
-  ggplot(aes(bdensity, p_totwgt_seedfit)) +
+  ggplot(aes(bdensity, p_seedfit)) +
   geom_boxplot() +
   labs(x = "Background density treatment",
        y = "Phytometer fecundity (# seeds)",
