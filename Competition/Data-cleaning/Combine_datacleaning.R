@@ -61,7 +61,7 @@ phytocomp[(is.na(phytocomp$plot_banpp) & phytocomp$backgroundspp != "Control"),]
 
 
 # -- ADD IN ALLOMETRIC DATA, PROJECT FECUNDITY -----
-phytocomp2 <- left_join(phytocomp, allodat[c("phytometer", "intercept", "slope")], by = "phytometer")
+phytocomp2 <- left_join(phytocomp, allodat[c("species", "intercept", "slope")], by = c("phytometer" = "species"))
 #reorganize columns
 phytocomp2 <- phytocomp2[,c(colnames(background), colnames(phytodat)[4:11], "intercept", "slope", colnames(phytodat)[16:ncol(phytodat)])] %>%
   rename(background = species,
