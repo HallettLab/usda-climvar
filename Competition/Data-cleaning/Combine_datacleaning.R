@@ -46,8 +46,8 @@ glimpse(phytodat)
 glimpse(allodat)
 glimpse(spplist)
 
-nrow(phytodat) #1056
-# combine background and phytometers (there should only be 1056 when combine)
+nrow(phytodat) #1056 when prediction data wide form, 1936 when tidy (all non-Control plots repeated bc have prediction based in pindiv wgt and ptot wgt)
+# combine background and phytometers (nrow should match nrow of phytodat)
 phytocomp <- left_join(phytodat, background) 
 summary(phytocomp)
 # which are the NAs in background density? (should only be control plots)
@@ -73,12 +73,12 @@ phytocomp2 <- phytocomp2[,c(colnames(background), colnames(phytodat)[4:11], "int
   dplyr::select(plot, falltreatment, treatment:shelter, 
                 # background species columns
                 background, bcode4:insitu_bdisturbed, seedsAdded:bdensity_flag, 
-                # phytometer and predicted seeds out columns
-                phytometer, pcode4:uprPI.95)
+                # phytometer and predicted seeds out columns with weight source used for predictions
+                phytometer, pcode4:ncol(.))
 
-# clean up regression cols (4 signif digits)
+# clean up regression cols (4 signif digits, bc that was accuracy of scale used for weighing)
 combined <- phytocomp2 
-combined[,grep("intercept",colnames(combined)):ncol(combined)] <- sapply(combined[,grep("intercept",colnames(combined)):ncol(combined)], function(x) round(x,4)) 
+combined[,grepl("intercept|slope|seedfit|[.]95$",colnames(combined))] <- sapply(combined[,grepl("intercept|slope|seedfit|[.]95$",colnames(combined))], function(x) round(x,4)) 
 
 # -- FINISHING -----
 # write out
