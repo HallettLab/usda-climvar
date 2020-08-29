@@ -25,32 +25,35 @@ comp.dat <- read.csv(paste0(datpath, "Competition_CleanedData/Competition_combin
 
 # and bring back allodat
 allodat <- read.csv(paste0(datpath,"Competition_CleanedData/Competition_allometric_clean.csv"),
-                    na.strings = na_vals, strip.white = T) %>%
-  rename(bcode4 = phytometer)
+                    na.strings = na_vals, strip.white = T)
 
 # isolate the phytometer data
 phyto.dat <- comp.dat %>%
-  select(plot:bdensity, insitu_bdisturbed, phytometer, pcode4, insitu_pstems, p_totwgt_seedfit ) %>%
-  filter(!is.na(p_totwgt_seedfit)) %>%
-  mutate(p_totwgt_seedfit = ifelse(insitu_pstems == 0, 0, p_totwgt_seedfit)) %>%
+  select(plot:bdensity, insitu_bdisturbed, phytometer, pcode4, insitu_pstems, p_seedfit, pfit_source) %>%
+  filter(!is.na(p_seedfit)) %>%
+  mutate(p_seedfit = ifelse(insitu_pstems == 0, 0, p_seedfit)) %>%
   select(-phytometer, -bcode4, -shelter) %>%
-  rename(stemsIn = insitu_pstems, seedsOut = p_totwgt_seedfit, disturbed = insitu_bdisturbed,
+  rename(stemsIn = insitu_pstems, seedsOut = p_seedfit, disturbed = insitu_bdisturbed,
          block = shelterBlock) %>%
   mutate(seedsIn = ifelse(pcode4 == "AVFA" | pcode4 == "TRHI", 10, 12),
          seedsIn = ifelse(pcode4 == "LACA" | pcode4 == "ESCA", 15, seedsIn),
-         seedsIn = ifelse(stemsIn > seedsIn, stemsIn, seedsIn))
+         seedsIn = ifelse(stemsIn > seedsIn, stemsIn, seedsIn)) %>%
+  # code to subset seedfit based on individual pwgt or total pwgt
+  subset(grepl("ind", pfit_source)) %>% # uncomment this line if want based on indidivual phyto wgt
+  #subset(grepl("tot", pfit_source)) %>% # uncomment this line if want based on total phyto wgt
+  select(-pfit_source)
 
-# islate the background data
+# isolate the background data
 back.dat0 <- comp.dat %>%
   filter(!is.na(background)) %>%
   select(plot:bdensity,insitu_bdisturbed, b.ind.wgt.g, seedsAdded, insitu_plot_bdensity) %>%
   unique() 
 
-back.dat <- left_join(back.dat0, allodat) %>%
-  mutate(p_totwgt_seedfit = intercept + b.ind.wgt.g*insitu_plot_bdensity*slope) %>%
-  mutate(p_totwgt_seedfit = ifelse(insitu_plot_bdensity == 0, 0, p_totwgt_seedfit)) %>%
-  select(plot:bdensity,insitu_bdisturbed,seedsAdded, p_totwgt_seedfit, insitu_plot_bdensity) %>%
-  rename(seedsIn = seedsAdded, seedsOut = p_totwgt_seedfit, pcode4 = bcode4,
+back.dat <- left_join(back.dat0, allodat, by = c("bcode4" = "species")) %>%
+  mutate(p_seedfit = intercept + b.ind.wgt.g*insitu_plot_bdensity*slope) %>%
+  mutate(p_seedfit = ifelse(insitu_plot_bdensity == 0, 0, p_seedfit)) %>%
+  select(plot:bdensity,insitu_bdisturbed,seedsAdded, p_seedfit, insitu_plot_bdensity) %>%
+  rename(seedsIn = seedsAdded, seedsOut = p_seedfit, pcode4 = bcode4,
          stemsIn = insitu_plot_bdensity, disturbed = insitu_bdisturbed,
          block = shelterBlock) %>%
   filter(!is.na(seedsOut)) %>%
@@ -58,7 +61,7 @@ back.dat <- left_join(back.dat0, allodat) %>%
 
 
 ## check that always the right number of seeds added 
-ggplot(back.dat, aes(x= seedsIn, y = stemsIn)) + geom_point() + geom_abline(intercept = 0, slope = 1)
+ggplot(back.dat, aes(x= seedsIn, y = stemsIn, col = pcode4, shape = bdensity)) + geom_point() + geom_abline(intercept = 0, slope = 1)
 
 # calculate stems in
 stems.in <- rbind(phyto.dat, back.dat) %>%
