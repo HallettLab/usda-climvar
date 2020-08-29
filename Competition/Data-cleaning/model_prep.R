@@ -19,14 +19,14 @@ comp.dat <- read.csv(paste0(datpath, "Competition_CleanedData/Competition_combin
 # and bring back allodat
 allodat <- read.csv(paste0(datpath,"Competition_CleanedData/Competition_allometric_clean.csv"),
                     na.strings = na_vals, strip.white = T) %>%
-  rename(bcode4 = phytometer)
+  rename(bcode4 = species)
 
 phyto.dat <- comp.dat %>%
-  select(plot:bdensity, insitu_bdisturbed, phytometer, pcode4, insitu_pstems, p_totwgt_seedfit ) %>%
-  filter(!is.na(p_totwgt_seedfit)) %>%
-  mutate(p_totwgt_seedfit = ifelse(insitu_pstems == 0, 0, p_totwgt_seedfit)) %>%
+  select(plot:bdensity, insitu_bdisturbed, phytometer, pcode4, insitu_pstems, p_seedfit ) %>%
+  filter(!is.na(p_seedfit)) %>%
+  mutate(p_seedfit = ifelse(insitu_pstems == 0, 0, p_seedfit)) %>%
   select(-phytometer, -bcode4) %>%
-  rename(seedsIn = insitu_pstems, seedsOut = p_totwgt_seedfit) 
+  rename(seedsIn = insitu_pstems, seedsOut = p_seedfit) 
 
 back.dat0 <- comp.dat %>%
   filter(!is.na(background)) %>%
@@ -34,10 +34,10 @@ back.dat0 <- comp.dat %>%
   unique() 
 
 back.dat <- left_join(back.dat0, allodat) %>%
-  mutate(p_totwgt_seedfit = intercept + b.ind.wgt.g*insitu_plot_bdensity*slope) %>%
-  mutate(p_totwgt_seedfit = ifelse(insitu_plot_bdensity == 0, 0, p_totwgt_seedfit)) %>%
-  select(plot:bdensity,insitu_bdisturbed,seedsAdded, p_totwgt_seedfit) %>%
-  rename(seedsIn = seedsAdded, seedsOut = p_totwgt_seedfit, pcode4 = bcode4) %>%
+  mutate(p_seedfit = intercept + b.ind.wgt.g*insitu_plot_bdensity*slope) %>%
+  mutate(p_seedfit = ifelse(insitu_plot_bdensity == 0, 0, p_seedfit)) %>%
+  select(plot:bdensity,insitu_bdisturbed,seedsAdded, p_seedfit) %>%
+  rename(seedsIn = seedsAdded, seedsOut = p_seedfit, pcode4 = bcode4) %>%
   filter(!is.na(seedsOut))
 
 tog <- rbind(phyto.dat, back.dat) %>%
@@ -116,11 +116,11 @@ for (i in 1:length(treatments)){
   
   ## graph just phyto - seeds
 phyto.dat <- comp.dat %>%
-  select(plot:bdensity, insitu_bdisturbed, phytometer, pcode4, insitu_pstems, p_totwgt_seedfit ) %>%
-  filter(!is.na(p_totwgt_seedfit)) %>%
-  mutate(p_totwgt_seedfit = ifelse(insitu_pstems == 0, 0, p_totwgt_seedfit)) %>%
+  select(plot:bdensity, insitu_bdisturbed, phytometer, pcode4, insitu_pstems, p_seedfit ) %>%
+  filter(!is.na(p_seedfit)) %>%
+  mutate(p_seedfit = ifelse(insitu_pstems == 0, 0, p_seedfit)) %>%
   select(-phytometer, -bcode4) %>%
-  rename(seedsIn = insitu_pstems, seedsOut = p_totwgt_seedfit) 
+  rename(seedsIn = insitu_pstems, seedsOut = p_seedfit) 
 
 back.dat0 <- comp.dat %>%
   filter(!is.na(background)) %>%
@@ -128,10 +128,10 @@ back.dat0 <- comp.dat %>%
   unique()
 
 back.dat2 <- left_join(back.dat0, allodat) %>%
-  mutate(p_totwgt_seedfit = intercept + b.ind.wgt.g*slope) %>%
-  mutate(p_totwgt_seedfit = ifelse(insitu_plot_bdensity == 0, 0, p_totwgt_seedfit)) %>%
-  select(plot:bdensity,insitu_bdisturbed, p_totwgt_seedfit) %>%
-  rename(seedsOut = p_totwgt_seedfit, pcode4 = bcode4) %>%
+  mutate(p_seedfit = intercept + b.ind.wgt.g*slope) %>%
+  mutate(p_seedfit = ifelse(insitu_plot_bdensity == 0, 0, p_seedfit)) %>%
+  select(plot:bdensity,insitu_bdisturbed, p_seedfit) %>%
+  rename(seedsOut = p_seedfit, pcode4 = bcode4) %>%
   filter(!is.na(seedsOut)) %>%
   mutate(seedsIn = 1)
 
@@ -158,8 +158,9 @@ ggplot(filter(phytotog2, background%in%c("Avena fatua", "Bromus hordeaceus", "Vu
 
 ## graph just phyto - seeds
 phyto.dat2 <- comp.dat %>%
-  select(plot:bdensity, insitu_bdisturbed, phytometer, pcode4, p.ind.wgt.g ) %>%
-   select(-phytometer, -bcode4) 
+  select(plot:bdensity, insitu_bdisturbed, phytometer, pcode4, p.ind.wgt.g) %>%
+  select(-phytometer, -bcode4) %>%
+  distinct() # data duplicated from two different predict wgt data sources, should be 1056 rows unduplicated
 
 back.dat3 <- comp.dat %>%
   filter(!is.na(background)) %>%
