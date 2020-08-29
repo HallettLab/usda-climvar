@@ -134,9 +134,9 @@ summary(lm(seeds~wgt_g, data = subset(specdat, species == "LACA" & clip_date == 
 
 # quick plot of esca
 ## compare flower, pod, wgt relationships to seed
-select(esca, specimen, flowers, pods, seeds, wgt_g) %>%
+select(esca, specimen, flowers, pods, totseeds, wgt_g) %>%
   gather(met, val, flowers, pods, wgt_g) %>%
-  ggplot(aes(val, seeds)) +
+  ggplot(aes(val, totseeds)) +
   geom_point(aes(col = as.factor(specimen))) +
   geom_smooth(method = "lm", col = "grey20") +
   facet_wrap(~met)
@@ -152,7 +152,8 @@ plot(esca$flowers, esca$pods)
 allo.tog <- specdat %>%
   select(species, trt, specimen, clip_date, seeds, wgt_g) %>%
   filter(!is.na(wgt_g)) %>% # removes LACA plants that were bagged together before weighing
-  rbind(data.frame(cbind(esca, trt = "ambient2020"))[names(.)])
+  rbind(mutate(esca, seeds = totseeds, trt = "ambient2020")[names(.)]) %>%
+  data.frame()
 
 # graph it all together!
 ggplot(allo.tog, aes(x=wgt_g, y=seeds, color = trt)) + geom_point() + geom_smooth(method = "lm", se =F) + 
@@ -252,7 +253,7 @@ phytodat2 <- left_join(phytodat, select(predict_out, -pwgt_g)) %>%
 # graph it all together!
 ggplot(allo.tog) + 
   geom_point(aes(x=wgt_g, y=seeds, color = trt)) + 
-  geom_abline(data = allo.out, aes(intercept = 0, slope = slope, lty = species)) +
+  geom_abline(data = allo.out, aes(intercept = 0, slope = slope, lty = phytometer)) +
   facet_wrap(~species, scales = "free")
 
 # change spp colname in allometric table to more generic
