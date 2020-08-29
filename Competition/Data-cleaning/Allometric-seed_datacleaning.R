@@ -214,7 +214,7 @@ for(i in species){
     PIs <- predict.lm(l, newdata = temp_predict, interval = "predict")
     colnames(PIs)[2:3] <- paste0(colnames(PIs)[2:3],"PI.95") # prefix to "upper" and "lower"
     # bind dataset used for prediction, CIs, PIs, and type of phyto dry mass (individual or total) used for prediction
-    temp_predict <- cbind(temp_predict, CIs, PIs[,2:3], wgt_source = w)
+    temp_predict <- cbind(temp_predict, CIs, PIs[,2:3], pfit_source = w)
     # append to predict_out
     predict_out <- rbind(predict_out, temp_predict)
   }
@@ -237,7 +237,7 @@ for(i in species){
 
 # preliminary look (NA = no background density bc control plot)
 ggplot(predict_out, aes(x=backgroundspp, y = fit)) + geom_boxplot() +  
-  geom_point(aes(col = wgt_source), alpha = 0.5, position = position_dodge(width = 0.3)) +
+  geom_point(aes(col = pfit_source), alpha = 0.5, position = position_dodge(width = 0.3)) +
   facet_grid(phytometer~backgrounddensity, scales = "free_y")
 # > note: NAs in prediction dataset are plots where data are missing (phytos not clipped/collected .. oopsies)
 
@@ -252,11 +252,11 @@ phytodat2 <- left_join(phytodat, select(predict_out, -pwgt_g)) %>%
 # graph it all together!
 ggplot(allo.tog) + 
   geom_point(aes(x=wgt_g, y=seeds, color = trt)) + 
-  geom_abline(data = allo.out, aes(intercept = 0, slope = slope, lty = phytometer)) +
+  geom_abline(data = allo.out, aes(intercept = 0, slope = slope, lty = species)) +
   facet_wrap(~species, scales = "free")
 
-# lmh added this line after ctw wrote code.. keeping in case needed for bayes modeling
-allo.out$species <- allo.out$phytometer
+# change spp colname in allometric table to more generic
+allo.out <- rename(allo.out, species = phytometer)
 
 # write out allometric table
 write.csv(allo.out, paste0(datpath,"Competition_CleanedData/Competition_allometric_clean.csv"), row.names = F)
