@@ -3,15 +3,27 @@
 # initate: Jan 2019
 
 # script purpose:
-# derive allometric relationship of biomass to seed production (fecundity) by species by fall drought treatment
-# compile predicted values, confidence intervals and prediction intervals (using `predict`)
-# write out to competition cleaned data 
+# 1) derive allometric relationship of biomass to seed production (fecundity) by species by fall drought treatment
+# 2) compile predicted values, confidence intervals and prediction intervals (using `predict`)
+# write out (1) and (2) datasets to ClimVar Dropbox Competition_CleanedData subfolder 
 
 # notes: 
-# specimens collected by fall dry and fall wet. check to see if treatment makes a difference on fecundity.
+# AVBA, BRHO, LACA, and VUMY specimens collected by fall dry and fall wet. check to see if treatment makes a difference on fecundity.
 # more than 20 specimens collected for some species (e.g. april and late-season samples for forbs)
+# ESCA specimens collected from Mariposa, CA, spring 2020, in ambient conditions (from CTW family property, by CTW's mom, sent to Boulder, CO, where CTW processing)
+# TRHI specimens collected from USDA Compost project, spring 2020 (collectred by Nikolai, AS et al. processing in Eugene, OR)
+# no ESCA or TRHI specimens with seeds available for collection like the other species at ClimVar project Spring 2017 (sampling trip #2 = too late for TRHI, too early for ESCA)
 
-# > as of 2019-05-02, still need to address +20specimen collections for LACA, but writing out data table so we can move on for now
+# dependencies:
+## scripts dependent on file generated in this script (i.e. changes made to csv written out here may affect code in dependent scripts):
+# 1. in Competition/Data-cleaning
+# > Combine_datacleaning.R; model_prep.R
+# >> other scripts depdendent on Combine_datacleaning.R: germain_figure.R
+# 2. in Competition/Data-analysis
+# > coexistence_model_formatting.R * <-- many scripts in Competition/Model-fit dependent on this script
+
+
+
 
 # -- SETUP -----
 rm(list = ls()) # clean environment
@@ -39,13 +51,13 @@ specmeta <- read_excel(paste0(datpath, "Competition_EnteredData/Competition_spec
                        na = na_vals)
 # clean up read in metadata table
 # preserve variable descriptions and order
-specmeta <- specmeta[23:nrow(specmeta),]
+specmeta <- specmeta[grep("^Variable", specmeta[[1]]):nrow(specmeta),]
 # set row one as colnames then remove
 colnames(specmeta) <- specmeta[1,]; specmeta <- specmeta[-1,]
 
 # update sep 2020: read in and append ESCA + TRHI dat after CTW and LMH process 2020 samples
 esca <- read.csv(paste0(datpath, "Competition_EnteredData/Competition_ESCAspecimens_spring2020.csv"), na.strings = na_vals) %>%
-# convert esca dates to date
+  # convert esca dates to date
   mutate_at(c("clip_date", "wgh_date"), function(x) as.Date(x, format = "%m/%d/%y"))
 
 
@@ -111,6 +123,7 @@ subset(specdat, species == "LACA") %>%
   geom_smooth(method = "lm", se=F) +
   facet_wrap(~species, scales = "free") #hm.. april looks like better time to clip? maybe plants pooping out by may
 # potentially should exclude may samples?
+# > note: 8 missing rows are 8 individuals bagged together in april (CTW misunderstood initial instructions), so no individual weights. okay to ignore
 
 # check how slope changes if exclude may
 # everything
@@ -160,56 +173,86 @@ predict_out <- data.frame()
 
 for(i in species){
   print(paste("Iterating through", i, "regression"))
-  l <- lm(seeds~0 + wgt_g, data = subset(allo.tog, species == i))
+  
+  # create lm predicting seeds from mass
+  # > mar 2020: LS and LMH decide makes sense to force intercept through 0 since no biomass, no seeds
+  # l <- lm(seeds~wgt_g, data = subset(allo.tog, species == i))  # let lm determine intercept
+  l <- lm(seeds~0 + wgt_g, data = subset(allo.tog, species == i)) # force intercept at 0
+  
   # store lm results
-  temp_lm <- cbind(phytometer = c(rep(i,1)), tidy(l))
-  temp_lm <- temp_lm[,-5]
-  colnames(temp_lm)[3:5] <- c("est", "se","pval")
-  # temp_lm <- temp_lm %>%
-  #   #mutate(term = casefold(gsub("[(]|[)]", "", term))) %>%
-  #   gather(met,val, est:pval) %>%
-  #   unite(gosharks, term, met) %>%
-  #   spread(gosharks, val)
+  temp_lm <- cbind(phytometer = i, tidy(l))
+  temp_lm <- temp_lm[!names(temp_lm) == "statistic"]
+  temp_lm <- rename(temp_lm, "est" = estimate, "se" = std.error, "pval" = p.value)
+  # if intercept forced through 0, add in intercept term as 0 so it's clear that's what it is
+  if(!any(grepl("intercept", temp_lm$term))){
+    temp_lm <- rbind(temp_lm, data.frame(phytometer = i, term = "Intercept", est = 0, se = NA, pval = NA))
+  }
+  # spread out model results by model term (e.g. intercept, beta term), so each beta estimate, se, and pval for each predictor-side component in its own col
+  # > this works whether the intercept goes through 0 or not
+  temp_lm <- temp_lm %>%
+    mutate(term = casefold(gsub("[(]|[)]", "", term))) %>%
+    gather(met,val, est:pval) %>%
+    unite(gosharks, term, met) %>%
+    spread(gosharks, val)
   
   # add to allo.out
   allo.out <- rbind(allo.out, temp_lm)
   
   # compile predict results
-  temp_predict <- phytodat[phytodat$phytometer == i, c("plot", "backgroundspp", "backgrounddensity", "phytometer", "pdry_wgt_g")]
-  colnames(temp_predict)[ncol(temp_predict)] <- "wgt_g"
-  CIs <- predict.lm(l, newdata = temp_predict ,interval = "confidence")
-  colnames(CIs)[2:3] <- paste0(colnames(CIs)[2:3],"CI.95") 
-  PIs <- predict.lm(l, newdata = temp_predict ,interval = "predict")
-  colnames(PIs)[2:3] <- paste0(colnames(PIs)[2:3],"PI.95") 
-  temp_predict <- cbind(temp_predict, CIs, PIs[,2:3]) %>%
-    rename(p_totwgt = wgt_g)
+  # > update 2020 aug 28 (after group mtg): want to predict BOTH based on inidividual weight, and total phytometer weight
+  # > for forb phytometers, we typically only clipped up to 3 individuals but more may have grown in (clipped in apr, so left 4th and greater individuals in ground to see how they looked in may)
+  # > for grasses, we typically clipped all phyto individuals (bc harvesting in may)
+  # for-loop through both types of weight to append to master predicted dataset
+  for(w in c("p.ind.wgt.g", "p_totwgt")){
+    temp_predict <- phytodat[phytodat$phytometer == i, c("plot", "backgroundspp", "backgrounddensity", "phytometer", w)] # <- laurens changed this to dry wgt of the specimens.. not of the total phytometers in the plot..
+    # rename wgt column as "wgt_g" so can run predict function on same lm created above
+    colnames(temp_predict)[ncol(temp_predict)] <- "wgt_g"
+    # crunch 95% confidence interval
+    CIs <- predict.lm(l, newdata = temp_predict, interval = "confidence")
+    colnames(CIs)[2:3] <- paste0(colnames(CIs)[2:3],"CI.95") # prefix to "upper" and "lower"
+    # crunch 95% prediction interval
+    PIs <- predict.lm(l, newdata = temp_predict, interval = "predict")
+    colnames(PIs)[2:3] <- paste0(colnames(PIs)[2:3],"PI.95") # prefix to "upper" and "lower"
+    # bind dataset used for prediction, CIs, PIs, and type of phyto dry mass (individual or total) used for prediction
+    temp_predict <- cbind(temp_predict, CIs, PIs[,2:3], wgt_source = w)
+    # append to predict_out
+    predict_out <- rbind(predict_out, temp_predict)
+  }
   
-  # add to predict_out
-  predict_out <- rbind(predict_out, temp_predict)
-   ggplot(predict_out, aes(x=backgroundspp, y = fit)) + geom_boxplot() +  facet_wrap(~backgrounddensity)
   # if last species, clean up and print done
   if(i == species[length(species)]){
-    #allo.out <- allo.out[,c(1:2,4,3,5,7,6)]
-    # lower case colnames, remove parentheses and "_est" from beta colnames
+    # lower case colnames, remove parentheses and "_est" from beta colnames, renumber rownames
     colnames(allo.out) <- casefold(gsub("[(]|[)]|_est", "", colnames(allo.out)))
     colnames(allo.out) <- gsub("wgt_g", "slope", colnames(allo.out))
     rownames(allo.out) <- seq(1,nrow(allo.out),1)
+    allo.out <- data.frame(allo.out)
+    # clarify wgt in prediction dataset is for phytometers, renumber rownames
     rownames(predict_out) <- seq(1,nrow(predict_out),1)
+    predict_out <- rename(predict_out, pwgt_g = wgt_g) %>%
+      data.frame()
+    
     print("lm results and predictions compiled!")
   }
 }
 
+# preliminary look (NA = no background density bc control plot)
+ggplot(predict_out, aes(x=backgroundspp, y = fit)) + geom_boxplot() +  
+  geom_point(aes(col = wgt_source), alpha = 0.5, position = position_dodge(width = 0.3)) +
+  facet_grid(phytometer~backgrounddensity, scales = "free_y")
+# > note: NAs in prediction dataset are plots where data are missing (phytos not clipped/collected .. oopsies)
+
 
 # -- FINISHING -----
 # merge phyodat and predicted values
-phytodat2 <- left_join(phytodat, predict_out) %>%
-  rename(p_totwgt_seedfit = fit) %>%
+# > LMH requests wide form for prediction dataset (thinks that makes the most sense so phytodat not repeated.. can just run two different models based on column)
+phytodat2 <- left_join(phytodat, select(predict_out, -pwgt_g)) %>%
+  rename(p_seedfit = fit) %>%
   tbl_df()
 
 # graph it all together!
 ggplot(allo.tog) + 
   geom_point(aes(x=wgt_g, y=seeds, color = trt)) + 
-  geom_abline(data = allo.out, aes(intercept = 0, slope = est, lty = phytometer)) +
+  geom_abline(data = allo.out, aes(intercept = 0, slope = slope, lty = phytometer)) +
   facet_wrap(~species, scales = "free")
 
 # lmh added this line after ctw wrote code.. keeping in case needed for bayes modeling
