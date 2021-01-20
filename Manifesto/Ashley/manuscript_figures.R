@@ -214,7 +214,7 @@ data2<-merge(May_all_XC, data2)
 ggplot(data=data2, aes(y=ANPPgm, x=treatment, color=as.factor(clust)))+
   geom_boxplot()
 
-c<-lme(weight_g_m ~treatment, random=~1|year/shelterBlock, subset(data2, clust2=="1"), na.action=na.exclude)
+c<-lme(weight_g_m ~treatment*as.factor(clust), random=~1|year/shelterBlock, subset(data2, clust2=="1"), na.action=na.exclude)
 summary(c)
 anova(c) #treatment is significant
 r.squaredGLMM(c) #12% of variation explained by fixed effects, 57% by whole model (interannual variation?)
@@ -530,6 +530,10 @@ May_XC$treatment2 <- as.character(May_XC$treatment)
 #Then turn it back into a factor with the levels in the correct order
 May_XC$treatment2 <- factor(May_XC$treatment2, levels = c("controlRain", "fallDry","springDry","consistentDry"))
 
+label1 <- paste("Treatment: F['3,33']==4.59")
+label2<-paste("Year: F['2,33']==12.36")
+label3<-paste("Treatment*Year: F['6,3'3]== 2.10")
+label4<- "p==0.001"
 Fig3a<-ggplot(May_XC, aes(x = treatment2, y = weight_g_m)) + 
   geom_boxplot(aes(fill = treatment2)) + 
   ggtitle("a) Overall treatment effects on ANPP")+
@@ -540,9 +544,11 @@ Fig3a<-ggplot(May_XC, aes(x = treatment2, y = weight_g_m)) +
   scale_color_manual(values = c("gray80","gray50", "black"), guide = guide_legend(title = "Year")) +
   #facet_wrap(~year)+
   annotate("text", x= c("controlRain","consistentDry", "fallDry","springDry"), y = c( 975, 900, 900,900), label = c("a", "b", "b", "ab"), color = "black", cex=6) +
+  #geom_label(aes(x=3, y = max(weight_g_m - 2)), label =  c(label1,label2,label3), parse = T)+ #x=c("springDry","consistentDry"), y=c(1025,1025), parse=TRUE)+
+  annotate("text", label= paste(c("Treatment: F ['3,33']==4.59", "p==0.001","Year: F['2,33']==12.36", "p < 0.001","TreatmentxYear: F['6,33'] ==  2.10", "p == 0.079")),
+           x=c(3.5,4,3.5,4,3.5,4), y=c(1025,1025,1000,1000,975,975), cex=4, hjust = 1, parse=T)+
   theme(legend.position="none")+
-  xlab("Rainfall Treatment") +
-  ylab("ANPP (g/m2)")
+  labs(x="Rainfall Treatment", y = expression(paste("ANPP ", g/m^{2})))
 Fig3a
 
 Fig3b<-ggplot(d=May_XC, aes(x=as.factor(year), y=weight_g_m)) +
@@ -551,7 +557,7 @@ Fig3b<-ggplot(d=May_XC, aes(x=as.factor(year), y=weight_g_m)) +
   #scale_fill_manual(values = c("gray99","gray80", "gray50"), guide = guide_legend(title = "Year")) +
   #geom_jitter(position=position_jitter(0.2), aes(color=treatment2)) +
   #scale_color_manual(values = c("royalblue2", "peachpuff","lightsteelblue1", "sienna"), guide = guide_legend(title = "Treatment")) +
-  labs(x="Year", y="ANPP (g/m2)")+
+  labs(x="Year", y = expression(paste("ANPP ", g/m^{2})))+
   theme(legend.position="none")+
   annotate("text", x= c("2015", "2016","2017"), y = c(900, 975, 975), label = c("a", "b", "b"), color = "black", cex=6) 
 Fig3b
@@ -570,7 +576,7 @@ Fig3c<-ggplot(data2, aes(y=ANPPgm, x=treatment2,  fill=treatment2))+
   scale_x_discrete(labels = c("Control\n ", "Early\nDrought\n", "Late\n Drought\n","Consistent\n Drought\n"))+
   scale_fill_manual(values = c("Black", "gray40","lightgrey", "white"), guide = guide_legend(title = "Treatment"), labels=c("Control", "Early Drought", "Late Drought", "Consistent Drought")) +
   #annotate("text", x= c(0.7, 0.9, 1.1,1.3), y = c( 950, 950, 950,950), label = c("a", "b", "ab", "b"), color = "black", cex=6) +
-  labs(x="Rainfall Treatment", y="ANPP (g/m2)")+
+  labs(x="", y = expression(paste("ANPP ", g/m^{2})))+
   theme(legend.position="none")
 Fig3c
 
@@ -752,7 +758,7 @@ FG_XC_nfix$clust<-clustmem$clust2
 m4<-lme(log(weight_g_m+1) ~treatment, random=~1|year/shelterBlock, FG_XC_nfix, na.action=na.exclude)
 summary(m4)
 anova(m4) #treatment is significant
-r.squaredGLMM(m4) #30% of variation explained by fixed effects, 39% by whole model (interannual variation?)
+r.squaredGLMM(m4) #28% of variation explained by fixed effects, 37% by whole model (interannual variation?)
 qqnorm(residuals(m4))
 qqline(residuals(m4))
 shapiro.test(residuals(m4))
@@ -763,7 +769,7 @@ contrast(LS4, "pairwise") #consistent drought is different from fall and spring,
 m4a<-lme(log(weight_g_m+1) ~treatment*as.factor(clust), random=~1|year/shelterBlock, FG_XC_nfix, na.action=na.exclude)
 summary(m4a)
 anova(m4a) #treatment is significant
-r.squaredGLMM(m4a) #30% of variation explained by fixed effects, 39% by whole model (interannual variation?)
+r.squaredGLMM(m4a) #36% of variation explained by fixed effects, 44% by whole model (interannual variation?)
 qqnorm(residuals(m4a))
 qqline(residuals(m4a))
 shapiro.test(residuals(m4a))
@@ -832,9 +838,15 @@ Fig3b_v2<-ggplot(data=pheno_2015_xc, aes(x=time, y=meanPG))+
   ggtitle("b) Overall treatment effects on phenology")+
   geom_errorbar(aes(ymax = meanPG+sePG, ymin = meanPG-sePG), width=.25)+
   geom_line(aes(x=time, y=meanPG, group=treatment2))+
-  geom_point(aes(fill=treatment2), pch=21, cex=5)+
-  scale_fill_manual(values = c("Black", "gray40","lightgrey", "white"), guide = guide_legend(title = "Treatment:"), labels=c("Control", "Early\nDrought", "Late\nDrought","Consistent\nDrought"))+
+  geom_point(aes(fill=treatment2, shape = treatment2), cex=5)+
+  scale_fill_manual(values = c("Black", "gray40","lightgrey", "white"), 
+                    guide = guide_legend(title = "Treatment:"), 
+                    labels=c("Control", "Early\nDrought", "Late\nDrought","Consistent\nDrought"))+
+  scale_shape_manual(values=c(21,24,22,23),guide = guide_legend(title = "Treatment:"), #change legend title
+                     labels=c("Control", "Early\nDrought", "Late\nDrought", "Consistent\nDrought"))+
   labs(x="Time", y="Greenness (%)")+
+  annotate("text", label= paste(c("Treatment: F['3,357']==81.02", "p < 0.001","Time: F['3,357']==145.64", "p < 0.001","Treatment*x*Time: F['9,357']==3.60", "p < 0.001")),
+           x=c(3.5,4,3.5,4,3.5,4), y=c(110,110,106,106,102,102), cex=4, hjust = 1, parse=T)+
   theme(legend.position="bottom")
 Fig3b_v2
 
@@ -856,8 +868,12 @@ Fig5b<-ggplot(data=pheno_clust_sum, aes(x=time, y=meanPG))+
   facet_wrap(~as.factor(clust), ncol=2)+
   geom_errorbar(aes(ymax = meanPG+sePG, ymin = meanPG-sePG), width=.25)+
   geom_line(aes(x=time, y=meanPG, group=treatment2))+
-  geom_point(aes(fill=treatment2), pch=21, cex=5)+
-  scale_fill_manual(values = c("Black", "gray40","lightgrey", "white"), guide = guide_legend(title = "Treatment:"), labels=c("Control", "Early\nDrought", "Late\nDrought","Consistent\nDrought"))+
+  geom_point(aes(fill=treatment2, shape=treatment2), cex=5)+
+  scale_fill_manual(values = c("Black", "gray40","lightgrey", "white"), 
+                    guide = guide_legend(title = "Treatment:"), 
+                    labels=c("Control", "Early\nDrought", "Late\nDrought","Consistent\nDrought"))+
+  scale_shape_manual(values=c(21,24,22,23),guide = guide_legend(title = "Treatment:"), #change legend title
+                     labels=c("Control", "Early\nDrought", "Late\nDrought", "Consistent\nDrought"))+
   labs(x="Time", y="Greenness (%)") +
   theme(legend.position="bottom")
 Fig5b
@@ -866,6 +882,12 @@ grid.arrange(Fig5a,Fig5b, ncol=2)
 
 ##new figure 4
 grid.arrange(Fig3c, Fig5b, ncol=1)
+treatment_names <- c(
+  `controlRain` = "Control",
+  `consistentDry` = "Consistent Drought",
+  `fallDry` = "Early Drought",
+  `springDry` = "Late Drought"
+)
 
 #supplementary figure, run Cover_dataanalyses.R first
 gf_graphic2 <- gf %>%
@@ -881,14 +903,26 @@ ggplot(data = subset(gf_graphic2, subplot %in% c("XC")), aes(x=year, y=meancover
   geom_rect(data = subset(gf_graphic2,treatment2 == 'controlRain'),aes(fill = treatment2),xmin = -Inf,xmax = Inf, ymin = -Inf,ymax = Inf,alpha = 0.3) +
   geom_rect(data = subset(gf_graphic2,treatment2 == 'fallDry'),aes(fill = treatment2),xmin = -Inf,xmax = Inf, ymin = -Inf,ymax = Inf,alpha = 0.3) +
   geom_rect(data = subset(gf_graphic2,treatment2 == 'springDry'),aes(fill = treatment2),xmin = -Inf,xmax = Inf, ymin = -Inf,ymax = Inf,alpha = 0.3) +
-  scale_fill_manual(values=c("sienna", "royalblue2",  "peachpuff2", "lightsteelblue1"))+
+  scale_fill_manual(values=c("sienna", "royalblue2",  "peachpuff2", "lightsteelblue1"),
+                    guide = guide_legend(title = "Treatment:"), 
+                    labels=c("Consistent Drought","Control",  "Early Drought", "Late Drought"))+
   geom_point(cex=3.5) +
   geom_errorbar(aes(ymax = meancover+secover, ymin = meancover-secover), width=.25) + 
-  labs(x="Year", y="Percent cover", fill="Functional group") +
-  facet_wrap(~treatment2, ncol=4)+ 
+  labs(x="Year", y="Percent cover", shape="Functional Group") +
+  facet_wrap(~treatment2, ncol=4, labeller=as_labeller(treatment_names))+ 
   theme_bw()+ 
   theme(text = element_text(size=14))+
+  #theme(strip.background = element_blank(),strip.text.x = element_blank())+
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+treatment_names2 <- c(
+  `controlRain` = "Control",
+  `consistentDry` = "Consistent Drought",
+  `fallDry` = "Early Drought",
+  `springDry` = "Late Drought",
+  `1` = "1: Functionally Diverse",
+  `2` = "2: Avena dominated"
+)
 
 gf_graphic3 <- gf %>% filter(subplot=="XC")%>%
   group_by(clust15, func, treatment, year) %>%
@@ -904,8 +938,12 @@ ggplot(data = gf_graphic3, aes(x=year, y=meancover, shape=func)) +
   scale_fill_manual(values=c("sienna", "royalblue2",  "peachpuff2", "lightsteelblue1"))+
   geom_point(cex=3.5) +
   geom_errorbar(aes(ymax = meancover+secover, ymin = meancover-secover), width=.25) + 
-  labs(x="Year", y="Percent cover", fill="Functional group") +
-  facet_wrap(~clust15*treatment2, ncol=4)+ 
+  labs(x="Year", y="Percent cover", shape="Functional group") +
+  scale_fill_manual(values=c("sienna", "royalblue2",  "peachpuff2", "lightsteelblue1"),
+                    guide = guide_legend(title = "Treatment:"), 
+                    labels=c("Consistent Drought","Control",  "Early Drought", "Late Drought"))+
+  facet_wrap(~clust15*treatment2, ncol=4, labeller=as_labeller(treatment_names2))+ 
   theme_bw()+ 
   theme(text = element_text(size=14))+
+  #theme(strip.background = element_blank(), strip.text.x = element_blank())+
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
