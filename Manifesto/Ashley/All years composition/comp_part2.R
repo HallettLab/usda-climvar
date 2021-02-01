@@ -108,7 +108,7 @@ FG_B$treatment2[FG_B$treatment=="springDry"] <- "Late"
 FG_B$treatment2[FG_B$treatment=="fallDry"] <- "Early"
 FG_B$treatment2[FG_B$treatment=="consistentDry"] <- "Consistent"
 
-#to create a plot of biomass of forb, grass, mixed
+#to create a plot of biomass of forb, grass, mixed, we include forb biomass in monoculture, grass biomass in monoculture
 FG_B.g2$Fweight<-FG_B.f2$M
 FG_B.g2$Gweight<-FG_grass$weight_g_m
 FG_all<-FG_B.g2%>%gather("Fweight","Gweight","totweight",key=comp, value=biomass)
