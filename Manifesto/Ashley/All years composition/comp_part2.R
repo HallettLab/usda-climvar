@@ -305,7 +305,8 @@ contrast(LS.g, "pairwise")
 
 #Manuscript figures----
 
-#FIGURE 1 - real biomass by composition treatment
+# * FIGURE 1 ----
+#real biomass by composition treatment
 #total biomass of the mixed, forb, and grass plots by treatment 
 f1a<-ggplot(d=subset(FG_all), aes(x=treatment2, y=biomass, fill=comp)) +
   #facet_wrap(~year)+
@@ -363,7 +364,7 @@ ggdraw(f1a) +
 #alternatively, ggpubr for panels
 #ggarrange(pcomp, pyr, f1a, ncol = 2, nrow = 2, labels=c("a)","b)", "c)"), heights=c(1,2))
 
-#FIGURE 2
+# * FIGURE 2 ----
 #Figure 2a - biodiversity effects 
 f2a<-ggplot(FG_B.sum2, aes(x=treatment2, y=m))+
   geom_abline(intercept = 0, slope = 0)+
@@ -394,7 +395,8 @@ f2b
 ggarrange(f2a, f2b, ncol = 1, nrow = 2, labels=c("a)","b)"), heights=c(2,1))
 
 
-#FIGURE 3 - deviation in expected yield by functional group
+# * FIGURE 3 ---- 
+#deviation in expected yield by functional group
 f3<-ggplot(d=FG_B.sum3, aes(x=treatment2, y=dYi.m, shape=as.factor(year))) +
   facet_wrap(~func,ncol=2)+
   #ylim(-80,200)+
@@ -409,7 +411,8 @@ f3<-ggplot(d=FG_B.sum3, aes(x=treatment2, y=dYi.m, shape=as.factor(year))) +
   geom_errorbar(aes(ymin=dYi.m-dYi.se,ymax=dYi.m+dYi.se),position = position_dodge(width = 0.50), width=0)
 f3
 
-#FIGURE S1 - biomass by rainfall and composition treatment by year
+# * FIGURE S1 ---- 
+#biomass by rainfall and composition treatment by year
 fs1<-ggplot(d=subset(FG_all), aes(x=treatment2, y=biomass, fill=comp)) +
   facet_wrap(~year)+
   #ggtitle(expression(Observed~Yield~(Y[o])))+
@@ -421,7 +424,8 @@ fs1<-ggplot(d=subset(FG_all), aes(x=treatment2, y=biomass, fill=comp)) +
   geom_boxplot(aes(y=biomass), shape=16)
 fs1
 
-#FIGURE S2 - dRY vs M to help understand selection effects
+# * FIGURE S2 ----
+#dRY vs M to help understand selection effects
 ggplot(FG_B, aes(y=dRY, x=M))+
   geom_point(aes(color=treatment2,shape=as.factor(func)))+
   geom_smooth(method="lm",(aes(color=treatment2)),se=F)+
