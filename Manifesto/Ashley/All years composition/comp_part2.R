@@ -269,7 +269,7 @@ shapiro.test(residuals(m.sel)) #note, not normally distributed
 LS.sel<-lsmeans(m.sel, ~treatment)
 contrast(LS.sel, "pairwise")
 
-#3. complementarity
+#4. complementarity
 m.comp<-lme(complement ~treatment*year, random=~1|shelterBlock, FG_B, na.action=na.exclude)
 summary(m.comp)
 anova(m.comp) #treatment and treatment*year are significant
@@ -280,7 +280,7 @@ shapiro.test(residuals(m.comp)) #normal
 LS.all<-lsmeans(m.comp, ~treatment, by="year")
 contrast(LS.all, "pairwise")
 
-#4. do forbs do better or worse than expected?
+#5. do forbs do better or worse than expected?
 m.f<-lme(dYi ~treatment*year, random=~1|shelterBlock, FG_B.f2, na.action=na.exclude)
 summary(m.f)
 anova(m.f) #treatment is not significant
@@ -291,7 +291,7 @@ shapiro.test(residuals(m.f)) #normal
 LS.f<-lsmeans(m.f, ~treatment, by="year")
 contrast(LS.f, "pairwise")
 
-#5. do grasses do better or worse than expected?
+#6. do grasses do better or worse than expected?
 m.g<-lme(dYi ~treatment*year, random=~1|shelterBlock, subset(FG_B, func=="Grass"), na.action=na.exclude)
 summary(m.g)
 anova(m.g) #treatment is not significant
