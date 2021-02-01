@@ -1,3 +1,9 @@
+#Biodiversity effects across rainfall treatments in CA annual grasslands
+#the purpose of this code is additive partitioning of biodiversity effects in the ClimVar mixed composition plots
+#this code accompanies the partitioning manuscript and reproducible, publication figures are in the final section 
+#Date of last update: 1/February/2021
+#Author: Ashley Shaw
+
 library(tidyverse)
 library(nlme)
 library(ggplot2)
