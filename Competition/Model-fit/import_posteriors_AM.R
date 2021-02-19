@@ -5,14 +5,14 @@ library(ggplot2)
 library(tidyverse)
 
 ## AVFA
-load("./Competition/Model-fit/posteriors/AM_avfa_dry_posteriors_ind.rdata")
+load("./Competition/Model-fit/posteriors/avfa_dry_posteriors_final.rdata")
 avfa_dry <- rstan::extract(no_dist_seeds_avfa_dry)
-stan_dens(no_dist_seeds_avfa_dry, pars = c("lambda", "alpha_avfa", "alpha_brho", "alpha_esca", "alpha_laca", "alpha_vumy"))
+#stan_dens(no_dist_seeds_avfa_dry, pars = c("lambda", "alpha_avfa", "alpha_brho", "alpha_esca", "alpha_laca", "alpha_vumy"))
 remove(no_dist_seeds_avfa_dry)
 
-load("./Competition/Model-fit/posteriors/AM_avfa_wet_posteriors_ind.rdata")
+load("./Competition/Model-fit/posteriors/avfa_wet_posteriors_final.rdata")
 avfa_wet <- rstan::extract(no_dist_seeds_avfa_wet)
-stan_dens(no_dist_seeds_avfa_wet, pars = c("lambda", "alpha_avfa", "alpha_brho", "alpha_esca", "alpha_laca", "alpha_vumy"))
+#stan_dens(no_dist_seeds_avfa_wet, pars = c("lambda", "alpha_avfa", "alpha_brho", "alpha_esca", "alpha_laca", "alpha_vumy"))
 remove(no_dist_seeds_avfa_wet)
 
 # Convert to data frame
@@ -22,14 +22,14 @@ params_avfa$species <- "avfa"
 params_avfa$treatment <- c("fallDry","fallWet")
 
 ## BRHO
-load("./Competition/Model-fit/posteriors/AM_brho_wet_posteriors_ind.rdata")
+load("./Competition/Model-fit/posteriors/brho_wet_posteriors_final.rdata")
 brho_wet <- rstan::extract(no_dist_seeds_brho_wet)
-stan_dens(no_dist_seeds_brho_wet, pars = c("lambda", "alpha_avfa", "alpha_brho", "alpha_esca", "alpha_laca", "alpha_vumy"))
+#stan_dens(no_dist_seeds_brho_wet, pars = c("lambda", "alpha_avfa", "alpha_brho", "alpha_esca", "alpha_laca", "alpha_vumy"))
 remove(no_dist_seeds_brho_wet)
 
-load("./Competition/Model-fit/posteriors/AM_brho_dry_posteriors_ind.rdata")
+load("./Competition/Model-fit/posteriors/brho_dry_posteriors_final.rdata")
 brho_dry <- rstan::extract(no_dist_seeds_brho_dry)
-stan_dens(no_dist_seeds_brho_dry, pars = c("lambda", "alpha_avfa", "alpha_brho", "alpha_esca", "alpha_laca", "alpha_vumy"))
+#stan_dens(no_dist_seeds_brho_dry, pars = c("lambda", "alpha_avfa", "alpha_brho", "alpha_esca", "alpha_laca", "alpha_vumy"))
 remove(no_dist_seeds_brho_dry)
 
 # Convert to data frame
@@ -39,14 +39,14 @@ params_brho$species <- "brho"
 params_brho$treatment <- c("fallDry","fallWet")
 
 ## VUMY
-load("./Competition/Model-fit/posteriors/AM_vumy_dry_posteriors_ind.rdata")
+load("./Competition/Model-fit/posteriors/vumy_dry_posteriors_final.rdata")
 vumy_dry <- rstan::extract(no_dist_seeds_vumy_dry)
-stan_dens(no_dist_seeds_vumy_dry, pars = c("lambda", "alpha_avfa", "alpha_brho", "alpha_esca", "alpha_laca", "alpha_vumy"))
+#stan_dens(no_dist_seeds_vumy_dry, pars = c("lambda", "alpha_avfa", "alpha_brho", "alpha_esca", "alpha_laca", "alpha_vumy"))
 remove(no_dist_seeds_vumy_dry)
 
-load("./Competition/Model-fit/posteriors/AM_vumy_wet_posteriors_ind.rdata")
+load("./Competition/Model-fit/posteriors/vumy_wet_posteriors_final.rdata")
 vumy_wet <- rstan::extract(no_dist_seeds_vumy_wet)
-stan_dens(no_dist_seeds_vumy_wet, pars = c("lambda", "alpha_avfa", "alpha_brho", "alpha_esca", "alpha_laca", "alpha_vumy"))
+#stan_dens(no_dist_seeds_vumy_wet, pars = c("lambda", "alpha_avfa", "alpha_brho", "alpha_esca", "alpha_laca", "alpha_vumy"))
 remove(no_dist_seeds_vumy_wet)
 
 # Convert to data frame
@@ -56,14 +56,14 @@ params_vumy$species <- "vumy"
 params_vumy$treatment <- c("fallDry","fallWet")
 
 ## LACA
-load("./Competition/Model-fit/posteriors/AM_laca_dry_posteriors_ind.rdata")
+load("./Competition/Model-fit/posteriors/laca_dry_posteriors_final.rdata")
 laca_dry <- rstan::extract(no_dist_seeds_laca_dry)
-stan_dens(no_dist_seeds_laca_dry, pars = c("lambda", "alpha_avfa", "alpha_brho", "alpha_esca", "alpha_laca", "alpha_vumy"))
+#stan_dens(no_dist_seeds_laca_dry, pars = c("lambda", "alpha_avfa", "alpha_brho", "alpha_esca", "alpha_laca", "alpha_vumy"))
 remove(no_dist_seeds_laca_dry)
 
-load("./Competition/Model-fit/posteriors/AM_laca_wet_posteriors_ind.rdata")
+load("./Competition/Model-fit/posteriors/laca_wet_posteriors_final.rdata")
 laca_wet <- rstan::extract(no_dist_seeds_laca_wet)
-stan_dens(no_dist_seeds_laca_wet, pars = c("lambda", "alpha_avfa", "alpha_brho", "alpha_esca", "alpha_laca", "alpha_vumy"))
+#stan_dens(no_dist_seeds_laca_wet, pars = c("lambda", "alpha_avfa", "alpha_brho", "alpha_esca", "alpha_laca", "alpha_vumy"))
 remove(no_dist_seeds_laca_wet)
 
 # Convert to data frame
@@ -73,15 +73,26 @@ params_laca$species <- "laca"
 params_laca$treatment <- c("fallDry","fallWet")
 
 ## ESCA
-load("./Competition/Model-fit/posteriors/AM_esca_dry_posteriors_ind.rdata")
+load("./Competition/Model-fit/posteriors/esca_dry_posteriors_final.rdata")
 esca_dry <- rstan::extract(no_dist_seeds_esca_dry)
-stan_dens(no_dist_seeds_esca_dry, pars = c("lambda", "alpha_avfa", "alpha_brho", "alpha_esca", "alpha_laca", "alpha_vumy"))
+#stan_dens(no_dist_seeds_esca_dry, pars = c("lambda", "alpha_avfa", "alpha_brho", "alpha_esca", "alpha_laca", "alpha_vumy"))
 remove(no_dist_seeds_esca_dry)
 
-load("./Competition/Model-fit/posteriors/AM_esca_wet_posteriors_ind.rdata")
+load("./Competition/Model-fit/posteriors/esca_wet_posteriors_final.rdata")
 esca_wet <- rstan::extract(no_dist_seeds_esca_wet)
-stan_dens(no_dist_seeds_esca_wet, pars = c("lambda", "alpha_avfa", "alpha_brho", "alpha_esca", "alpha_laca", "alpha_vumy"))
+#stan_dens(no_dist_seeds_esca_wet, pars = c("lambda", "alpha_avfa", "alpha_brho", "alpha_esca", "alpha_laca", "alpha_vumy"))
 remove(no_dist_seeds_esca_wet)
+
+## TRHI
+load("./Competition/Model-fit/posteriors/trhi_dry_posteriors_final.rdata")
+trhi_dry <- rstan::extract(no_dist_seeds_trhi_dry)
+#stan_dens(no_dist_seeds_trhi_dry, pars = c("lambda", "alpha_avfa", "alpha_brho", "alpha_esca", "alpha_laca", "alpha_vumy"))
+remove(no_dist_seeds_trhi_dry)
+
+load("./Competition/Model-fit/posteriors/trhi_wet_posteriors_final.rdata")
+trhi_wet <- rstan::extract(no_dist_seeds_trhi_wet)
+#stan_dens(no_dist_seeds_trhi_wet, pars = c("lambda", "alpha_avfa", "alpha_brho", "alpha_esca", "alpha_laca", "alpha_vumy"))
+remove(no_dist_seeds_trhi_wet)
 
 # Convert to data frame
 params_esca <- rbind(as.data.frame(lapply(esca_dry, mean))[-7],

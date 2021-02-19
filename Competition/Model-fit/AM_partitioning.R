@@ -41,16 +41,18 @@ params$germ[params$species == "brho"] <- 0.8
 params$germ[params$species == "vumy"] <- 0.8
 params$germ[params$species == "laca"] <- 0.8
 params$germ[params$species == "esca"] <- 0.92
+params$germ[params$species == "trhi"] <- 0.95
 
 params$surv[params$species == "avfa"] <- 0.01
 params$surv[params$species == "brho"] <- 0.013
 params$surv[params$species == "vumy"] <- 0.045
 params$surv[params$species == "laca"] <- 0.013
 params$surv[params$species == "esca"] <- 0.013
+params$surv[params$species == "trhi"] <- 0.01
 
 # Create weighted parameters for mechanism partitioning
 params_weighted <- params[params$treatment == "fallDry",1:6]*fall.dry + params[params$treatment == "fallWet",1:6]*fall.wet
-params_weighted$species <- c("avfa","vumy","brho","esca","laca")
+params_weighted$species <- c("avfa","vumy","brho","esca","laca","trhi")
 params_weighted <- left_join(params_weighted, unique(params[,c("species","germ","surv")]))
 
 ### Coexistence functions ----
@@ -78,7 +80,7 @@ pop.resident <- function (N0, resident, s, g, a_intra, a_inter, lambda) {
 
 ## Run all species to equilibrium in isolation
 # Species to loop across and time in years
-species <- c("avfa","brho","vumy","laca","esca")
+species <- c("avfa","brho","vumy","laca","esca","trhi")
 time <- length(rainsummary$raintype)
 
 # Pre-allocate empty object to store results, and set initial conditions
@@ -109,12 +111,14 @@ coexist_out <- list(avfa = matrix(NA, nrow = 72, ncol = length(species)-1),
                     brho = matrix(NA, nrow = 72, ncol = length(species)-1),
                     vumy = matrix(NA, nrow = 72, ncol = length(species)-1),
                     laca = matrix(NA, nrow = 72, ncol = length(species)-1),
-                    esca = matrix(NA, nrow = 72, ncol = length(species)-1))
+                    esca = matrix(NA, nrow = 72, ncol = length(species)-1),
+                    trhi = matrix(NA, nrow = 72, ncol = length(species)-1))
 colnames(coexist_out[['avfa']]) <- species[species != 'avfa']
 colnames(coexist_out[['brho']]) <- species[species != 'brho']
 colnames(coexist_out[['vumy']]) <- species[species != 'vumy']
 colnames(coexist_out[['laca']]) <- species[species != 'laca']
 colnames(coexist_out[['esca']]) <- species[species != 'esca']
+colnames(coexist_out[['trhi']]) <- species[species != 'trhi']
 
 # Loop once for each invader
 for (i in 1:length(species)){
@@ -158,7 +162,7 @@ coexist_out <- lapply(coexist_out, log)
 
 ## Run all species to equilibrium with average rainfall conditions
 # Species to loop across and time in years
-species <- c("avfa","brho","vumy","laca","esca")
+species <- c("avfa","brho","vumy","laca","esca","trhi")
 time <- length(rainsummary$raintype)
 
 # Pre-allocate empty object to store results, and set initial conditions
@@ -186,12 +190,14 @@ coexist_no_var <- list(avfa = matrix(NA, nrow = 72, ncol = length(species)-1),
                     brho = matrix(NA, nrow = 72, ncol = length(species)-1),
                     vumy = matrix(NA, nrow = 72, ncol = length(species)-1),
                     laca = matrix(NA, nrow = 72, ncol = length(species)-1),
-                    esca = matrix(NA, nrow = 72, ncol = length(species)-1))
+                    esca = matrix(NA, nrow = 72, ncol = length(species)-1),
+                    trhi = matrix(NA, nrow = 72, ncol = length(species)-1))
 colnames(coexist_no_var[['avfa']]) <- species[species != 'avfa']
 colnames(coexist_no_var[['brho']]) <- species[species != 'brho']
 colnames(coexist_no_var[['vumy']]) <- species[species != 'vumy']
 colnames(coexist_no_var[['laca']]) <- species[species != 'laca']
 colnames(coexist_no_var[['esca']]) <- species[species != 'esca']
+colnames(coexist_no_var[['trhi']]) <- species[species != 'trhi']
 
 # Loop once for each invader
 for (i in 1:length(species)){
@@ -233,7 +239,7 @@ coexist_eps_0 <- lapply(coexist_no_var, log)
 
 ## Run all species to equilibrium with variable lambda
 # Species to loop across and time in years
-species <- c("avfa","brho","vumy","laca","esca")
+species <- c("avfa","brho","vumy","laca","esca","trhi")
 time <- length(rainsummary$raintype)
 
 # Pre-allocate empty object to store results, and set initial conditions
@@ -264,12 +270,14 @@ coexist_var_lamb <- list(avfa = matrix(NA, nrow = 72, ncol = length(species)-1),
                        brho = matrix(NA, nrow = 72, ncol = length(species)-1),
                        vumy = matrix(NA, nrow = 72, ncol = length(species)-1),
                        laca = matrix(NA, nrow = 72, ncol = length(species)-1),
-                       esca = matrix(NA, nrow = 72, ncol = length(species)-1))
+                       esca = matrix(NA, nrow = 72, ncol = length(species)-1),
+                       trhi = matrix(NA, nrow = 72, ncol = length(species)-1))
 colnames(coexist_var_lamb[['avfa']]) <- species[species != 'avfa']
 colnames(coexist_var_lamb[['brho']]) <- species[species != 'brho']
 colnames(coexist_var_lamb[['vumy']]) <- species[species != 'vumy']
 colnames(coexist_var_lamb[['laca']]) <- species[species != 'laca']
 colnames(coexist_var_lamb[['esca']]) <- species[species != 'esca']
+colnames(coexist_var_lamb[['trhi']]) <- species[species != 'trhi']
 
 # Loop once for each invader
 for (i in 1:length(species)){
@@ -316,7 +324,7 @@ coexist_eps_lamb <- Map('-', coexist_var_lamb, coexist_eps_0)
 
 ## Run all species to equilibrium with variable lambda
 # Species to loop across and time in years
-species <- c("avfa","brho","vumy","laca","esca")
+species <- c("avfa","brho","vumy","laca","esca","trhi")
 time <- length(rainsummary$raintype)
 
 # Pre-allocate empty object to store results, and set initial conditions
@@ -347,12 +355,14 @@ coexist_var_alph <- list(avfa = matrix(NA, nrow = 72, ncol = length(species)-1),
                          brho = matrix(NA, nrow = 72, ncol = length(species)-1),
                          vumy = matrix(NA, nrow = 72, ncol = length(species)-1),
                          laca = matrix(NA, nrow = 72, ncol = length(species)-1),
-                         esca = matrix(NA, nrow = 72, ncol = length(species)-1))
+                         esca = matrix(NA, nrow = 72, ncol = length(species)-1),
+                         trhi = matrix(NA, nrow = 72, ncol = length(species)-1))
 colnames(coexist_var_alph[['avfa']]) <- species[species != 'avfa']
 colnames(coexist_var_alph[['brho']]) <- species[species != 'brho']
 colnames(coexist_var_alph[['vumy']]) <- species[species != 'vumy']
 colnames(coexist_var_alph[['laca']]) <- species[species != 'laca']
 colnames(coexist_var_alph[['esca']]) <- species[species != 'esca']
+colnames(coexist_var_alph[['trhi']]) <- species[species != 'trhi']
 
 # Loop once for each invader
 for (i in 1:length(species)){
