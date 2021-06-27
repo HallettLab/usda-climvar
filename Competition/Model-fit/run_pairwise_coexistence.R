@@ -25,8 +25,8 @@ brho_wet$germ <- .8
 brho_dry$surv <- .013
 brho_wet$surv <- .013
 
-vumy_dry$germ <- .8
-vumy_wet$germ <- .8
+vumy_dry$germ <- .6
+vumy_wet$germ <- .6
 vumy_dry$surv <- .045
 vumy_wet$surv <- .045
 
@@ -40,8 +40,8 @@ esca_wet$germ <- .95
 esca_dry$surv <- .01
 esca_wet$surv <- .01
 
-trhi_dry$germ <- .95
-trhi_wet$germ <- .95
+trhi_dry$germ <- .2
+trhi_wet$germ <- .2
 trhi_dry$surv <- .01
 trhi_wet$surv <- .01
 
@@ -555,16 +555,25 @@ invasion_means$pair[grepl("laca", invasion_means$invasion) & grepl("trhi", invas
 
 invasion_means$pair[grepl("esca", invasion_means$invasion) & grepl("trhi", invasion_means$invasion)] <- "esca_trhi"
 
-invasion_means$plot <- c(0.5, 0.5, 0.5, 0.5, 
-                         1.3, 0.5, 0.5, 0.5,
-                         1.3, 1.3, 0.5, 0.5,
-                         1.3, 1.3, 1.3, 0.5,
-                         1.3, 1.3, 1.3, 1.3,
-                         0.7, 0.7, 0.7, 0.7,
-                         1.5, 0.7, 0.7, 0.7,
-                         1.5, 1.5, 0.7, 0.7,
-                         1.5, 1.5, 1.5, 0.7,
-                         1.5, 1.5, 1.5, 1.5)
+invasion_means$plot <- c(0.5, 0.5, 0.5, 0.5, 0.5, 
+                         1.3, 0.5, 0.5, 0.5, 0.5,
+                         1.3, 1.3, 0.5, 0.5, 0.5,
+                         1.3, 1.3, 1.3, 0.5, 0.5,
+                         1.3, 1.3, 1.3, 1.3, 0.5,
+                         1.3, 1.3, 1.3, 1.3, 1.3,
+                         0.7, 0.7, 0.7, 0.7, 0.7,
+                         1.5, 0.7, 0.7, 0.7, 0.7,
+                         1.5, 1.5, 0.7, 0.7, 0.7,
+                         1.5, 1.5, 1.5, 0.7, 0.7,
+                         1.5, 1.5, 1.5, 1.5, 0.7,
+                         1.5, 1.5, 1.5, 1.5, 1.5)
+
+invasion_means$pair <- factor(invasion_means$pair, 
+                              levels = c("avfa_brho", "avfa_esca", "avfa_laca", "avfa_vumy", "avfa_trhi",
+                                         "brho_esca", "brho_laca", "brho_vumy", "brho_trhi",
+                                         "vumy_esca", "vumy_laca","vumy_trhi",
+                                         "laca_esca", "laca_trhi",
+                                         "esca_trhi"))
 
 pdf("./Competition/Figures/Invader_LDGR_plots.pdf", height = 6, width = 8)
 ggplot(invasion_means, aes(x = plot, y = growth, color = factor(trt))) + 

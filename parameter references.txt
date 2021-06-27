@@ -7,3 +7,13 @@ Escholtzia californica
 	Germination
 	Fox, G. A., Evans, A. S., & Keefer, C. J. (1995). Phenotypic consequences of forcing germination: a general problem of intervention in experimental design. American Journal of Botany, 82(10), 1264-1270.
 	Montalvo, A. M., Feist-Alvey, L. J., & Koehler, C. E. (2002). The effect of fire and cold treatments on seed germination of annual and perennial populations of Eschscholzia californica (Papaveraceae) in southern California. Madroño, 207-227.
+
+Avena fatua
+
+	Atwood, W. M. (1914). A physiological study of the germination of Avena fatua. Botanical Gazette, 57(5), 386-414.
+
+Trifolium hirtum
+
+Vulpia Myuros
+
+	Scherner, A., Melander, B., Jensen, P. K., Kudsk, P., & Avila, L. A. (2017). Germination of winter annual grass weeds under a range of temperatures and water potentials. Weed Science, 65(4), 468-478.

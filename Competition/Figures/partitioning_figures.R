@@ -1,6 +1,8 @@
 setwd('./UO Hallett/Projects/usda-climvar')
 source('./Competition/model-fit/AM_partitioning.R')
 
+library(plotrix)
+
 
 ### Prepare data for plotting ----
 
@@ -33,6 +35,13 @@ esca_eps_plot <- as.data.frame(rbind(coexist_out$esca, coexist_eps_0$esca, coexi
                                      coexist_eps_alpha$esca, coexist_eps_int$esca))
 esca_eps_plot$partition <- c("total","eps_0","eps_lamb","eps_alpha","eps_int")
 esca_eps_plot$invader <- "esca"
+
+## TRHI
+trhi_eps_plot <- as.data.frame(rbind(coexist_out$trhi, coexist_eps_0$trhi, coexist_eps_lamb$trhi, 
+                                     coexist_eps_alpha$trhi, coexist_eps_int$trhi))
+trhi_eps_plot$partition <- c("total","eps_0","eps_lamb","eps_alpha","eps_int")
+trhi_eps_plot$invader <- "trhi"
+
 
 ### AVFA pairwise partitioning ----
 
@@ -250,11 +259,12 @@ eps_0_plot <- as.data.frame(t(as.data.frame(coexist_eps_0)))
 eps_0_plot$invader <- rownames(eps_0_plot)
                             
 eps_0_plot <- eps_0_plot %>%
-        pivot_longer(cols = brho:esca, names_to = "resident", values_to = "GRWR")
-eps_0_plot$resident[eps_0_plot$invader == "brho"] <- colnames(brho_eps_plot)[1:4]
-eps_0_plot$resident[eps_0_plot$invader == "vumy"] <- colnames(vumy_eps_plot)[1:4]
-eps_0_plot$resident[eps_0_plot$invader == "laca"] <- colnames(laca_eps_plot)[1:4]
-eps_0_plot$resident[eps_0_plot$invader == "esca"] <- colnames(esca_eps_plot)[1:4]
+        pivot_longer(cols = brho:trhi, names_to = "resident", values_to = "GRWR")
+eps_0_plot$resident[eps_0_plot$invader == "brho"] <- colnames(brho_eps_plot)[1:5]
+eps_0_plot$resident[eps_0_plot$invader == "vumy"] <- colnames(vumy_eps_plot)[1:5]
+eps_0_plot$resident[eps_0_plot$invader == "laca"] <- colnames(laca_eps_plot)[1:5]
+eps_0_plot$resident[eps_0_plot$invader == "esca"] <- colnames(esca_eps_plot)[1:5]
+eps_0_plot$resident[eps_0_plot$invader == "trhi"] <- colnames(trhi_eps_plot)[1:5]
 
 pdf('./Competition/Figures/VarInd_LDGR.pdf', height = 6, width = 5)
 ggplot(eps_0_plot, aes(x = GRWR, y = resident, fill = resident)) + 
@@ -266,6 +276,57 @@ ggplot(eps_0_plot, aes(x = GRWR, y = resident, fill = resident)) +
         scale_fill_brewer(palette = "Accent") +
         theme_bw() + 
         theme(axis.text.y = element_blank(), axis.ticks.y = element_blank())
+dev.off()
+
+### All average mechanism comparison ----
+
+## Just resident
+mech <- data.frame(mechanism = factor(c("Variation-Independent","RNL in Lambda","RNL in Alpha","E-C Covariance"),
+                                          levels = c("Variation-Independent","RNL in Alpha","RNL in Lambda","E-C Covariance")),
+                       average = c(mean(unlist(coexist_eps_0)),
+                                   mean(unlist(coexist_eps_lamb)),
+                                   mean(unlist(coexist_eps_alpha)),
+                                   mean(unlist(coexist_eps_int))),
+                       se = c(std.error(unlist(coexist_eps_0)),
+                              std.error(unlist(coexist_eps_lamb)),
+                              std.error(unlist(coexist_eps_alpha)),
+                              std.error(unlist(coexist_eps_int))))
+
+pdf('./Competition/Figures/mechanism_contribution.pdf', width = 4, height = 4)
+ggplot(mech, aes(x = 1:4, y = average)) + 
+        geom_point(size = 2) + 
+        geom_errorbar(aes(ymin = average - 2*se, ymax = average + 2*se), width = 0.2) + 
+        geom_hline(yintercept = 0, linetype = "dashed") + 
+        ylab("Mean Contribution to Log LDGR") + xlab("Mechanism") +
+        scale_x_continuous(breaks = 1:4, labels = c(expression(Delta^"0"), expression(Delta^lambda), expression(Delta^alpha),expression(Delta^"cov(E,C)"))) + 
+        coord_cartesian(xlim = c(0.5,4.5)) +
+        theme_classic() +
+        theme(axis.text.x = element_text(size = 14))
+dev.off()
+
+## Invader - Resident comparison
+
+mech <- data.frame(mechanism = factor(c("Variation-Independent","RNL in Lambda","RNL in Alpha","E-C Covariance"),
+                                      levels = c("Variation-Independent","RNL in Alpha","RNL in Lambda","E-C Covariance")),
+                   average = c(mean(unlist(ir_eps_0)),
+                               mean(unlist(ir_eps_lamb)),
+                               mean(unlist(ir_eps_alpha)),
+                               mean(unlist(ir_eps_int))),
+                   se = c(std.error(unlist(ir_eps_0)),
+                          std.error(unlist(ir_eps_lamb)),
+                          std.error(unlist(ir_eps_alpha)),
+                          std.error(unlist(ir_eps_int))))
+
+pdf('./Competition/Figures/ir_mechanism_contribution.pdf', width = 4, height = 4)
+ggplot(mech, aes(x = 1:4, y = average)) + 
+        geom_point(size = 2) + 
+        geom_errorbar(aes(ymin = average - 2*se, ymax = average + 2*se), width = 0.2) + 
+        geom_hline(yintercept = 0, linetype = "dashed") + 
+        ylab("Mean Contribution to Log LDGR") + xlab("Mechanism") +
+        scale_x_continuous(breaks = 1:4, labels = c(expression(Delta^"0"), expression(Delta^lambda), expression(Delta^alpha),expression(Delta^"cov(E,C)"))) + 
+        coord_cartesian(xlim = c(0.5,4.5)) +
+        theme_classic() +
+        theme(axis.text.x = element_text(size = 14))
 dev.off()
 
 ### Variation-dependent average mechanism comparison ----
