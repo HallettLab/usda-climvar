@@ -12,7 +12,14 @@
 # more than 20 specimens collected for some species (e.g. april and late-season samples for forbs)
 # ESCA specimens collected from Mariposa, CA, spring 2020, in ambient conditions (from CTW family property, by CTW's mom, sent to Boulder, CO, where CTW processing)
 # TRHI specimens collected from USDA Compost project, spring 2020 (collectred by Nikolai, AS et al. processing in Eugene, OR)
+## > note: TRHI "specimens" taken from nutrient control ppt XC or D plots in USDA Compost competition experiment (actual phytometers or background competitors)
+## > TRHI samples processed to get individual seed count and seed mass data, but not individual biomass (data are aggregated by phyto position or background samples.. up to 3 in each case were supposed to be clipped but in a few cases there were more than 3)
+## > TRHI "specimen" data read in has both aggregated data for fecundity and biomass (veg mass + seed mass), but "perstem" have averaged values so can calculate allo relationships on individual level like done for other species 
 # no ESCA or TRHI specimens with seeds available for collection like the other species at ClimVar project Spring 2017 (sampling trip #2 = too late for TRHI, too early for ESCA)
+
+# updates:
+# > aug 2020: CTW incorporated ESCA 
+# > feb 2021: CTW incorporated TRHI
 
 # dependencies:
 ## scripts dependent on file generated in this script (i.e. changes made to csv written out here may affect code in dependent scripts):
@@ -60,6 +67,8 @@ esca <- read.csv(paste0(datpath, "Competition_EnteredData/Competition_ESCAspecim
   # convert esca dates to date
   mutate_at(c("clip_date", "wgh_date"), function(x) as.Date(x, format = "%m/%d/%y"))
 
+# update jan 2021: read in and append TRHI from AS/AM -- comes from USDA Compost competition experiment, file prepped by CTW (see prep_USDACompost_TRHI_forallo.R)
+trhi <- read.csv(paste0(datpath, "Competition_EnteredData/outside_project_data_related/USDACompost_Competition_TRHIspecimens_spring2020_prepped.csv"), na.strings = na_vals)
 
 
 # -- READ IN AND COMPILE ALL SPECIMEN TABS -----
@@ -143,6 +152,16 @@ select(esca, specimen, flowers, pods, totseeds, wgt_g) %>%
 # what is the relationship of flowers to pods?
 plot(esca$flowers, esca$pods)
 
+# there is a slight difference in drought v ambient ppt for trhi (ctw already checked out in prep TRHI script)
+# will reproduce simple plot to show (difference is fairly modest, ie okay to combine ppt trts like done for other spp)
+select(trhi, ppt_trt, id, perstem_flowers, perstem_seeds, perstem_mass) %>%
+  gather(met, val, perstem_flowers, perstem_mass) %>%
+  ggplot(aes(val, perstem_seeds, col = ppt_trt)) +
+  geom_point(alpha = 0.7) +
+  geom_smooth(aes(fill = ppt_trt), method = "lm", formula = "y ~ 0 + x") +
+  ggtitle("TRHI") +
+  facet_wrap(~met, scales = "free_x")
+
 
 
 # -- SIMPLIFY (PER LMH) AND JOIN WITH CLEANED COMPETITION BIOMASS -----
@@ -152,11 +171,23 @@ plot(esca$flowers, esca$pods)
 allo.tog <- specdat %>%
   select(species, trt, specimen, clip_date, seeds, wgt_g) %>%
   filter(!is.na(wgt_g)) %>% # removes LACA plants that were bagged together before weighing
-  rbind(mutate(esca, seeds = totseeds, trt = "ambient2020")[names(.)]) %>%
+  rbind(mutate(esca, seeds = totseeds, trt = "ambient2020_mariposa")[names(.)]) %>%
   data.frame()
 
+# prep trhi to append
+trhi_prep <- select(trhi, species, ppt_trt, id, harvest_date, perstem_seeds, perstem_mass) %>%
+  rename(specimen = id, trt = ppt_trt, clip_date = harvest_date, seeds = perstem_seeds, wgt_g = perstem_mass) %>%
+  # change ppt trt to match climvar specs
+  mutate(trt = ifelse(trt == "D", "dry", "wet"))
+  # R wants date in clip_date to rbind.. raw datasheets don't have exact date (data also not yet entered).. may and june 2020
+  # .. date not included in datasets written out from this dataset so drop from allo.tog
+
+# add trhi
+allo.tog <- select(allo.tog, -clip_date) %>%
+  rbind(trhi_prep[names(.)])
+
 # graph it all together!
-ggplot(allo.tog, aes(x=wgt_g, y=seeds, color = trt)) + geom_point() + geom_smooth(method = "lm", se =F) + 
+ggplot(allo.tog, aes(x=wgt_g, y=seeds, color = trt)) + geom_point() + geom_smooth(aes(fill = trt), method = "lm") + 
   facet_wrap(~species, scales = "free") + geom_smooth(data = allo.tog, aes(x=wgt_g, y=seeds), method = "lm", se = F, color = "black")
 # treatment doesn't seem to have any effect, can group all together in models
 
@@ -239,7 +270,8 @@ for(i in species){
 # preliminary look (NA = no background density bc control plot)
 ggplot(predict_out, aes(x=backgroundspp, y = fit)) + geom_boxplot() +  
   geom_point(aes(col = pfit_source), alpha = 0.5, position = position_dodge(width = 0.3)) +
-  facet_grid(phytometer~backgrounddensity, scales = "free_y")
+  labs(subtitle = "phytometer on vertical facet, background competitor + density on horizontal") +
+  facet_grid(phytometer~backgrounddensity, scales = "free", space = "free_x")
 # > note: NAs in prediction dataset are plots where data are missing (phytos not clipped/collected .. oopsies)
 
 
@@ -248,12 +280,14 @@ ggplot(predict_out, aes(x=backgroundspp, y = fit)) + geom_boxplot() +
 # > LMH requests wide form for prediction dataset (thinks that makes the most sense so phytodat not repeated.. can just run two different models based on column)
 phytodat2 <- left_join(phytodat, select(predict_out, -pwgt_g)) %>%
   rename(p_seedfit = fit) %>%
-  tbl_df()
+  data.frame()
 
 # graph it all together!
 ggplot(allo.tog) + 
   geom_point(aes(x=wgt_g, y=seeds, color = trt)) + 
   geom_abline(data = allo.out, aes(intercept = 0, slope = slope, lty = phytometer)) +
+  # make all start at 0 on y axis (trhi doesn't when scales = free in facet_wrap)
+  scale_y_continuous(limits = c(0,NA)) +
   facet_wrap(~species, scales = "free")
 
 # change spp colname in allometric table to more generic

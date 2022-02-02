@@ -11,10 +11,16 @@ na_vals = c(" ","", NA, "NA")
 if(file.exists("~/Dropbox/Shared/ClimVar/Competition/Data/")){
   # LGS
   datpath <- "~/Dropbox/Shared/ClimVar/Competition/Data/"
+  
+}else if(file.exists("~/Dropbox/ClimVar/Competition/Data/")){
   # LMH
-}else{
   datpath <- "~/Dropbox/ClimVar/Competition/Data/"
-}
+  
+} else {
+  #AJM
+  datpath <- "C:/Users/Andrew/Dropbox (University of Oregon)/UO Hallett/ClimVar/Competition/Data/"
+} 
+  
 
 ### FECUNDITY ### 
 # read in data
@@ -65,7 +71,6 @@ ggplot(back.dat, aes(x= seedsIn, y = stemsIn, col = pcode4, shape = bdensity)) +
 
 # calculate stems in
 stems.in <- rbind(phyto.dat, back.dat) %>%
-  filter(pcode4 != "TRHI") %>%
   select(-seedsOut, -seedsIn) %>%
   mutate(varnew = paste(pcode4, "stemsIn", sep = "_")) %>%
   select(-pcode4) %>%
@@ -75,7 +80,6 @@ stems.in <- rbind(phyto.dat, back.dat) %>%
 
 # calculate seeds in
 seeds.added <- rbind(phyto.dat, back.dat) %>%
-  filter(pcode4 != "TRHI") %>%
   select( -stemsIn, -seedsOut) %>%
   mutate(varnew = paste(pcode4, "seedsIn", sep = "_")) %>%
   select(-pcode4) %>%
@@ -85,7 +89,6 @@ seeds.added <- rbind(phyto.dat, back.dat) %>%
 
 # calculate seeds out 
 seeds.out <-  rbind(phyto.dat, back.dat) %>%
-  filter(pcode4 != "TRHI") %>%
   select(plot, falltreatment, treatment, block, seedsOut, pcode4, background, bdensity) %>%
   rename(species = pcode4)
 
@@ -125,7 +128,6 @@ back.dat <- left_join(back.dat, tomerge)
 
 ### SURVIVAL ###
 together <- left_join(recruit.dat, back.dat) %>%
-  filter(!is.na(background), background != "Trifolium hirtum") %>%
   mutate(perRecruit = stemsRecruit/seedsIn)
 
 
