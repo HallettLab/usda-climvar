@@ -308,31 +308,39 @@ contrast(LS.g, "pairwise")
 # * FIGURE 1 ----
 #real biomass by composition treatment
 #total biomass of the mixed, forb, and grass plots by treatment 
+FG_all$comp <- ordered(FG_all$comp, levels = c("Gweight","Fweight","totweight"))
 f1a<-ggplot(d=subset(FG_all), aes(x=treatment2, y=biomass, fill=comp)) +
   #facet_wrap(~year)+
   ggtitle("Observed Yield (Yo)")+
   #theme_linedraw()+
   #theme(legend.position="none")+
-  scale_fill_manual(values = c("black","white", "gray"), guide = guide_legend(title = "Composition"),
-                    labels=c("Forb-only", "Grass-only", "Mixed")) +
+  scale_fill_manual(values = c("white","black", "gray"), guide = guide_legend(title = "Composition"),
+                    labels=c( "Grass-only", "Forb-only","Mixed")) +
   labs(x="Drought Treatment", y="ANPP g/m2")+
   geom_boxplot(aes(y=biomass))+
   ylim(0,1500)
 f1a
 
-pcomp<-ggplot(d=FG_all, aes(x=comp, y=biomass, fill=comp)) +
+f1a.v2<-ggplot(d=subset(FG_all), aes(x=treatment2, y=biomass, fill=comp)) +
+  #facet_wrap(~year)+
+  #ggtitle("Observed Yield (Yo)")+
+  #theme_linedraw()+
+  #theme(legend.position="none")+
+  scale_fill_manual(values = c("white","black", "gray"), guide = guide_legend(title = "Composition"),
+                    labels=c("Grass","Forb",  "Mixed")) +
+  labs(x="", y=expression(ANPP~(g/m^2)))+
+  geom_boxplot(aes(y=biomass))+
+  ylim(0,1000)
+f1a.v2
+
+FG_all$comp2 <- ordered(FG_all$comp, levels = c("Gweight","Fweight","totweight"))
+pcomp<-ggplot(d=FG_all, aes(x=comp2, y=biomass, fill=comp2)) +
   #theme_linedraw()+
   labs(x="", y=expression(ANPP~(g/m^2)))+
-  theme(
-    panel.grid.major = element_blank(), 
-    panel.grid.minor = element_blank(),
-    panel.background = element_rect(fill = "transparent",colour = NA),
-    plot.background = element_rect(fill = "transparent",colour = NA)
-  )+
-  scale_fill_manual(values = c("black","white", "gray")) +
-  theme(legend.position="none")+
-  annotate("text", x= c("Fweight", "Gweight","totweight"), y = c(1000, 1000, 1000), label = c("a", "b", "c"), color = "black") +
-  scale_x_discrete(labels=c("Fweight" = "Forb", "Gweight" = "Grass", "totweight" = "Mixed"))+
+  annotate("text", x= c( "Gweight","Fweight","totweight"), y = c(1000, 1000, 1000), label = c("a", "b", "c"), color = "black") +
+  scale_fill_manual(values = c("white","black", "gray"), guide = guide_legend(title = "Composition"),
+                    labels=c("Grass","Forb",  "Mixed")) +  theme(legend.position="none")+
+  scale_x_discrete(labels=c("Gweight" = "Grass", "Fweight" = "Forb",  "totweight" = "Mixed"), limits=levels(FG_all$comp2))+
   geom_boxplot(aes(y=biomass), shape=16)
 pcomp
 
@@ -360,6 +368,24 @@ ggdraw(f1a) +
     c(1, 0.92, 0.92),
     size = 14
   )
+
+#plot big panel plus small panels on right
+right_col1<-plot_grid(pcomp, pyr, labels = c('B', 'C'), label_size = 14, ncol=1)
+right_col1
+
+F1A<-plot_grid(f1a.v2 + theme(legend.position="none"), right_col1, labels=c("A",""), rel_widths=c(2,1.5), label_size=14, ncol=2)
+F1A
+
+#run soil-cleaning.R
+legend_b <- get_legend(
+  f1a.v2 + 
+    guides(color = guide_legend(nrow = 1)) +
+    theme(legend.position = "bottom")
+)
+
+Figure1<- plot_grid(F1A, F1D, F1G,legend_b, ncol=1, rel_heights = c(1, 1,1,.1))
+Figure1
+
 
 #alternatively, ggpubr for panels
 #ggarrange(pcomp, pyr, f1a, ncol = 2, nrow = 2, labels=c("a)","b)", "c)"), heights=c(1,2))
@@ -432,7 +458,9 @@ ggplot(FG_B, aes(y=dRY, x=M))+
   facet_wrap(~year)
 
 ##note that figure 4, figure 5, and figure S4 are currently in soil_cleaning.R
+#figure S3 is in rainfall.R
 ##TO-DO: move code for remaining figures here
+
 
 
 
