@@ -32,6 +32,25 @@ rainsummary <- rainsummary %>%
 fall.dry <- length(which(rainsummary$raintype == "fallDry")) / nrow(rainsummary)
 fall.wet <- length(which(rainsummary$raintype == "fallWet")) / nrow(rainsummary)
 
+## Germination and peak growing season correlation
+rain <- read_csv("../avena-erodium/Data/PRISM_brownsvalley_long.csv", skip = 10) %>%
+  mutate(ppt = `ppt (inches)`*2.54*10) %>%
+  separate(Date, c("year", "month")) %>%
+  mutate(year = as.numeric(year),
+         month = as.numeric(month)) %>%
+  filter(month %in% c(9,10,11,12,1,2,3,4)) %>%
+  mutate(year = ifelse(month == 12 | month == 11 | month == 10 | month == 9, year + 1, year)) %>%
+  mutate(growth_season = ifelse(month == 12 | month == 11 | month == 10 | month == 9, "early", "late")) %>%
+  group_by(year, growth_season) %>%
+  summarise(tot_rainfall = sum(ppt)) %>%
+  pivot_wider(names_from = growth_season, values_from = tot_rainfall)
+
+plot(rain$early, rain$late)
+abline(lm(rain$late ~ rain$early))
+#points(rain$early, rain$late)
+
+cor.test(rain$early, rain$late)
+
 ### Load or set model parameters ----
 source('./Competition/Model-fit/import_posteriors_AM.R')
 

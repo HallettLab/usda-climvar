@@ -43,7 +43,7 @@ no_dist_seeds_avfa_wet <- stan(file = "Six_species_BH_model.stan", data = c("N",
                        iter = 50000, chains = 4, thin = 3, control = list(adapt_delta = 0.95, max_treedepth = 20),
                        init = initials1)
 
-save(no_dist_seeds_avfa_wet, file = "./posteriors/avfa_wet_posteriors_updated_germ.rdata")
+save(no_dist_seeds_avfa_wet, file = "./posteriors/avfa_wet_posteriorsAM.rdata")
 # dry
 
 dat <- subset(data, species == "AVFA")
@@ -67,7 +67,7 @@ no_dist_seeds_avfa_dry <- stan(file = "Six_species_BH_model.stan", data = c("N",
                        iter = 50000, chains = 4, thin = 3, control = list(adapt_delta = 0.95, max_treedepth = 20),
                        init = initials1)
 
-save(no_dist_seeds_avfa_dry, file = "./posteriors/avfa_dry_posteriors_updated_germ.rdata")
+save(no_dist_seeds_avfa_dry, file = "./posteriors/avfa_dry_posteriorsAM.rdata")
 ### BRHO ----
 # wet
 
@@ -91,10 +91,10 @@ intra_g <- 0.8
 
 no_dist_seeds_brho_wet <- stan(file = "Six_species_BH_model.stan", data = c("N", "Fecundity", "intra", "intra_g",
                                                                             "avfa", "brho","esca", "laca", "vumy", "trhi"),
-                               iter = 50000, chains = 4, thin = 3, control = list(adapt_delta = 0.97, max_treedepth = 20),
+                               iter = 60000, chains = 4, thin = 3, control = list(adapt_delta = 0.97, max_treedepth = 20),
                                init = initials1)
 
-save(no_dist_seeds_brho_wet, file = "./posteriors/brho_wet_posteriors_updated_germ.rdata")
+save(no_dist_seeds_brho_wet, file = "./posteriors/brho_wet_posteriorsAM.rdata")
 # dry
 
 dat <- subset(data, species == "BRHO")
@@ -117,10 +117,10 @@ intra_g <- 0.8
 
 no_dist_seeds_brho_dry <- stan(file = "Six_species_BH_model.stan", data = c("N", "Fecundity", "intra", "intra_g",
                                                                             "avfa", "brho","esca", "laca", "vumy", "trhi"),
-                       iter = 40000, chains = 4, thin = 3, control = list(adapt_delta = 0.99, max_treedepth = 20),
+                       iter = 50000, chains = 4, thin = 3, control = list(adapt_delta = 0.99, max_treedepth = 20),
                        init = initials1)
 
-save(no_dist_seeds_brho_dry, file = "./posteriors/brho_dry_posteriors_updated_germ.rdata")
+save(no_dist_seeds_brho_dry, file = "./posteriors/brho_dry_posteriorsAM.rdata")
 ### LACA ----
 # dry
 
@@ -147,7 +147,7 @@ no_dist_seeds_laca_dry <- stan(file = "Six_species_BH_model.stan", data = c("N",
                        iter = 40000, chains = 4, thin = 3, control = list(adapt_delta = 0.95, max_treedepth = 20), 
                        init = initials1)
 
-save(no_dist_seeds_laca_dry, file = "./posteriors/laca_dry_posteriors_updated_germ.rdata")
+save(no_dist_seeds_laca_dry, file = "./posteriors/laca_dry_posteriorsAM.rdata")
 
 # wet
 
@@ -174,7 +174,7 @@ no_dist_seeds_laca_wet <- stan(file = "Six_species_BH_model.stan", data = c("N",
                        iter = 40000, chains = 4, thin = 3, control = list(adapt_delta = 0.95, max_treedepth = 20), 
                        init = initials1)
 
-save(no_dist_seeds_laca_wet, file = "./posteriors/laca_wet_posteriors_updated_germ.rdata")
+save(no_dist_seeds_laca_wet, file = "./posteriors/laca_wet_posteriorsAM.rdata")
 ### VUMY ----
 # wet
 
@@ -201,7 +201,7 @@ no_dist_seeds_vumy_wet <- stan(file = "Six_species_BH_model.stan", data = c("N",
                        iter = 40000, chains = 4, thin = 3, control = list(adapt_delta = 0.97, max_treedepth = 20),
                        init = initials1)
 
-save(no_dist_seeds_vumy_wet, file = "./posteriors/vumy_wet_posteriors_updated_germ.rdata")
+save(no_dist_seeds_vumy_wet, file = "./posteriors/vumy_wet_posteriorsAM.rdata")
 # dry
 
 dat <- subset(data, species == "VUMY")
@@ -227,7 +227,7 @@ no_dist_seeds_vumy_dry <- stan(file = "Six_species_BH_model.stan", data = c("N",
                        iter = 40000, chains = 4, thin = 3, control = list(adapt_delta = 0.97, max_treedepth = 20),
                        init = initials1)
 
-save(no_dist_seeds_vumy_dry, file = "./posteriors/vumy_dry_posteriors_updated_germ.rdata")
+save(no_dist_seeds_vumy_dry, file = "./posteriors/vumy_dry_posteriorsAM.rdata")
 
 ### ESCA ----
 # wet
@@ -252,10 +252,10 @@ intra_g <- 0.95
 
 no_dist_seeds_esca_wet <- stan(file = "Six_species_BH_model.stan", data = c("N", "Fecundity", "intra", "intra_g",
                                                                             "avfa", "brho","esca", "laca", "vumy", "trhi"),
-                               iter = 40000, chains = 4, thin = 3, control = list(adapt_delta = 0.99, max_treedepth = 20),
+                               iter = 50000, chains = 4, thin = 3, control = list(adapt_delta = 0.99, max_treedepth = 20),
                                init = initials1)
 
-save(no_dist_seeds_esca_wet, file = "./posteriors/esca_wet_posteriors_updated_germ.rdata")
+save(no_dist_seeds_esca_wet, file = "./posteriors/esca_wet_posteriorsAM.rdata")
 
 # dry
 
@@ -279,10 +279,10 @@ intra_g <- 0.95
 
 no_dist_seeds_esca_dry <- stan(file = "Six_species_BH_model.stan", data = c("N", "Fecundity", "intra", "intra_g",
                                                                             "avfa", "brho","esca", "laca", "vumy", "trhi"),
-                               iter = 40000, chains = 4, thin = 3, control = list(adapt_delta = 0.97, max_treedepth = 20),
+                               iter = 50000, chains = 4, thin = 3, control = list(adapt_delta = 0.97, max_treedepth = 20),
                                init = initials1)
 
-save(no_dist_seeds_esca_dry, file = "./posteriors/esca_dry_posteriors_updated_germ.rdata")
+save(no_dist_seeds_esca_dry, file = "./posteriors/esca_dry_posteriorsAM.rdata")
 
 ### TRHI ----
 # wet
@@ -310,7 +310,7 @@ no_dist_seeds_trhi_wet <- stan(file = "Six_species_BH_model.stan", data = c("N",
                                iter = 40000, chains = 4, thin = 3, control = list(adapt_delta = 0.98, max_treedepth = 20),
                                init = initials1)
 
-save(no_dist_seeds_trhi_wet, file = "./posteriors/trhi_wet_posteriors_updated_germ.rdata")
+save(no_dist_seeds_trhi_wet, file = "./posteriors/trhi_wet_posteriorsAM.rdata")
 
 # dry
 
@@ -341,5 +341,5 @@ no_dist_seeds_trhi_dry <- stan(file = "TRHI_Six_species_BH_model.stan", data = c
                                iter = 200000, chains = 4, thin = 3, control = list(adapt_delta = 0.995, max_treedepth = 20),
                                init = initials1)
 
-save(no_dist_seeds_trhi_dry, file = "./posteriors/trhi_dry_posteriors_updated_germ.rdata")
+save(no_dist_seeds_trhi_dry, file = "./posteriors/trhi_dry_posteriorsAM.rdata")
 

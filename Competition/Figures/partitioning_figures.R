@@ -7,38 +7,38 @@ library(plotrix)
 ### Prepare data for plotting ----
 
 ## AVFA
-avfa_eps_plot <- as.data.frame(rbind(coexist_out$avfa, coexist_eps_0$avfa, coexist_eps_lamb$avfa, 
-                       coexist_eps_alpha$avfa, coexist_eps_int$avfa))
+avfa_eps_plot <- as.data.frame(rbind(invader_no_mech$avfa, ir_eps_0$avfa, ir_eps_lamb$avfa, 
+                                     ir_eps_alpha$avfa, ir_eps_int$avfa))
 avfa_eps_plot$partition <- c("total","eps_0","eps_lamb","eps_alpha","eps_int")
 avfa_eps_plot$invader <- "avfa"
 
 ## BRHO
-brho_eps_plot <- as.data.frame(rbind(coexist_out$brho, coexist_eps_0$brho, coexist_eps_lamb$brho, 
-                                     coexist_eps_alpha$brho, coexist_eps_int$brho))
+brho_eps_plot <- as.data.frame(rbind(invader_no_mech$brho, ir_eps_0$brho, ir_eps_lamb$brho, 
+                                     ir_eps_alpha$brho, ir_eps_int$brho))
 brho_eps_plot$partition <- c("total","eps_0","eps_lamb","eps_alpha","eps_int")
 brho_eps_plot$invader <- "brho"
 
 ## VUMY
-vumy_eps_plot <- as.data.frame(rbind(coexist_out$vumy, coexist_eps_0$vumy, coexist_eps_lamb$vumy, 
-                                     coexist_eps_alpha$vumy, coexist_eps_int$vumy))
+vumy_eps_plot <- as.data.frame(rbind(invader_no_mech$vumy, ir_eps_0$vumy, ir_eps_lamb$vumy, 
+                                     ir_eps_alpha$vumy, ir_eps_int$vumy))
 vumy_eps_plot$partition <- c("total","eps_0","eps_lamb","eps_alpha","eps_int")
 vumy_eps_plot$invader <- "vumy"
 
 ## LACA
-laca_eps_plot <- as.data.frame(rbind(coexist_out$laca, coexist_eps_0$laca, coexist_eps_lamb$laca, 
-                                     coexist_eps_alpha$laca, coexist_eps_int$laca))
+laca_eps_plot <- as.data.frame(rbind(invader_no_mech$laca, ir_eps_0$laca, ir_eps_lamb$laca, 
+                                     ir_eps_alpha$laca, ir_eps_int$laca))
 laca_eps_plot$partition <- c("total","eps_0","eps_lamb","eps_alpha","eps_int")
 laca_eps_plot$invader <- "laca"
 
 ## ESCA
-esca_eps_plot <- as.data.frame(rbind(coexist_out$esca, coexist_eps_0$esca, coexist_eps_lamb$esca, 
-                                     coexist_eps_alpha$esca, coexist_eps_int$esca))
+esca_eps_plot <- as.data.frame(rbind(invader_no_mech$esca, ir_eps_0$esca, ir_eps_lamb$esca, 
+                                     ir_eps_alpha$esca, ir_eps_int$esca))
 esca_eps_plot$partition <- c("total","eps_0","eps_lamb","eps_alpha","eps_int")
 esca_eps_plot$invader <- "esca"
 
 ## TRHI
-trhi_eps_plot <- as.data.frame(rbind(coexist_out$trhi, coexist_eps_0$trhi, coexist_eps_lamb$trhi, 
-                                     coexist_eps_alpha$trhi, coexist_eps_int$trhi))
+trhi_eps_plot <- as.data.frame(rbind(invader_no_mech$trhi, ir_eps_0$trhi, ir_eps_lamb$trhi, 
+                                     ir_eps_alpha$trhi, ir_eps_int$trhi))
 trhi_eps_plot$partition <- c("total","eps_0","eps_lamb","eps_alpha","eps_int")
 trhi_eps_plot$invader <- "trhi"
 
@@ -255,7 +255,7 @@ barplot(laca_eps_plot$esca, ylim = c(-4, 2.5), xlab = "Mechanism", main = "LACA 
 
 dev.off()
 ### Variation-independent mechanism comparisons ----
-eps_0_plot <- as.data.frame(t(as.data.frame(coexist_eps_0)))
+eps_0_plot <- as.data.frame(t(as.data.frame(ir_eps_0)))
 eps_0_plot$invader <- rownames(eps_0_plot)
                             
 eps_0_plot <- eps_0_plot %>%
@@ -266,7 +266,15 @@ eps_0_plot$resident[eps_0_plot$invader == "laca"] <- colnames(laca_eps_plot)[1:5
 eps_0_plot$resident[eps_0_plot$invader == "esca"] <- colnames(esca_eps_plot)[1:5]
 eps_0_plot$resident[eps_0_plot$invader == "trhi"] <- colnames(trhi_eps_plot)[1:5]
 
-pdf('./Competition/Figures/VarInd_LDGR.pdf', height = 6, width = 5)
+eps_0_plot <- eps_0_plot %>%
+        mutate(invader = recode(invader, avfa = "A.fatua", brho = "B.hordeaceus", vumy = "V.myuros",
+                                laca = "L.californica", trhi = "T.hirtum", esca = "E.californica"),
+               resident = recode(resident, avfa = "A.fatua", brho = "B.hordeaceus", vumy = "V.myuros",
+                                laca = "L.californica", trhi = "T.hirtum", esca = "E.californica")) %>%
+        mutate(invader = factor(invader, levels = c("A.fatua", "V.myuros", "B.hordeaceus", 
+                                                    "T.hirtum", "L.californica", "E.californica")))
+
+pdf('./Competition/Figures/figures/VarInd_LDGR.pdf', height = 6.5, width = 5.5)
 ggplot(eps_0_plot, aes(x = GRWR, y = resident, fill = resident)) + 
         geom_bar(stat = "identity") +
         xlab("Invader LDGR - Variation Independent Mechanisms") +  
@@ -317,13 +325,13 @@ mech <- data.frame(mechanism = factor(c("Variation-Independent","RNL in Lambda",
                           std.error(unlist(ir_eps_alpha)),
                           std.error(unlist(ir_eps_int))))
 
-pdf('./Competition/Figures/ir_mechanism_contribution.pdf', width = 4, height = 4)
+pdf('./Competition/Figures/figures/ir_mechanism_contribution.pdf', width = 4, height = 4)
 ggplot(mech, aes(x = 1:4, y = average)) + 
         geom_point(size = 2) + 
         geom_errorbar(aes(ymin = average - 2*se, ymax = average + 2*se), width = 0.2) + 
         geom_hline(yintercept = 0, linetype = "dashed") + 
         ylab("Mean Contribution to Log LDGR") + xlab("Mechanism") +
-        scale_x_continuous(breaks = 1:4, labels = c(expression(Delta^"0"), expression(Delta^lambda), expression(Delta^alpha),expression(Delta^"cov(E,C)"))) + 
+        scale_x_continuous(breaks = 1:4, labels = c(expression(Delta^"0"), expression(Delta^lambda), expression(Delta^alpha),expression(Delta^paste(alpha, lambda)))) + 
         coord_cartesian(xlim = c(0.5,4.5)) +
         theme_classic() +
         theme(axis.text.x = element_text(size = 14))

@@ -517,7 +517,16 @@ names(invasion_wet) <- c("avfa_into_brho", "avfa_into_vumy", "avfa_into_laca", "
                          "esca_into_avfa", "esca_into_brho", "esca_into_vumy", "esca_into_laca", "esca_into_trhi",
                          "trhi_into_avfa", "trhi_into_brho", "trhi_into_vumy", "trhi_into_laca", "trhi_into_esca")
 
-rm(list=setdiff(ls(), c("invasion_dry", "invasion_wet")))
+## Grab mean equilibrium abundances for both rainfall conditions
+equil_abund <- as.data.frame(rbind(apply(residents_dry, 2, mean),
+                   apply(residents_wet, 2, mean)))
+equil_abund$trt <- c("dry","wet")
+
+equil_abund <- equil_abund %>%
+  pivot_longer(cols = avfa:trhi, names_to = "species", values_to = "abundance")
+  
+
+rm(list=setdiff(ls(), c("invasion_dry", "invasion_wet","equil_abund","params")))
 
 ### Plot ----
 
@@ -582,5 +591,6 @@ ggplot(invasion_means, aes(x = plot, y = growth, color = factor(trt))) +
   facet_wrap(~pair) + 
   scale_x_continuous(breaks = c(0.6, 1.4), labels = c("1-2", "2-1"), limits = c(.2,1.8)) +
   labs(color = "Fall Treatment") + 
+  scale_color_manual(values = c("#f4a261", "#2a9d8f")) + 
   theme_bw()
 dev.off()
