@@ -4,15 +4,15 @@ library(tidyverse)
 # Accumulation curves for BNPP analysis -----------------------------------
 
 #read in data
-bnppdat <- read.csv("~/Dropbox/ClimVar/DATA/Plant_composition_data/BNPP/BNPP_EnteredData/ClimVar_BNPP_20150520.csv") %>%
-  tbl_df() %>%
+bnppdat <- read.csv("./Dropbox/ClimVar/DATA/Plant_composition_data/BNPP/BNPP_EnteredData/ClimVar_BNPP_20150520.csv") %>%
+  as_tibble() %>%
   mutate(uniquePlot=paste(Plot, Subplot, sep="_")) %>%
   mutate(uniqueSample=paste(uniquePlot, Depth, sep="_"))
 names(bnppdat)[14]="rmass"
 
 #subset data for accumulation
 dat <- bnppdat %>%
-  select(uniqueSample, Interval, rmass) %>%
+  #select(uniqueSample, Interval, rmass) %>%
   arrange(uniqueSample, Interval)
 
 #create dat2 with accumulated mass
