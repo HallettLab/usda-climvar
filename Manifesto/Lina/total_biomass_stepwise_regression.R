@@ -1,7 +1,6 @@
 ANPP <- read.csv("./Dropbox/ClimVar/DATA/Plant_composition_data/ANPP/ANPP_CleanedData/ClimVar_ANPP-peak.csv", header = TRUE)
 BNPP <- read.csv("./Dropbox/ClimVar/DATA/Plant_composition_data/BNPP/BNPP_CleanedData/BNPP_MayHarvest_2015.csv", header = TRUE)
-aCWM <- read.csv("./Dropbox/ClimVar/DATA/Plant_composition_data/BNPP/BNPP_CleanedData/above_traits.csv", header = TRUE)
-bCWM <- read.csv("./Dropbox/ClimVar/DATA/Plant_composition_data/BNPP/BNPP_CleanedData/Belowground_CWM_traits.csv", header = TRUE)
+CWM <- read.csv("./Dropbox/ClimVar/DATA/Plant_composition_data/BNPP/BNPP_CleanedData/Belowground_CWM_traits.csv", header = TRUE)
 env <- read.csv("./Dropbox/ClimVar/DATA/Plant_composition_data/BNPP/BNPP_CleanedData/env_2015.csv", header = TRUE)
 
 ###How does total biomass relate to CWM traits?
@@ -18,72 +17,47 @@ BNPP <- BNPP %>%
 BNPP1 <- BNPP %>%
   group_by(plot, subplot, treatment, shelterBlock) %>% #group data
   summarise(agg_BNPP = sum(bmass_g_m2)) %>% #sum BNPP
-  select(plot, subplot, treatment, shelterBlock, agg_BNPP)
+  dplyr::select(plot, subplot, treatment, shelterBlock, agg_BNPP)
 
 #Filter 2015 ANPP 
 ANPP1 <- ANPP %>%
   filter(year == 2015) %>%
   filter(subplot %in% c("B", "F", "G")) %>%
-  select(plot, subplot, treatment, shelterBlock, weight_g_m)
-
-#Select aboveground CWM
-above_CWM <- aCWM %>%
-  select(shelterBlock, subplot, treatment, CWM.Ht, CWM.LDMC, CWM.SLA)
-
-#Select belowground CWM
-below_CWM <- bCWM %>%
-  select(shelterBlock, subplot, treatment, nbsp, CWM.Dens, CWM.DiamC, CWM.SRLC, CWM.SRLF, CWM.PropF)
+  dplyr::select(plot, subplot, treatment, shelterBlock, weight_g_m)
 
 #Join dataframes
 Joined <- ANPP1 %>%
   left_join(BNPP1, by = c("plot", "subplot", "treatment", "shelterBlock")) %>%
-  left_join(above_CWM, by = c("subplot", "treatment", "shelterBlock")) %>%
-  left_join(below_CWM, by = c("subplot", "treatment", "shelterBlock")) %>%
+  left_join(CWM, by = c("plot", "subplot", "treatment", "shelterBlock")) %>%
   mutate(total = weight_g_m + agg_BNPP)
-
+Joined <- Joined[,-c(7:16)]
 #Standardize joined data
 library(vegan)
-stand_Joined_num <- decostand(Joined[,5:16], "standardize")
+stand_Joined_num <- decostand(Joined[,5:15], "standardize")
 stand_Joined <- cbind(Joined[,1:4], stand_Joined_num)
-
 #OR log transform joined data
 #log_Joined_num <- log(Joined[, 5:16])
 #log_Joined <- cbind(Joined[,1:4], log_Joined_num)
 
-#Subset data by subplot
-stand_both <- stand_Joined %>%
-  filter(subplot == "B")
-stand_forb <- stand_Joined %>%
-  filter(subplot == "F") 
-stand_grass <- stand_Joined %>%
-  filter(subplot == "G")
-
 ##Backwards stepwise regression
 library(MASS)
-model0 <- lm(total ~ CWM.Ht + CWM.LDMC + CWM.SLA + CWM.Dens + CWM.DiamC + CWM.SRLC + CWM.SRLF + CWM.PropF, stand_both)
-step_both <- stepAIC(model0, direction = "backward", trace = FALSE)
-step_both$anova
-model1 <- lm(total ~ CWM.Ht + CWM.LDMC + CWM.SLA + CWM.DiamC + CWM.SRLC + CWM.SRLF, stand_both)
+model0 <- lm(total ~CWM.Ht + CWM.LDMC + CWM.SLA + CWM.Dens + CWM.DiamC + CWM.SRLC + CWM.SRLF + CWM.PropF, stand_Joined)
+step_total <- stepAIC(model0, direction = "backward", trace = FALSE)
+step_total$anova
+model1 <- lm(total ~ CWM.LDMC + CWM.DiamC + CWM.SRLC + CWM.SRLF + CWM.PropF, stand_Joined)
 summary(model1)
 
-model2 <- lm(total ~ CWM.Ht + CWM.LDMC + CWM.SLA + CWM.Dens + CWM.DiamC + CWM.SRLC + CWM.SRLF + CWM.PropF, stand_forb)
-step_forb <- stepAIC(model2, direction = "backward", trace = FALSE)
-step_forb$anova
-model3 <- lm(total ~ CWM.LDMC + CWM.SRLC + CWM.SRLF, stand_forb)
+model2 <- lm(weight_g_m ~CWM.Ht + CWM.LDMC + CWM.SLA , stand_Joined)
+step_total <- stepAIC(model2, direction = "backward", trace = FALSE)
+step_total$anova
+model3 <- lm(weight_g_m ~CWM.Ht , stand_Joined)
 summary(model3)
 
-model4 <- lm(total ~ CWM.Ht + CWM.LDMC + CWM.SLA + CWM.Dens + CWM.DiamC + CWM.SRLC + CWM.SRLF + CWM.PropF, stand_grass)
-step_grass<- stepAIC(model4, direction = "backward", trace = FALSE)
-step_grass$anova
-model5 <- lm(total ~ CWM.Dens + CWM.SRLF + CWM.PropF, stand_grass)
-summary(model5)
-
-model6 <- lm(total ~CWM.Ht + CWM.LDMC + CWM.SLA + CWM.Dens + CWM.DiamC + CWM.SRLC + CWM.SRLF + CWM.PropF, stand_Joined)
-step_total <- stepAIC(model6, direction = "backward", trace = FALSE)
+model4 <- lm(agg_BNPP ~CWM.Dens + CWM.DiamC + CWM.SRLC + CWM.SRLF + CWM.PropF , stand_Joined)
+step_total <- stepAIC(model4, direction = "backward", trace = FALSE)
 step_total$anova
-model7 <- lm(total ~ CWM.Ht + CWM.DiamC + CWM.SRLF, stand_Joined)
-summary(model7)
-
+model5 <- lm(weight_g_m ~CWM.DiamC, stand_Joined)
+summary(model5)
 ###How does the environment affect BNPP?
 #Select env of interest
 env_data <- env %>%

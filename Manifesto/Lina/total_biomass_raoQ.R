@@ -117,30 +117,23 @@ rao_grass <- stand_rao %>%
   filter(subplot == "G")
 
 library(MASS)
-model0 <- lm(total ~ SLARaoQ + LDMCRaoQ + HtRaoQ + DensRaoQ + DiamCRaoQ + SRLCRaoQ + SRLFRaoQ + PropFRaoQ, rao_both)
-step_both <- stepAIC(model0, direction = "backward", trace = FALSE)
-step_both$anova
-model1 <- lm(total ~ SLARaoQ + LDMCRaoQ + HtRaoQ + DensRaoQ + DiamCRaoQ + SRLCRaoQ + SRLFRaoQ + PropFRaoQ, rao_both)
-summary(model1)
-
-model2 <- lm(total ~ SLARaoQ + LDMCRaoQ + HtRaoQ + DensRaoQ + DiamCRaoQ + SRLCRaoQ + SRLFRaoQ + PropFRaoQ, rao_forb)
-step_forb <- stepAIC(model2, direction = "backward", trace = FALSE)
-step_forb$anova
-model3 <- lm(total ~ SLARaoQ + SRLFRaoQ, rao_forb)
-summary(model3)
-
-model4 <- lm(total ~ SLARaoQ + LDMCRaoQ + HtRaoQ + DensRaoQ + DiamCRaoQ + SRLCRaoQ + SRLFRaoQ + PropFRaoQ, rao_grass)
-step_grass <- stepAIC(model4, direction = "backward", trace = FALSE)
-step_grass$anova
-model5 <- lm(total ~ SLARaoQ + LDMCRaoQ + DensRaoQ + SRLCRaoQ, rao_grass)
-summary(model5)
-
-model6 <- lm(total ~ SLARaoQ + LDMCRaoQ + HtRaoQ + DensRaoQ + DiamCRaoQ + SRLCRaoQ + SRLFRaoQ + PropFRaoQ, stand_rao)
+model8 <- lm(total ~ SLARaoQ + LDMCRaoQ + HtRaoQ + DensRaoQ + DiamCRaoQ + SRLCRaoQ + SRLFRaoQ + PropFRaoQ, stand_rao)
 step_all <- stepAIC(model6, direction = "backward", trace = FALSE)
 step_all$anova
-model7 <- lm(total ~ SLARaoQ, stand_rao)
+model9 <- lm(total ~ DensRaoQ + DiamCRaoQ , stand_rao)
 summary(model7)
 
+model10 <- lm(weight_g_m ~ SLARaoQ + LDMCRaoQ + HtRaoQ , stand_rao)
+step_all <- stepAIC(model10, direction = "backward", trace = FALSE)
+step_all$anova
+model11 <- lm(weight_g_m ~ SLARaoQ  , stand_rao)
+summary(model11)
+
+model12 <- lm(agg_BNPP ~ DensRaoQ + DiamCRaoQ + SRLCRaoQ + SRLFRaoQ + PropFRaoQ, stand_rao)
+step_all <- stepAIC(model12, direction = "backward", trace = FALSE)
+step_all$anova
+model13 <- lm(agg_BNPP ~ DensRaoQ , stand_rao)
+summary(model13)
 #plot ANPP BNPP by RaoQ 
 library(ggplot2)
 library(ggpubr)

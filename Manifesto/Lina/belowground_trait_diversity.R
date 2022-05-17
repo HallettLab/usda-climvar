@@ -1,5 +1,5 @@
 veg <- read.csv("./Dropbox/ClimVar/DATA/Plant_composition_data/Cover/Cover_CleanedData/ClimVar_2015_species-cover_wide.csv", header = TRUE)
-traits <- read.csv("./Dropbox/ClimVar/DATA/Plant_composition_data/Traits/Traits_GHscreening_Brad/BradTraits_Cleaned.csv", header = TRUE)
+traits <- read.csv("./Dropbox/ClimVar/DATA/Plant_composition_data/Traits/Traits_GHscreening_Lina_Ashley/Combined_GHtraits.csv", header = TRUE)
 BNPP <- read.csv("./Dropbox/ClimVar/DATA/Plant_composition_data/BNPP/BNPP_CleanedData/BNPP_MayHarvest_2015.csv", header = TRUE)
 
 library(tidyverse)
@@ -9,41 +9,40 @@ library(FD)
 #Species names must be in same order in both files
 veg_keys <- veg[,1:7]
 vegdat <- veg[,8:64]
-vegdat1 <- vegdat[, -c(2,6,10,12,14:16,22:25,28:32,34,37:44,46,53:54,57)] #remove all columns that we do not have trait data on
-vegdat1$AVESP <- vegdat1$Avena.barbata + vegdat1$Avena.fatua #group some species
+vegdat1 <- vegdat[, -c(6,10,12,15:16,20,22:25,28,31,32,34,36:39,41:44,46,53,57)] #remove all columns that we do not have trait data for and any species that has no cover in 2015
+#group some species
 vegdat1$BRODIA <- vegdat1$Bromus.diandrus + vegdat1$Bromus.sterilis
-vegdat1$EROBOT <- vegdat1$Erodium.botrys + vegdat1$Erodium.cicutarium + vegdat1$Erodium.moschatum
 vegdat1$HORMUR <- vegdat1$Hordeum.marinum + vegdat1$Hordeum.murinum
-vegdat1$TRISP <- vegdat1$Trifolium.dubium + vegdat1$Trifolium.glomeratum + vegdat1$Trifolium.sp. + vegdat1$Trifolium.subterraneum + vegdat1$Trifolium.wildenovii
-vegdat1$VULMYU <- vegdat1$Vulpia.bromoides + vegdat1$Vulpia.myuros
-vegdat2 <- vegdat1[ , -c(2,3,5,8,12:16,19,21,22,24:28)] #remove grouped columns and Lupinus bicolor because it does not occur in any community
-colnames(vegdat2) <- c("ACHMIL", "BRADIS", "BROHOR", "BROMAD", "CENSOL", "CYNDAC", "CYNECH",
-                    "LACSER", "LOLMUL", "TAECAP", "TRIHIR", "AVESP", "BRODIA", 
-                    "EROBOT", "HORMUR", "TRISP", "VULMYU") #rename columns
-vegdat3 <- vegdat2[c("ACHMIL", "AVESP", "BRADIS", "BRODIA", "BROHOR", "BROMAD", 
-                     "CENSOL", "CYNDAC", "CYNECH", "EROBOT", "HORMUR", "LACSER",
-                     "LOLMUL", "TAECAP", "TRIHIR", "TRISP", "VULMYU")] #reorder columns
+vegdat1$TRISP <- vegdat1$Trifolium.dubium + vegdat1$Trifolium.glomeratum + vegdat1$Trifolium.sp. + vegdat1$Trifolium.wildenovii
+vegdat2 <- vegdat1[ , -c(9,6,16,17,24,25,27,29)] #remove grouped columns 
+colnames(vegdat2) <- c("ACHMIL","ANAARV", "AVEBAR", "AVEFAT", "BRADIS", "BROHOR", "BROMAD", "CENSOL","CERGLO", 
+                       "CYNDAC", "CYNECH", "EROBOT", "EROMOS", "HYPGLA", "HYPRAD", 
+                       "LACSER", "LOLMUL","RUMPUL", "TAECAP", "TRIHIR", "TRISUB", "VICSAT", "VULBRO", "VULMYU",
+                       "BRODIA", "HORMUR", "TRISP") #rename columns
+vegdat3 <- vegdat2[c("ACHMIL","ANAARV", "AVEBAR", "AVEFAT", "BRADIS", "BRODIA","BROHOR", "BROMAD", "CENSOL","CERGLO", 
+                     "CYNDAC", "CYNECH", "EROBOT", "EROMOS",  "HORMUR","HYPGLA", "HYPRAD", 
+                     "LACSER", "LOLMUL","RUMPUL", "TAECAP", "TRIHIR", "TRISP", "TRISUB", "VICSAT", "VULBRO", "VULMYU"
+)] #reorder columns
 dim(vegdat3) #check the dimension of veg data
 comp <- as.matrix(vegdat3[1:nrow(vegdat3), 1:ncol(vegdat3)])
 
 traits$ID <- as.character(traits$ID) #set ID column as character
-traits$ID <- ifelse(traits$ID == "AVEFAT", "AVESP", traits$ID) #use Avena fatua traits for Avena sp.
 traits$ID <- ifelse(traits$ID == "TRIREP", "TRISP", traits$ID) #use Trifolium repens traits for Trifolium sp. 
-bg_traits <- traits %>%
-  filter(ID %in% c("ACHMIL", "AVESP", "BRADIS", "BRODIA", "BROHOR", "BROMAD", 
-                   "CENSOL", "CYNDAC", "CYNECH", "EROBOT", "HORMUR", "LACSER",
-                   "LOLMUL", "TAECAP", "TRIHIR","TRISP", "VULMYU")) %>%
-  select(ID, Dens, DiamC, SRLC, SRLF, PropF)
-dim(bg_traits) #check the dimension of trait data
-tr <- as.matrix(bg_traits[1:nrow(bg_traits), 2:ncol(bg_traits)])
-row.names(tr) <- bg_traits$ID
+all_traits <- traits %>%
+  filter(ID %in% c("ACHMIL","ANAARV", "AVEBAR", "AVEFAT", "BRADIS", "BRODIA","BROHOR", "BROMAD", "CENSOL","CERGLO", 
+                   "CYNDAC", "CYNECH", "EROBOT", "EROMOS",  "HORMUR","HYPGLA", "HYPRAD", 
+                   "LACSER", "LOLMUL","RUMPUL", "TAECAP", "TRIHIR", "TRISP", "TRISUB", "VICSAT", "VULBRO", "VULMYU")) %>%
+  dplyr::select(ID, SLA, LDMC, Ht, Dens, DiamC, SRLC, SRLF, PropF)
+dim(all_traits) #check the dimension of trait data
+tr <- as.matrix(all_traits[1:nrow(all_traits), 2:ncol(all_traits)])
+row.names(tr) <- all_traits$ID
 
 #Now the data is ready to calculate trait diversity
 results <- dbFD(tr, comp, corr="cailliez")
 results <- as.data.frame(results) %>%
   tbl_df()
 Div <- cbind(veg_keys, results) #combine with keys
-write.csv(Div, "Belowground_CWM_traits.csv")
+#write.csv(Div, "Belowground_CWM_traits.csv")
 
 #standardize Div dataset
 library(vegan)
