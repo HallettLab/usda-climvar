@@ -199,21 +199,21 @@ TukeyHSD(aov(fitA))
 fitB <- lm(agg_BNPP~subplot, Joined)
 TukeyHSD(fitB)
 
-#Biomass by rain treatment
+#Biomass by rain treatment FigS1
 p3 <- ggplot(Joined, aes(x = treatment, y = agg_BNPP, fill = treatment)) +
         geom_boxplot() +
         theme_bw() +
-        labs(y = "BNPP g/m2 depth 0-30 cm", x = "precip treatment", fill = "treatment") +
+        labs(y = bquote('BNPP'~(g/m^2)), x = "precip treatment", fill = "treatment") +
         scale_fill_manual(values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))
 
 p4 <- ggplot(Joined, aes(x = treatment, y = weight_g_m, fill = treatment)) +
         geom_boxplot() +
         theme_bw() +
         theme(legend.position = "none") +
-        labs(y = "ANPP g/m2", x = "precip treatment", fill = "treatment") +
+        labs(y = bquote('ANPP'~(g/m^2)), x = "precip treatment", fill = "treatment") +
         scale_fill_manual(values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))
 
-ggarrange(p3, p4, ncol = 2, nrow = 1, 
+ggarrange(p4, p3, ncol = 2, nrow = 1, 
           common.legend = TRUE, legend = "right",
           align = "v",labels = c("a)", "b)"))
 
@@ -222,11 +222,11 @@ anova(fit1)
 fit2 <- lm(agg_BNPP~treatment*subplot, Joined)
 anova(fit2)
 
-#Regression ANPP ~ CWM.Ht
+#Regression ANPP ~ CWM.Ht Table S5
 Ht_all <- lm(weight_g_m ~ CWM.Ht, Joined)
 summary(Ht_all) #significant
 Ht_both<- lm(weight_g_m ~ CWM.Ht, Joined%>%filter(subplot == "B")) 
-summary(Ht_both) #significant
+summary(Ht_both) #not significant
 Ht_forb <- lm(weight_g_m ~ CWM.Ht, Joined%>%filter(subplot == "F"))
 summary(Ht_forb) #not significant
 Ht_grass <- lm(weight_g_m ~ CWM.Ht, Joined%>%filter(subplot == "G"))
@@ -244,7 +244,7 @@ summary(LDMC_grass) #not significant
 
 #Regression ANPP ~ CWM.SLA
 SLA_all <- lm(weight_g_m ~ CWM.SLA, Joined)
-summary(SLA_all) #significant
+summary(SLA_all) #not significant
 SLA_both<- lm(weight_g_m ~ CWM.SLA, Joined%>%filter(subplot == "B")) 
 summary(SLA_both) #not significant
 SLA_forb <- lm(weight_g_m ~ CWM.SLA, Joined%>%filter(subplot == "F"))
