@@ -76,16 +76,16 @@ overall_rao <- as.data.frame(overall_rao) %>%
   tbl_df()
 
 ##Join ind RaoQ with biomass
-rao_table <- as.data.frame(cbind(veg_keys[,2:3],SLA_results[,7], LDMC_results[,7],
+rao_table <- as.data.frame(cbind(veg_keys[,2:5],SLA_results[,7], LDMC_results[,7],
                                  Ht_results[,7], Dens_results[,7], DiamC_results[,7],
                                  SRLC_results[,7], SRLF_results[,7], PropF_results[,7], overall_rao[,8]))
-colnames(rao_table) <- c("plot", "subplot", "SLARaoQ", "LDMCRaoQ", "HtRaoQ", "DensRaoQ", 
+colnames(rao_table) <- c("plot", "subplot", "year", "treatment", "SLARaoQ", "LDMCRaoQ", "HtRaoQ", "DensRaoQ", 
                           "DiamCRaoQ", "SRLCRaoQ", "SRLFRaoQ", "PropFRaoQ", "RaoQ")
 #Filter 2015 ANPP
 ANPP1 <- ANPP %>%
   filter(year == 2015) %>%
   filter(subplot %in% c("B", "F", "G")) %>%
-  dplyr::select(plot, subplot, weight_g_m)
+  dplyr::select(plot, subplot, treatment, weight_g_m)
 
 #Replace entry "20-Oct" to "10-20" in depth column in the BNPP dataset
 BNPP$depth <- as.character(BNPP$depth) #set depth as character
@@ -95,18 +95,18 @@ BNPP <- BNPP %>%
 
 #Calculate the aggregated BNPP in three levels of soil depth
 BNPP1 <- BNPP %>%
-  group_by(plot, subplot) %>% #group data
+  group_by(plot, subplot, treatment) %>% #group data
   summarise(agg_BNPP = sum(bmass_g_m2)) %>% #sum BNPP
-  dplyr::select(plot, subplot, agg_BNPP)
+  dplyr::select(plot, subplot, treatment, agg_BNPP)
 
 joined_rao <- rao_table %>%
-  left_join(ANPP1, by = c("plot", "subplot")) %>%
-  left_join(BNPP1, by = c("plot", "subplot")) %>%
+  left_join(ANPP1, by = c("plot", "subplot", "treatment")) %>%
+  left_join(BNPP1, by = c("plot", "subplot", "treatment")) %>%
   mutate(total = weight_g_m + agg_BNPP)
 
 #standardize ind RaoQ and Biomass
-stand_joined_rao <- decostand(joined_rao[,3:14], "standardize") 
-stand_rao <- as.data.frame(cbind(joined_rao[,1:2], stand_joined_rao))
+stand_joined_rao <- decostand(joined_rao[,5:16], "standardize") 
+stand_rao <- as.data.frame(cbind(joined_rao[,1:4], stand_joined_rao))
 
 #Stepwise regression of BNPP ~ Ind RaoQ
 rao_both <- stand_rao %>%
@@ -137,25 +137,26 @@ summary(model13)
 #plot ANPP BNPP by RaoQ 
 library(ggplot2)
 library(ggpubr)
-p1 <- ggplot(joined_rao, aes(x = RaoQ, y = weight_g_m, color = subplot)) +
+p1 <- ggplot(joined_rao, aes(x = RaoQ, y = weight_g_m, color = treatment)) +
   geom_point() +
   theme_bw() +
   labs(y = bquote('ANPP'~(g/m^2)), x = "Rao's Q", color = "Treatment") +
   geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE) +
-  annotate("text", x = 4, y = 750, label = "R2 = 0.75, p < 0.01", size = 4, color = "#f8766d") +
-  annotate("text", x = 2.5, y = 370, label = "R2 = 0.09, p = 0.23", size = 4, color = "#619bff") +
-  annotate("text", x = 7, y = 300, label = "R2 = 0.001, p = 0.88", size = 4, color = "#00ba38") +
-  scale_color_discrete(name = "Treatment", labels = c("Mixed", "Forb", "Grass")) 
+  stat_cor(aes(group=treatment,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
 
-p2 <- ggplot(joined_rao, aes(x = RaoQ, y = agg_BNPP, color = subplot)) +
+#+
+  #scale_color_discrete(name = "Treatment", labels = c("Mixed", "Forb", "Grass")) 
+
+p2 <- ggplot(joined_rao, aes(x = RaoQ, y = agg_BNPP, color = treatment)) +
   geom_point() +
   theme_bw() +
   labs(y = bquote('BNPP'~(g/m^2)), x = "Rao's Q", color = "Treatment") +
   geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE) +
-  annotate("text", x = 2.6, y = 400, label = "R2 = 0.002, p = 0.84", size = 4, color = "#f8766d") +
-  annotate("text", x = 3.4, y = 290, label = "R2 = 0.03, p = 0.47", size = 4, color = "#619bff") +
-  annotate("text", x = 7, y = 210, label = "R2 = 0.02, p = 0.55", size = 4, color = "#00ba38") +
-  scale_color_discrete(name = "Treatment", labels = c("Mixed", "Forb", "Grass")) 
+  #annotate("text", x = 2.6, y = 400, label = "R2 = 0.002, p = 0.84", size = 4, color = "#f8766d") +
+  #annotate("text", x = 3.4, y = 290, label = "R2 = 0.03, p = 0.47", size = 4, color = "#619bff") +
+  #annotate("text", x = 7, y = 210, label = "R2 = 0.02, p = 0.55", size = 4, color = "#00ba38") +
+  stat_cor(aes(group=treatment,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
+  #scale_color_discrete(name = "Treatment", labels = c("Mixed", "Forb", "Grass")) 
 
 
 ggarrange(p1, p2, ncol = 2, nrow = 1, 
