@@ -147,7 +147,7 @@ p1 <- ggplot(data = joined, aes(x = CWM.Dens, y = agg_BNPP)) +
   labs(y= NULL) +
   theme(legend.position="none") +
   scale_color_discrete(name = "treatment", labels = c("Mixed", "Forb", "Grass")) +
-  annotate("text", x = 0.065, y = 600, label = lbl1, size = 4, color = "black")
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
 
 p2 <- ggplot(data = joined, aes(x = CWM.SRLF, y = agg_BNPP)) +
   geom_point(aes(color = as.factor(subplot))) +
@@ -157,7 +157,7 @@ p2 <- ggplot(data = joined, aes(x = CWM.SRLF, y = agg_BNPP)) +
   labs(y= NULL) +
   theme(legend.position= "none")+
   scale_color_discrete(name = "treatment", labels = c("Mixed", "Forb", "Grass")) +
-  annotate("text", x = 50000, y = 600, label = lbl2, size = 4, color = "black")
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
 
 p3 <- ggplot(data = joined, aes(x = CWM.SRLC, y = agg_BNPP)) +
   geom_point(aes(color = as.factor(subplot))) +
@@ -167,7 +167,7 @@ p3 <- ggplot(data = joined, aes(x = CWM.SRLC, y = agg_BNPP)) +
   labs(y= NULL) +
   theme(legend.position = "none")+
   scale_color_discrete(name = "treatment", labels = c("Mixed", "Forb", "Grass")) +
-  annotate("text", x = 3000, y = 600, label = lbl3, size = 4, color = "black")
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
 
 p4 <- ggplot(data = joined, aes(x = CWM.DiamC, y = agg_BNPP)) +
   geom_point(aes(color = as.factor(subplot))) +
@@ -177,7 +177,7 @@ p4 <- ggplot(data = joined, aes(x = CWM.DiamC, y = agg_BNPP)) +
   labs(y= NULL) +
   theme(legend.position = "none")+
   scale_color_discrete(name = "treatment", labels = c("Mixed", "Forb", "Grass")) +
-  annotate("text", x = 1, y = 600, label = lbl4, size = 4, color = "black")
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
 
 p5 <- ggplot(data = joined, aes(x = CWM.PropF, y = agg_BNPP)) +
   geom_point(aes(color = as.factor(subplot))) +
@@ -187,7 +187,7 @@ p5 <- ggplot(data = joined, aes(x = CWM.PropF, y = agg_BNPP)) +
   geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black")+
   theme(legend.position = "none")+
   scale_color_discrete(name = "treatment", labels = c("Mixed", "Forb", "Grass")) +
-  annotate("text", x = 0.982, y = 600, label = lbl5, size = 4, color = "black")
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
 
 figure <- ggarrange(p1, p2, p3, p4, p5,
           ncol =3, nrow =2, common.legend = TRUE, legend = "bottom",
@@ -199,7 +199,7 @@ annotate_figure(figure,
 Dens_all <- lm(agg_BNPP ~ CWM.Dens, joined)
 summary(Dens_all) #not significant
 Dens_both<- lm(agg_BNPP ~ CWM.Dens, both) 
-summary(Dens_both) #significant
+summary(Dens_both) #not significant
 Dens_forb <- lm(agg_BNPP ~ CWM.Dens, forb)
 summary(Dens_forb) #not significant
 Dens_grass <- lm(agg_BNPP ~ CWM.Dens, grass)
@@ -312,12 +312,7 @@ colnames(rao) <- c("DensRao", "SRLFRao", "SRLCRao", "DiamCRao", "PropFRao", "BNP
 stand_rao <- decostand(rao, "standardize")
 stand_rao_plot <- as.data.frame(cbind(Dens_joined[,2:3],stand_rao))
 
-#Plot BNPP vs Raos Q of each trait
-lbl1 <- expression("y = 250.31 + 15.25 x," ~ r^2 ~ "= 0.001")
-lbl2 <- expression("y = 291.31 - 89.81 x," ~ r^2 ~ "= 0.02")
-lbl3 <- expression("y = 290.77 - 59.32 x," ~ r^2 ~ "= 0.03")
-lbl4 <- expression("y = 274.82 - 30.08 x," ~ r^2 ~ "= 0.01")
-lbl5 <- expression("y = 240.65 - 22.11 x," ~ r^2 ~ "= 0.004")
+#Plot BNPP vs Raos Q of each trait FIG S5
 
 f1 <- ggplot(data = Dens_joined, aes(x = RaoQ, y = agg_BNPP)) +
         geom_point(aes(color = as.factor(subplot))) +
@@ -327,7 +322,7 @@ f1 <- ggplot(data = Dens_joined, aes(x = RaoQ, y = agg_BNPP)) +
         labs(y= NULL) +
         theme(legend.position="none")+
         scale_color_discrete(name = "treatment", labels = c("Mixed", "Forb", "Grass")) +
-        annotate("text", x = 1, y = 600, label = lbl1, size = 4, color = "black")
+        stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
 
 f2 <- ggplot(data = SRLF_joined, aes(x = RaoQ, y = agg_BNPP)) +
         geom_point(aes(color = as.factor(subplot))) +
@@ -336,7 +331,7 @@ f2 <- ggplot(data = SRLF_joined, aes(x = RaoQ, y = agg_BNPP)) +
         geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black")+
         labs(y= NULL) +
         theme(legend.position="none") +
-        annotate("text", x = 0.75, y = 600, label = lbl2 , size = 4, color = "black")
+        stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
 
 f3 <- ggplot(data = SRLC_joined, aes(x = RaoQ, y = agg_BNPP)) +
         geom_point(aes(color = as.factor(subplot))) +
@@ -345,7 +340,7 @@ f3 <- ggplot(data = SRLC_joined, aes(x = RaoQ, y = agg_BNPP)) +
         geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black")+
         labs(y= NULL) +
         theme(legend.position="none") +
-        annotate("text", x = 0.9, y = 600, label = lbl3, size = 4, color = "black")
+        stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
 
 f4 <- ggplot(data = DiamC_joined, aes(x = RaoQ, y = agg_BNPP)) +
         geom_point(aes(color = as.factor(subplot))) +
@@ -354,7 +349,7 @@ f4 <- ggplot(data = DiamC_joined, aes(x = RaoQ, y = agg_BNPP)) +
         geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black")+
         labs(y= NULL) +
         theme(legend.position="none") +
-        annotate("text", x = 1.5, y = 600, label = lbl4, size = 4, color = "black")
+        stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
 
 f5 <- ggplot(data = PropF_joined, aes(x = RaoQ, y = agg_BNPP)) +
         geom_point(aes(color = as.factor(subplot))) +
@@ -363,7 +358,7 @@ f5 <- ggplot(data = PropF_joined, aes(x = RaoQ, y = agg_BNPP)) +
         geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black")+
         labs(y= NULL) +
         theme(legend.position="none") +
-        annotate("text", x = 0.85, y = 600, label = lbl5, size = 4, color = "black")
+        stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
 
 figure2 <- ggarrange(f1, f2, f3, f4, f5,
                     ncol =3, nrow =2, common.legend = TRUE, legend = "bottom",
