@@ -154,7 +154,8 @@ p2 <- ggplot(joined_rao, aes(x = RaoQ, y = agg_BNPP, color = treatment)) +
   geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE) +
   #annotate("text", x = 2.6, y = 400, label = "R2 = 0.002, p = 0.84", size = 4, color = "#f8766d") +
   #annotate("text", x = 3.4, y = 290, label = "R2 = 0.03, p = 0.47", size = 4, color = "#619bff") +
-  #annotate("text", x = 7, y = 210, label = "R2 = 0.02, p = 0.55", size = 4, color = "#00ba38") +
+  #annotate("text", x = 7, y = 210, label = "R2 = 0.02, p = 0.55",
+  #size = 4, color = "#00ba38") +
   stat_cor(aes(group=treatment,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
   #scale_color_discrete(name = "Treatment", labels = c("Mixed", "Forb", "Grass")) 
 
