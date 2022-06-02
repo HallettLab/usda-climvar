@@ -5,14 +5,12 @@ library(gridExtra)
 
 ## PCA for trait groups by plant species; visualized by orgin and functional group ##
 ## Followed by CMW of PCA scores, regressed against ANPP and BNPP
-
-
 ## NOTE: Uses all_trait, abovetr15_fd2, cover15_fd2 from traitxANPP.R and BNPP1 from Lina's BNPP_exploratory_analysis.R
 
 
 # Select out correlated traits(MD, actual_area, Total) and those I don't have as much faith in (RMF, RGR)
-all_trait2 <- all_trait %>%
-  dplyr::select( -Seed.mass.grams, -C.N.Ratio)
+#all_trait2 <- all_trait %>%
+#  dplyr::select( -Seed.mass.grams, -C.N.Ratio)
 #all_trait2 <- all_trait2[-c(42:77), ]
 
 # Remove legumes from analysis if desired
@@ -22,11 +20,11 @@ all_trait2 <- all_trait %>%
 
 # First a PCA for ALL TRAITS (ABOVE AND BELOW)
 # matrix for PCA
-traits <- as.matrix(all_trait2[,c(6:ncol(all_trait2))])
+traits <- as.matrix(abovetr15_fd2[,c(6:ncol(all_trait2))])
 row.names(traits) <- all_trait2$ID
              
 # run PCA
-myrda <- rda(na.omit(traits), scale = TRUE)
+myrda <- rda(na.omit(abovetr15_fd2), scale = TRUE)
 
 # extract values
 siteout <- as.data.frame(scores(myrda, choices=c(1,2), display=c("sites")))
@@ -38,7 +36,7 @@ enviroout$type<-"traits"
 enviroout$name<-rownames(enviroout)
 
 # merge PC axes with trait data
-tog <- left_join(all_trait2, siteout) %>%
+tog <- left_join(abovetr15_FD2, siteout) %>%
   mutate(func = paste(Origin, GF, sep = "_"))
 
 # Remove legumes from legend key (if running PCA without legumes)
@@ -381,3 +379,12 @@ figure4 <- ggarrange(a.1, a.2, b.1, b.2,
                       ncol =2, nrow =2, common.legend = TRUE, legend = "bottom",
                       align = "v",labels = c("a)", "b)", "c)", "d)"))
 figure4
+
+ggplot(gf_prop_forb, aes(x=percentForb, y=agg_BNPP, color=subplot))+
+         geom_point()
+
+ggplot(gf_prop_forb, aes(x=totcover, y=agg_BNPP, color=subplot))+
+  geom_point()
+
+       
+       
