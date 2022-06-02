@@ -105,6 +105,28 @@ ggplot(subset(soil_comp, Depth==1), aes(x=treatment2, y=TN,fill=subplot))+
   geom_boxplot()+
   facet_wrap(~Year)
 
+#1. total SOC
+soc<-lme(log(SOC+1) ~treatment*subplot*Year, random=~1|shelterBlock, data=subset(soil_comp, Depth==1), na.action=na.exclude)
+summary(soc)
+anova(soc)
+r.squaredGLMM(soc)
+qqnorm(residuals(soc))
+qqline(residuals(soc))
+shapiro.test(residuals(soc))
+LS.soc<-lsmeans(soc, ~treatment, by="subplot")
+contrast(LS.soc, "pairwise")
+
+#2. total N
+tn<-lme(TN ~treatment*subplot*Year, random=~1|shelterBlock, data=subset(soil_comp, Depth==1), na.action=na.exclude)
+summary(tn)
+anova(tn)
+r.squaredGLMM(tn)
+qqnorm(residuals(tn))
+qqline(residuals(tn))
+shapiro.test(residuals(tn))
+LS.tn<-lsmeans(tn, ~treatment, by="subplot")
+contrast(LS.tn, "pairwise")
+
 
 m.soc<-lme(SOC ~subplot*treatment, random=~1|shelterBlock, data=subset(soil_comp, Year==2015&Depth==1), na.action=na.exclude)
 summary(m.soc)
@@ -217,6 +239,19 @@ f4a.v2<-ggplot(subset(soil_comp, Depth==1), aes(x=treatment2, y=TN, fill=subplot
 #facet_wrap(~Year)
 f4a.v2
 
+f4a.v3<-ggplot(subset(soil_comp, subplot=="B"&Depth==1), aes(x=treatment2, y=TN, fill="gray"))+
+  ylim(0,10)+
+  theme(legend.position="none")+
+  scale_fill_manual(values = c("gray")) +
+  #theme_linedraw()+
+  #scale_fill_manual(values = c("royalblue2","sienna","lightsteelblue1", "peachpuff"), guide = guide_legend(title = "Treatment")) +
+  #scale_fill_manual(values = c("white","black","gray"), guide = guide_legend(title = "Composition"),
+  #                  labels=c("Grass-only", "Forb-only", "Mixed")) +
+  labs(x="", y="Total N (ug/g)")+
+  geom_boxplot()
+#facet_wrap(~Year)
+f4a.v3
+
 ggdraw(f4a) +
   draw_plot(f4c, .15, .65, .3, .3) +
   draw_plot(f4d, 0.5,0.65, 0.3,0.3)+
@@ -228,11 +263,21 @@ ggdraw(f4a) +
   )
 
 #plot big panel plus small panels on right
-right_col2<-plot_grid(f4c, f4d, labels = c('E', 'F'), label_size = 14, ncol=1)
-right_col2
+right_col5<-plot_grid(f4c, f4d, labels = c('E', 'F'), label_size = 14, ncol=1)
+right_col5
 
-F1D<-plot_grid(f4a.v2 + theme(legend.position="none"), right_col2, labels=c("D",""), rel_widths=c(2,1.5), label_size=14, ncol=2)
+right_col6<-plot_grid(f4a.v3, f4d, labels = c('E', 'F'), label_size = 14, ncol=1)
+right_col6
+
+
+F1D<-plot_grid(f4a.v2 + theme(legend.position="none"), right_col5, labels=c("D",""), rel_widths=c(2,1.5), label_size=14, ncol=2)
 F1D
+
+F1D.2<-plot_grid(f4a.v3 + theme(legend.position="none"), right_col5, labels=c("D",""), rel_widths=c(2,1.5), label_size=14, ncol=2)
+F1D.2
+
+F1D.3<-plot_grid(f4c + theme(legend.position="none"), right_col6, labels=c("D",""), rel_widths=c(2,1.5), label_size=14, ncol=2)
+F1D.3
 
 f5c<-ggplot(subset(soil_comp, Depth==1 & Year=="2015"), aes(x=subplot, y=SOC, fill=subplot))+
   labs(x="", y=expression(SOC~(ug/g)))+
@@ -290,6 +335,20 @@ f5a.v2<-ggplot(subset(soil_comp, Depth==1), aes(x=treatment2, y=SOC, fill=subplo
 #facet_wrap(~Year)
 f5a.v2
 
+f5a.v3<-ggplot(subset(soil_comp, subplot=="B"&Depth==1), aes(x=treatment2, y=SOC, fill="gray"))+
+  ylim(0,250)+
+  #theme_linedraw()+
+  scale_fill_manual(values = c("gray")) +
+  #scale_fill_manual(values = c("white","black","gray"), guide = guide_legend(title = "Composition"),
+  #                  labels=c("Grass-only", "Forb-only", "Mixed")) +
+  labs(x="", y="SOC (ug/g)")+
+  annotate("text", x= c( "Ambient","Consistent","Early","Late"), y = c(240, 240, 240,240), label = c("ab", "a", "b", "a"), color = "black", size=5) +
+  theme(legend.position="none")+
+  geom_boxplot()
+#facet_wrap(~Year)
+f5a.v3
+
+
 ggdraw(f5a) +
   draw_plot(f5c, .15, .65, .3, .3) +
   draw_plot(f5d, 0.5,0.65, 0.3,0.3)+
@@ -304,8 +363,17 @@ ggdraw(f5a) +
 right_col3<-plot_grid(f5c, f5d, labels = c('H', 'I'), label_size = 14, ncol=1)
 right_col3
 
+right_col4<-plot_grid(f5a.v3, f5d, labels = c('H', 'I'), label_size = 14, ncol=1)
+right_col4
+
 F1G<-plot_grid(f5a.v2 + theme(legend.position="none"), right_col3, labels=c("G",""), rel_widths=c(2,1.5), label_size=14, ncol=2)
 F1G
+
+F1G.2<-plot_grid(f5a.v3 + theme(legend.position="none"), right_col3, labels=c("G",""), rel_widths=c(2,1.5), label_size=14, ncol=2)
+F1G.2
+
+F1G.3<-plot_grid(f5c + theme(legend.position="none"), right_col4, labels=c("G",""), rel_widths=c(2,1.5), label_size=14, ncol=2)
+F1G.3
 
 ggplot(subset(part_soil, year==2016), aes(x=TN, y=dY))+
   geom_point(aes(shape=treatment2),size=4)+
