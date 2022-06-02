@@ -333,6 +333,19 @@ f1a.v2<-ggplot(d=subset(FG_all), aes(x=treatment2, y=biomass, fill=comp)) +
   ylim(0,1000)
 f1a.v2
 
+f1a.v3<-ggplot(d=subset(FG_all, comp=="totweight"), aes(x=treatment2, y=biomass, fill="gray")) +
+  #facet_wrap(~year)+
+  #ggtitle("Observed Yield (Yo)")+
+  #theme_linedraw()+
+  theme(legend.position="none")+
+  scale_fill_manual(values = c("gray")) +
+  #scale_fill_manual(values = c("white","black", "gray"), guide = guide_legend(title = "Composition"),
+  #                  labels=c("Grass","Forb",  "Mixed")) +
+  labs(x="", y=expression(ANPP~(g/m^2)))+
+  geom_boxplot(aes(y=biomass))+
+  ylim(0,1000)
+f1a.v3
+
 FG_all$comp2 <- ordered(FG_all$comp, levels = c("Gweight","Fweight","totweight"))
 pcomp<-ggplot(d=FG_all, aes(x=comp2, y=biomass, fill=comp2)) +
   #theme_linedraw()+
@@ -373,8 +386,18 @@ ggdraw(f1a) +
 right_col1<-plot_grid(pcomp, pyr, labels = c('B', 'C'), label_size = 14, ncol=1)
 right_col1
 
+#plot big panel plus small panels on right
+right_col2<-plot_grid(f1a.v3, pyr, labels = c('B', 'C'), label_size = 14, ncol=1)
+right_col2
+
 F1A<-plot_grid(f1a.v2 + theme(legend.position="none"), right_col1, labels=c("A",""), rel_widths=c(2,1.5), label_size=14, ncol=2)
 F1A
+
+F1A.2<-plot_grid(f1a.v3 + theme(legend.position="none"), right_col1, labels=c("A",""), rel_widths=c(2,1.5), label_size=14, ncol=2)
+F1A.2
+
+F1A.3<-plot_grid(pcomp + theme(legend.position="none"), right_col2, labels=c("A",""), rel_widths=c(2,1.5), label_size=14, ncol=2)
+F1A.3
 
 #run soil-cleaning.R
 legend_b <- get_legend(
@@ -386,6 +409,12 @@ legend_b <- get_legend(
 Figure1<- plot_grid(F1A, F1D, F1G,legend_b, ncol=1, rel_heights = c(1, 1,1,.1))
 Figure1
 
+Figure1.2<- plot_grid(F1A.2, F1D.2, F1G.2,legend_b, ncol=1, rel_heights = c(1, 1,1,.1))
+Figure1.2
+
+Figure1.3<- plot_grid(F1A.3, F1D.3, F1G.3,legend_b, ncol=1, rel_heights = c(1, 1,1,.1))
+Figure1.3
+#save as 850 x 1300
 
 #alternatively, ggpubr for panels
 #ggarrange(pcomp, pyr, f1a, ncol = 2, nrow = 2, labels=c("a)","b)", "c)"), heights=c(1,2))
