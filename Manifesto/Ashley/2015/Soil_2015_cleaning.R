@@ -20,7 +20,7 @@ shelterkey <- read.csv("~/Dropbox/ClimVar/DATA/Plant_composition_data/Cover/Cove
 soil <- merge(soil, shelterkey) %>%
   tbl_df() 
 
-write.csv(soil, "~/Dropbox/ClimVar/DATA/Soil Extracts/Soil_CleanedData/ClimVar_soil_2015.csv")
+#write.csv(soil, "~/Dropbox/ClimVar/DATA/Soil Extracts/Soil_CleanedData/ClimVar_soil_2015.csv")
 
 
 
