@@ -308,6 +308,16 @@ rao_anpp<-ggplot(aboveFD.z, aes(x=RaoQ, y=ANPPgm, group=subplot, color=subplot))
   theme_bw()+
   geom_smooth(method='lm', se=FALSE, color="black", aes(group=1))
 rao_anpp
+
+rao_anpp<-ggplot(subset(aboveFD.z, subplot=="B"), aes(x=RaoQ, y=ANPPgm, group=treatment, color=treatment))+
+  stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) +
+  #annotate("text", x= c(1500, 6000, 9000), y = c(750, 450, 315), label = c("R2=0.31", "R2=0.04", "R2=0.09"), color = c("brown2", "dodgerblue3","forestgreen")) +
+  geom_point()+
+  #xlim(40,100)+
+  #ylim(0,100)
+  theme_bw()+
+  #geom_smooth(method='lm', se=FALSE, color="black", aes(group=4))
+rao_anpp
   
 ggplot(aboveFD.z, aes(x=RaoQ, y=ANPPgm))+
   stat_smooth_func(geom="text",method="lm", formula= y ~ x + I(x^2), hjust=0,parse=TRUE) +
