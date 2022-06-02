@@ -364,8 +364,7 @@ a.t1<-ggplot(data=siteout2_fd, aes(x=CWM.PC1, y=ANPPgm, group=treatment, color=t
 #  theme(legend.position="none")+
 #  scale_color_manual(values=c("tomato", "green3", "dodgerblue"), guide = guide_legend(title = "Treatment"), #change legend title
 #                     labels=c("Mixed", "Forb", "Grass"))+ #change labels in the legend)+
-  xlab("Community Weighted Means of Aboveground PC1 Scores")+
-  ylab("ANPP g/m2")+
+  labs(x=expression(atop("Short" %<->% "Tall","(CWM Aboveground PC1 Scores)")), y = expression(paste("ANPP ", g/m^{2})))+
   #xlim(40,100)+
   #ylim(0,100)
   geom_smooth(method="lm", formula= y ~ x, se=FALSE,  aes(group=treatment))
@@ -390,13 +389,12 @@ a.t2<-ggplot(data=siteout2_fd, aes(x=CWM.PC2, y=ANPPgm, group=treatment, color=t
   #stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=treatment)) +
   stat_cor(aes(group=treatment,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))+
   #ggtitle("a)")+
+  labs(x=expression(atop("High LDMC" %<->% "High SLA","(CWM Aboveground PC2 Scores)")), y = expression(paste("ANPP ", g/m^{2})))+
   geom_point()+
   theme_bw()+
   #  theme(legend.position="none")+
   #  scale_color_manual(values=c("tomato", "green3", "dodgerblue"), guide = guide_legend(title = "Treatment"), #change legend title
   #                     labels=c("Mixed", "Forb", "Grass"))+ #change labels in the legend)+
-  xlab("Community Weighted Means of Aboveground PC2 Scores")+
-  ylab("ANPP g/m2")+
   #xlim(40,100)+
   #ylim(0,100)
   geom_smooth(method="lm", formula= y ~ x, se=FALSE,  aes(group=treatment))
@@ -522,23 +520,6 @@ siteout_fd.b$shelterBlock<-traits_2015_2$shelterBlock
 siteout_fd.b$subplot<-traits_2015_2$subplot
 siteout_fd.b$treatment<-traits_2015_2$treatment
 
-below_tr <- siteout_fd.b %>% group_by(treatment,subplot) %>% 
-  summarize(CWM.PC1.m=mean(CWM.PC1), CWM.PC2.m=mean(CWM.PC2), se.PC1=calcSE(CWM.PC1),se.PC2=calcSE(CWM.PC2))
-
-ggplot(data=subset(below_tr,subplot=="B"), aes(x=treatment, y=CWM.PC1.m))+
-  geom_point(position=position_dodge(0.9),size=4)+
-  labs(y=expression(atop("Coarse" %<->% "Fine","(CWM Belowground PC1 Scores)")))+
-  geom_errorbar(aes(ymin = CWM.PC1.m-se.PC1, ymax = CWM.PC1.m+se.PC1), size = 1, width = 0,position=position_dodge(0.9))+
-  theme_bw()
-  #xlim(40,100)+
-  #ylim(0,100)
-  #geom_smooth(method="lm", formula= y ~ x, se=FALSE, color="black", aes(group=1))
-
-ggplot(data=subset(below_tr,subplot=="B"), aes(x=treatment, y=CWM.PC2.m))+
-  geom_point(position=position_dodge(0.9), size=4)+
-  labs(y=expression(atop("Long" %<->% "Dense","(CWM Belowground PC2 Scores)")))+
-  geom_errorbar(aes(ymin = CWM.PC2.m-se.PC2, ymax = CWM.PC2.m+se.PC2), size = 1, width = 0,position=position_dodge(0.9))+
-  theme_bw()
 
 ggplot(data=siteout_fd.b, aes(x=CWM.PC1, y=ANPPgm, group=subplot, color=subplot))+
   stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) +
@@ -578,8 +559,7 @@ bt.1<-ggplot(data=siteout_fd, aes(x=CWM.PC1, y=agg_BNPP, group=treatment, color=
   #stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) +
   #scale_color_manual(values=c("tomato", "green3", "dodgerblue"), guide = guide_legend(title = "Treatment"), #change legend title
   #                   labels=c("Mixed", "Forb", "Grass"))+ #change labels in the legend)+
-  xlab("Community Weighted Means of Belowground PC1 Scores")+
-  ylab("BNPP g/m2")+
+  labs(x=expression(atop("Coarse" %<->% "Fine","(CWM Belowground PC1 Scores)")), y = expression(paste("BNPP ", g/m^{2})))+
   #ggtitle("c)")+
   geom_point()+
   theme_bw()+
@@ -642,8 +622,7 @@ bt.2<-ggplot(data=siteout_fd, aes(x=CWM.PC2, y=agg_BNPP, group=treatment, color=
   #stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) +
   #scale_color_manual(values=c("tomato", "green3", "dodgerblue"), guide = guide_legend(title = "Treatment"), #change legend title
   #                   labels=c("Mixed", "Forb", "Grass"))+ #change labels in the legend)+
-  xlab("Community Weighted Means of Belowground PC1 Scores")+
-  ylab("BNPP g/m2")+
+  labs(x=expression(atop("Long" %<->% "Dense","(CWM Belowground PC2 Scores)")), y = expression(paste("BNPP ", g/m^{2})))+
   #ggtitle("c)")+
   geom_point()+
   theme_bw()+
@@ -729,6 +708,93 @@ figures7 <- ggarrange(a.t1, a.t2, bt.1, bt.2,
                      align = "v",labels = c("a)", "b)", "c)", "d)"))
 figures7
 
+#### trait shift with rainfall treatment
+above_tr <- siteout2_fd %>% mutate(treatment=ordered(treatment, levels = c(controlRain="controlRain", consistentDry="consistentDry",  fallDry="fallDry", springDry="springDry"))) %>%
+  group_by(treatment) %>% 
+  summarize(CWM.PC1.m=mean(CWM.PC1), CWM.PC2.m=mean(CWM.PC2), se.PC1=calcSE(CWM.PC1),se.PC2=calcSE(CWM.PC2))
+
+below_tr <- siteout_fd.b %>% mutate(treatment=ordered(treatment, levels = c(Control="controlRain", consistentDry="consistentDry",  fallDry="fallDry", springDry="springDry"))) %>%
+  group_by(treatment) %>% 
+  summarize(CWM.PC1.m=mean(CWM.PC1), CWM.PC2.m=mean(CWM.PC2), se.PC1=calcSE(CWM.PC1),se.PC2=calcSE(CWM.PC2))
+
+F6a<-ggplot(data=subset(above_tr), aes(x=treatment, y=CWM.PC1.m))+
+  geom_point(position=position_dodge(0.9),size=4)+
+  labs(y=expression(atop("Short" %<->% "Tall","(CWM Aboveground PC1 Scores)")), x="Precipitation Treatment")+
+  scale_x_discrete(labels = c("Control\n ","Consistent\n Drought\n", "Fall\nDrought\n", "Spring\n Drought\n"))+
+  geom_errorbar(aes(ymin = CWM.PC1.m-se.PC1, ymax = CWM.PC1.m+se.PC1), size = 0.5, width = 0,position=position_dodge(0.9))+
+  theme_bw()
+F6a
+
+F6b<-ggplot(data=subset(above_tr), aes(x=treatment, y=CWM.PC2.m))+
+  geom_point(position=position_dodge(0.9), size=4)+
+  labs(y=expression(atop("High LDMC" %<->% "High SLA","(CWM Aboveground PC2 Scores)")), x="Precipitation Treatment")+
+  scale_x_discrete(labels = c("Control\n ","Consistent\n Drought\n", "Fall\nDrought\n", "Spring\n Drought\n"))+
+  geom_errorbar(aes(ymin = CWM.PC2.m-se.PC2, ymax = CWM.PC2.m+se.PC2), size = 0.5, width = 0,position=position_dodge(0.9))+
+  theme_bw()
+F6b
+
+F6c<-ggplot(data=subset(below_tr), aes(x=treatment, y=CWM.PC1.m))+
+  geom_point(position=position_dodge(0.9),size=4)+
+  labs(y=expression(atop("Coarse" %<->% "Fine","(CWM Belowground PC1 Scores)")), x="Precipitation Treatment")+
+  scale_x_discrete(labels = c("Control\n ","Consistent\n Drought\n", "Fall\nDrought\n", "Spring\n Drought\n"))+
+  geom_errorbar(aes(ymin = CWM.PC1.m-se.PC1, ymax = CWM.PC1.m+se.PC1), size = 0.5, width = 0,position=position_dodge(0.9))+
+  theme_bw()
+F6c
+
+F6d<-ggplot(data=subset(below_tr), aes(x=treatment, y=CWM.PC2.m))+
+  geom_point(position=position_dodge(0.9), size=4)+
+  labs(y=expression(atop("Long" %<->% "Dense","(CWM Belowground PC2 Scores)")),  x="Precipitation Treatment")+
+  scale_x_discrete(labels = c("Control\n ","Consistent\n Drought\n", "Fall\nDrought\n", "Spring\n Drought\n"))+
+  geom_errorbar(aes(ymin = CWM.PC2.m-se.PC2, ymax = CWM.PC2.m+se.PC2), size = 0.5, width = 0,position=position_dodge(0.9))+
+  theme_bw()
+F6d
+
+figure6 <- ggarrange(F6a, F6b, F6c, F6d,
+                      ncol =2, nrow =2, 
+                      align = "v",labels = c("a)", "b)", "c)", "d)"))
+figure6
+
+mf6a<-lme(CWM.PC1 ~treatment, random=~1|shelterBlock, siteout2_fd , na.action=na.exclude)
+summary(mf6a)
+anova(mf6a) #treatment is significant
+r.squaredGLMM(mf6a) 
+qqnorm(residuals(mf6a))
+qqline(residuals(mf6a))
+shapiro.test(residuals(mf6a))
+LS1b<-lsmeans(mf6a, ~treatment)
+contrast(LS1b, "pairwise")
+
+mf6a<-lme(CWM.PC2 ~treatment, random=~1|shelterBlock, siteout2_fd , na.action=na.exclude)
+summary(mf6a)
+anova(mf6a) #treatment is significant
+r.squaredGLMM(mf6a) 
+qqnorm(residuals(mf6a))
+qqline(residuals(mf6a))
+shapiro.test(residuals(mf6a))
+LS1b<-lsmeans(mf6a, ~treatment)
+contrast(LS1b, "pairwise")
+
+mf6a<-lme(CWM.PC1 ~treatment, random=~1|shelterBlock, siteout_fd.b , na.action=na.exclude)
+summary(mf6a)
+anova(mf6a) #treatment is significant
+r.squaredGLMM(mf6a) 
+qqnorm(residuals(mf6a))
+qqline(residuals(mf6a))
+shapiro.test(residuals(mf6a))
+LS1b<-lsmeans(mf6a, ~treatment)
+contrast(LS1b, "pairwise")
+
+mf6a<-lme(CWM.PC2 ~treatment, random=~1|shelterBlock, siteout_fd.b , na.action=na.exclude)
+summary(mf6a)
+anova(mf6a) #treatment is significant
+r.squaredGLMM(mf6a) 
+qqnorm(residuals(mf6a))
+qqline(residuals(mf6a))
+shapiro.test(residuals(mf6a))
+LS1b<-lsmeans(mf6a, ~treatment)
+contrast(LS1b, "pairwise")
+
+####Extra
 ggplot(gf_prop_forb, aes(x=percentForb, y=agg_BNPP, color=subplot))+
          geom_point()
 
