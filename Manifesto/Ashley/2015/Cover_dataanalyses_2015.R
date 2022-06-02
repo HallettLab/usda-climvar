@@ -80,6 +80,10 @@ gfproportion_2015 <- gf_2015 %>%
   filter(func == "forb") %>%
   dplyr::select(-func)
 
+gfratio_2015 <- gf_2015 %>% 
+  group_by(plot, subplot, treatment, shelterBlock, func) %>%
+  mutate(fgratio=)
+
 gf_graphic_2015 <- gf_2015 %>%
   group_by(subplot, func, treatment) %>%
   summarize(meancover=mean(cover), secover=sd(cover)/sqrt(length(cover)))
@@ -104,6 +108,8 @@ a<-lme(percentForb ~ treatment*subplot, random=~1|shelterBlock, data=gfproportio
 
 summary(a) 
 anova(a)
+LSa<-lsmeans(a, ~subplot)
+contrast(LSa, "pairwise") #there is not a greater proportion of forbs in the mixed plots compared to grass plots
 r.squaredGLMM(a)
 summary(glht(a,linfct=mcp(treatment="Tukey")), alternative="Bonferonni")
 
@@ -135,11 +141,13 @@ gfproportionG_2015 <- gf_2015 %>%
   filter(func == "grass", subplot!= "XC") %>%
   dplyr::select(-func)
 
-b<-lme(percentGrass ~ treatment, random=~1|shelterBlock/subplot, data=gfproportionG_2015,
+b<-lme(percentGrass ~ treatment*subplot, random=~1|shelterBlock, data=gfproportionG_2015,
        contrasts=list(treatment=contr.treatment))
 
 summary(b) 
 anova(b)
+LSb<-lsmeans(b, ~subplot)
+contrast(LSb, "pairwise")
 r.squaredGLMM(b) #1% explained by fixed effects
 summary(glht(b,linfct=mcp(treatment="Tukey")), alternative="Bonferonni")
 
