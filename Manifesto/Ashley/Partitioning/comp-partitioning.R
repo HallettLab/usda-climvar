@@ -1,3 +1,4 @@
+##DO NOT USE
 #NOTE: mistakes in partitioning calculations here, corrected in comp_part2.R which is the code for the manuscript
 ##the purpose of this code is additive partitioning of biodiversity effects in the ClimVar mixed composition plots
 #code below to be deleted due to errors in calculatations, but leaving up for now so steps of what was done are clear 

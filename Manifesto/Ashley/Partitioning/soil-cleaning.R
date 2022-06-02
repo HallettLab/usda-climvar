@@ -1,5 +1,8 @@
+#the purpose of this script is to clean up soil extracts data and create figures for the climvar partitioning manuscript
+#this code accompanies the partitioning manuscript and reproducible, publication figures below
+#Date of last update: 2/June/2022
+#Author: Ashley Shaw
 
-#the purpose of this script is to clean up soil extracts data 
 library(tidyverse)
 library(stringr)
 setwd("~/Dropbox/ClimVar/DATA/")
