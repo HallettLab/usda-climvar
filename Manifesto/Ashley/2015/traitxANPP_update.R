@@ -23,7 +23,7 @@ levels(trait.dat1$Taxon)
 trait.dat1$Taxon <- sub(" ", "_", trait.dat1$Taxon)
 names(cover15)<-str_replace_all(names(cover15), c("\\." = "_"))
 cover15_2<- cover15 %>% dplyr::select(-Bromus_sp_, -Bromus_sterilis, -Convolvulus_arvensis, 
-                          -Gastridium_phleoides, -Hordeum_sp_, -Juncus_bufonius, -Kickxia_spuria,
+                          -Gastridium_phleoides, -Juncus_bufonius, -Kickxia_spuria,
                           -Linum_bienne, -Lythrum_hyssopifolia, -Medicago_arabica, -Medicago_polymorpha, -Rumex_pulcher,
                           -Sherardia_arvensis, -Sonchus_oleraceus, -Zeltnera_muehlenbergii)
 cover15_fd<- cover15_2 %>% dplyr::select(-plot, -subplot, -treatment, -shelterBlock, -shelter, -year, -X)
@@ -34,15 +34,19 @@ abovetr15_fd<-trait.dat1 %>% filter(Ht > 0) %>% dplyr::select(-ID, -GF, -Origin,
 #                                     SILGAL=Silene_gallica, TAECAP=Taeniatherum_caput_medusae, TORARV=Torilis_arvensis, TRIDUB=Trifolium_dubium, TRIGLO=Trifolium_glomeratum, TRIHIR=Trifolium_hirtum, TRISP=Trifolium_sp_,  TRISUB=Trifolium_subterraneum, TRIWIL=Trifolium_wildenovii, TRIHYA=Triteleia_hyacintha, VICSAT=Vicia_sativa, VULBRO=Vulpia_bromoides, VULMYU=Vulpia_myuros)
 
 #remove species that do not occur in any community or that we don't have trait data for
-cover15_fd3 <- cover15_fd3 %>% mutate(Hordeum_murinum=Hordeum_marinum+Hordeum_murinum)
-cover15_fd3 <- cover15_fd %>% dplyr::select(-Hordeum_marinum,-Briza_minor, -Carduus_pycnocephalus, -Clarkia_amoena, -Fillago_gallica, -Galium_parisiense, -Erodium_cicutarium, -Geranium_sp_, -Lupinus_bicolor, -Silene_gallica,-Senecio_vulgaris,-Torilis_arvensis, -Trifolium_dubium, -Trifolium_glomeratum,-Trifolium_sp_, -Trifolium_wildenovii, -Triteleia_hyacintha)
+cover15_fd3 <- cover15_fd %>% mutate(Hordeum_murinum=(Hordeum_marinum+Hordeum_murinum+Hordeum_sp_), Trifolium_repens=(Trifolium_dubium+Trifolium_glomeratum+Trifolium_sp_+Trifolium_wildenovii))
+cover15_fd3 <- cover15_fd3 %>% dplyr::select(-Hordeum_sp_,-Hordeum_marinum,-Briza_minor, -Carduus_pycnocephalus, -Clarkia_amoena, -Fillago_gallica, -Galium_parisiense, -Erodium_cicutarium, -Geranium_sp_, -Lupinus_bicolor, -Silene_gallica,-Senecio_vulgaris,-Torilis_arvensis, 
+                                             -Trifolium_dubium, -Trifolium_glomeratum,-Trifolium_sp_, -Trifolium_wildenovii, -Triteleia_hyacintha)
 cover15_fd3<-cover15_fd3 %>% rename(Bromus_madritensis=Bromus_madritensis_madritensis)
+cover15_fd3 <- cover15_fd3 %>% dplyr::select(order(colnames(cover15_fd3)))
 cover_names<-cover15_fd3 %>% gather(Taxon, cover)%>%summarize(Taxon=unique(Taxon))
 cover15_fd3<-data.matrix(cover15_fd3)
 
+
+
 #remove species from traits so matches cover data
 abovetr15_fd2 <- abovetr15_fd[-c(2,3,5,9,10,14,17,20,21,22,23,24,27,28,29,30,31,34,37,39,40,
-                                 41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,58,59), ]
+                                 41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,58), ]
 abovetr15_fd3 <- abovetr15_fd2 %>% dplyr::select(-Taxon, -RGR, -actual_area)
 #rownames(abovetr15_fd2)[23]<-"Vicia_sativa"
 abovetr15_fd3<-bind_cols(abovetr15_fd3,cover_names)
@@ -228,6 +232,91 @@ ggplot(aboveFD.z, aes(x=CWM.Ht, y=ANPPgm))+
   #ylim(0,100)
   geom_smooth(method='lm', se=FALSE)
 
+ggplot(aboveFD.z, aes(y=CWM.Ht, x=treatment))+
+  #stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE) +
+  facet_wrap(~subplot)+
+  geom_boxplot()
+  #xlim(40,100)+
+  #ylim(0,100)
+  #geom_smooth(method='lm', se=FALSE)
+
+ggplot(aboveFD.z, aes(y=CWM.LDMC, x=treatment))+
+  #stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE) +
+  facet_wrap(~subplot)+
+  geom_boxplot()
+#xlim(40,100)+
+#ylim(0,100)
+#geom_smooth(method='lm', se=FALSE)
+
+ggplot(aboveFD.z, aes(y=CWM.SLA, x=treatment))+
+  #stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE) +
+  facet_wrap(~subplot)+
+  geom_boxplot()
+#xlim(40,100)+
+#ylim(0,100)
+#geom_smooth(method='lm', se=FALSE)
+
+
+ggplot(aboveFD.z, aes(y=CWM.RMF, x=treatment))+
+  #stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE) +
+  facet_wrap(~subplot)+
+  geom_boxplot()
+#xlim(40,100)+
+#ylim(0,100)
+#geom_smooth(method='lm', se=FALSE)
+
+ggplot(aboveFD.z, aes(y=CWM.Dens, x=treatment))+
+  #stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE) +
+  facet_wrap(~subplot)+
+  geom_boxplot()
+#xlim(40,100)+
+#ylim(0,100)
+#geom_smooth(method='lm', se=FALSE)
+
+ggplot(aboveFD.z, aes(y=CWM.DiamC, x=treatment))+
+  #stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE) +
+  facet_wrap(~subplot)+
+  geom_boxplot()
+#xlim(40,100)+
+#ylim(0,100)
+#geom_smooth(method='lm', se=FALSE)
+
+ggplot(aboveFD.z, aes(y=CWM.DiamC, x=treatment))+
+  #stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE) +
+  facet_wrap(~subplot)+
+  geom_boxplot()
+#xlim(40,100)+
+#ylim(0,100)
+#geom_smooth(method='lm', se=FALSE)
+
+m_sla<-lme(CWM.SLA~treatment, random=~1|shelterBlock, subset(aboveFD.z, subplot=="B"), na.action=na.exclude)
+summary(m_sla)
+anova(m_sla) #significant
+r.squaredGLMM(m_sla) #24% of variation explained by fixed effects, 42% by whole model (spatial variation?)
+qqnorm(residuals(m_sla))
+qqline(residuals(m_sla))
+shapiro.test(residuals(m_sla))
+#normal
+
+m_rmf<-lme(CWM.RMF~treatment, random=~1|shelterBlock, subset(aboveFD.z, subplot=="B"), na.action=na.exclude)
+summary(m_rmf)
+anova(m_rmf) #significant
+r.squaredGLMM(m_rmf) #24% of variation explained by fixed effects, 42% by whole model (spatial variation?)
+qqnorm(residuals(m_rmf))
+qqline(residuals(m_rmf))
+shapiro.test(residuals(m_rmf))
+#normal
+
+m_diamc<-lm(CWM.LDMC~treatment, subset(aboveFD.z, subplot=="B"), na.action=na.exclude)
+summary(m_diamc)
+anova(m_diamc) #significant
+r.squaredGLMM(m_diamc) #24% of variation explained by fixed effects, 42% by whole model (spatial variation?)
+qqnorm(residuals(m_diamc))
+qqline(residuals(m_diamc))
+shapiro.test(residuals(m_diamc))
+#normal
+
+
 m_sla<-lme(ANPPgm ~ CWM.SLA, random=~1|shelterBlock, aboveFD.z, na.action=na.exclude)
 summary(m_sla)
 anova(m_sla) #significant
@@ -385,7 +474,8 @@ rht<-ggplot(aboveFD.z, aes(x=Rht, y=ANPPgm, group=subplot, color=subplot))+
   #xlim(40,100)+
   #ylim(0,100)
   geom_smooth(method='lm', se=FALSE, color="black", aes(group=1))+
-  stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1))
+  stat_cor(aes(group=1,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
+  #stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1))
 rht
 
 ggplot(aboveFD_2, aes(x=Rht, y=ANPPgm))+
@@ -416,7 +506,8 @@ rsla<-ggplot(aboveFD.z, aes(x=Rsla, y=ANPPgm, group=subplot, color=subplot))+
   #xlim(40,100)+
   #ylim(0,100)
   geom_smooth(method='lm', se=FALSE, color="black", aes(group=1))+
-  stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) 
+  stat_cor(aes(group=1,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
+  #stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) 
 rsla
 
 ggplot(aboveFD_2, aes(x=Rsla, y=ANPPgm))+
@@ -438,7 +529,7 @@ shapiro.test(residuals(m_rldmc))
 #close to normal
 
 rldmc<-ggplot(aboveFD.z, aes(x=Rldmc, y=ANPPgm, group=subplot, color=subplot))+
-  stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) +
+  #stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) +
   #annotate("text", x= c(0.0025, 0.0012, 0.008), y = c(750, 600, 420), label = c("R2=0.51", "R2=0.05", "R2=0.03"), color = c("brown2", "dodgerblue3","forestgreen")) +
   geom_point()+
   theme_bw()+
@@ -448,7 +539,8 @@ rldmc<-ggplot(aboveFD.z, aes(x=Rldmc, y=ANPPgm, group=subplot, color=subplot))+
                      labels=c("Mixed", "Forb", "Grass"))+ #change labels in the legend)+
   #xlim(40,100)+
   #ylim(0,100)
-  geom_smooth(method='lm', se=FALSE, color="black", aes(group=1))
+  geom_smooth(method='lm', se=FALSE, color="black", aes(group=1))+
+  stat_cor(aes(group=1,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
 rldmc
 
 ggplot(aboveFD.z, aes(x=Rldmc, y=ANPPgm))+
