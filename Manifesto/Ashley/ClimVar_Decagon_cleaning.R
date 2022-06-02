@@ -75,14 +75,14 @@ duplicates3<-dat2[duplicated(dat2[,c(1:12)]),]
 duplicates3$year<-as.factor(as.character(duplicates3$year))
 #no dups, let's move on
 
-pdf("smXsppXtrt.pdf")
+#pdf("smXsppXtrt.pdf")
 biggraph<-ggplot(data=dat2, aes(x=time,
                       y=sm, group=subplot, color=subplot)) + geom_line() + facet_grid(shelterBlock~treatment)
 biggraph
-print(biggraph)
-dev.off()
+#print(biggraph)
+#dev.off()
 
-pdf("smXtrt_controlspp.pdf")
+#pdf("smXtrt_controlspp.pdf")
 controldat<-subset(dat2, subplot=="XC")
 
 controlgraph<-ggplot(data=controldat, aes(x=time,
@@ -94,9 +94,9 @@ controlAC$shelterBlock<-as.character(controlAC$shelterBlock)
 controlgraph2<-ggplot(data=controlAC, aes(x=time,
                                           y=sm, color=treatment, group=treatment)) + geom_line() + facet_grid(~shelterBlock)  + 
   scale_y_continuous(breaks=c(seq(-.4,.8,.1)))
-print(controlgraph)
-print(controlgraph2)
-dev.off()
+#print(controlgraph)
+#print(controlgraph2)
+#dev.off()
 
 # pull out focal plots, an
 smdat2 <- dat2 %>%
