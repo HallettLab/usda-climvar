@@ -424,3 +424,4 @@ ggplot(subset(fgabund2, harvest=="Second"), aes(x = treatment2, y = sum)) +
   xlab("Rainfall Treatment") +
   ylab("ANPP g/m2")+
   ylim(200,1100)
+
