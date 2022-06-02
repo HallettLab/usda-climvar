@@ -213,35 +213,35 @@ fitC <- aov(total~subplot, Joined)
 TukeyHSD(fitC)
 
 #Biomass by rain treatment 
-Joined$treatment <- factor(Joined$treatment, levels = c("controlRain", "fallDry", "springDry", "consistentDry"))
+Joined$treatment <- factor(Joined$treatment, levels = c("controlRain",  "springDry", "fallDry","consistentDry"))
 p3 <- ggplot(Joined, aes(x = treatment, y = agg_BNPP, fill = treatment)) +
         geom_boxplot() +
         theme_bw() +
         ylim(100, 700)+
-        annotate("text", x = 2.5, y = 700, label = "NA", size = 4) +
+        annotate("text", x = 2.5, y = 700, label = "NS", size = 4) +
         labs(y = bquote('BNPP'~(g/m^2)), x = "Precipitation treatment", fill = "treatment") +
-        scale_fill_manual(name = "Treatment", labels = c("Control", "Consistent Dry", "Fall Dry", "Spring Dry"), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23")) +
-        scale_x_discrete(labels = c("Control", "Consistent", "Fall", "Spring"))
+        scale_fill_manual(name = "Treatment", labels = c("Control","Spring Dry", "Fall Dry", "Consistent Dry"), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23")) +
+        scale_x_discrete(labels = c("Control", "Spring", "Fall", "Consistent"))
 
 p4 <- ggplot(Joined, aes(x = treatment, y = weight_g_m, fill = treatment)) +
         geom_boxplot() +
         theme_bw() +
         theme(legend.position = "none") +
         ylim(100, 700)+
-        annotate("text", x = 2.5, y = 700, label = "NA", size = 4) +
+        annotate("text", x = 2.5, y = 700, label = "NS", size = 4) +
         labs(y = bquote('ANPP'~(g/m^2)), x = "", fill = "treatment") +
-        scale_fill_manual(name = "Treatment", labels = c("Control", "Consistent Dry", "Fall Dry", "Spring Dry"), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23")) +
-        scale_x_discrete(labels = c("Control", "Consistent", "Fall", "Spring"))
+        scale_fill_manual(name = "Treatment", labels = c("Control","Spring Dry", "Fall Dry", "Consistent Dry"), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23")) +
+        scale_x_discrete(labels = c("Control", "Spring", "Fall", "Consistent"))
 
 pt_rain <- ggplot(Joined, aes(x = treatment, y = total, fill = treatment)) +
   geom_boxplot() +
   theme_bw() +
   theme(legend.position = "none") +
   ylim(200, 1500)+
-  annotate("text", x = 2.5, y = 1500, label = "NA", size = 4) +
+  annotate("text", x = 2.5, y = 1500, label = "NS", size = 4) +
   labs(y = bquote('Total Biomass'~(g/m^2)), x = "", fill = "treatment") +
-  scale_fill_manual(name = "Treatment", labels = c("Control", "Consistent Dry", "Fall Dry", "Spring Dry"), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23")) +
-  scale_x_discrete(labels = c("Control", "Consistent", "Fall", "Spring"))
+  scale_fill_manual(name = "Treatment", labels = c("Control","Spring Dry", "Fall Dry", "Consistent Dry"), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23")) +
+  scale_x_discrete(labels = c("Control", "Spring", "Fall", "Consistent"))
 
 fit1 <- aov(weight_g_m~treatment, Joined)
 TukeyHSD(fit1)

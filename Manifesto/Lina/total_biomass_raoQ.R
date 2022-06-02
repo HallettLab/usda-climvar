@@ -143,7 +143,7 @@ p1 <- ggplot(joined_rao, aes(x = RaoQ, y = weight_g_m, color = subplot)) +
   geom_point() +
   theme_bw() +
   ylim(50,900)+
-  labs(y = bquote('ANPP'~(g/m^2)), x = "Rao's Q", color = "Treatment") +
+  labs(y = bquote('ANPP'~(g/m^2)), x = "Rao's Q Aboveground Traits", color = "Treatment") +
   geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE) +
   stat_cor(aes(group=subplot,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
   scale_color_discrete(name = "Treatment", labels = c("Mixed", "Forb", "Grass")) 
@@ -152,44 +152,40 @@ p2 <- ggplot(joined_rao, aes(x = RaoQ, y = agg_BNPP, color = subplot)) +
   geom_point() +
   theme_bw() +
   ylim(50, 900)+
-  labs(y = bquote('BNPP'~(g/m^2)), x = "Rao's Q", color = "Treatment") +
+  theme(legend.position = "none") +
+  labs(y = bquote('BNPP'~(g/m^2)), x = "Rao's Q Belowground Traits", color = "Treatment") +
   geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE) +
-  #annotate("text", x = 2.6, y = 400, label = "R2 = 0.002, p = 0.84", size = 4, color = "#f8766d") +
-  #annotate("text", x = 3.4, y = 290, label = "R2 = 0.03, p = 0.47", size = 4, color = "#619bff") +
-  #annotate("text", x = 7, y = 210, label = "R2 = 0.02, p = 0.55",
-  #size = 4, color = "#00ba38") +
   stat_cor(aes(group=subplot,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
   scale_color_discrete(name = "Treatment", labels = c("Mixed", "Forb", "Grass")) 
 
-ggarrange(p1, p2, ncol = 2, nrow = 1, 
-          common.legend = TRUE, legend = "right",
-          align = "v",labels = c("a)", "b)"))
+joined_rao$treatment <- factor(joined_rao$treatment, levels =c("controlRain",  "springDry", "fallDry","consistentDry"))
 
-#By rain treatment Fig S6
-p1 <- ggplot(joined_rao, aes(x = RaoQ, y = weight_g_m, color = treatment)) +
+p3 <- ggplot(joined_rao, aes(x = RaoQ, y = weight_g_m, color = treatment)) +
   geom_point() +
   theme_bw() +
   ylim(50,900)+
-  labs(y = bquote('ANPP'~(g/m^2)), x = "Rao's Q", color = "Treatment") +
+  labs(y = bquote('ANPP'~(g/m^2)), x = "Rao's Q Aboveground Traits", color = "Treatment") +
   geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE) +
-  stat_cor(aes(group=treatment,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
-
-p2 <- ggplot(joined_rao, aes(x = RaoQ, y = agg_BNPP, color = treatment)) +
+  stat_cor(aes(group=treatment,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
+  scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))
+p4 <- ggplot(joined_rao, aes(x = RaoQ, y = agg_BNPP, color = treatment)) +
   geom_point() +
   theme_bw() +
   ylim(50, 900)+
-  labs(y = bquote('BNPP'~(g/m^2)), x = "Rao's Q", color = "Treatment") +
+  theme(legend.position = "none") +
+  labs(y = bquote('BNPP'~(g/m^2)), x = "Rao's Q Belowground Traits", color = "Treatment") +
   geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE) +
-  #annotate("text", x = 2.6, y = 400, label = "R2 = 0.002, p = 0.84", size = 4, color = "#f8766d") +
-  #annotate("text", x = 3.4, y = 290, label = "R2 = 0.03, p = 0.47", size = 4, color = "#619bff") +
-  #annotate("text", x = 7, y = 210, label = "R2 = 0.02, p = 0.55",
-  #size = 4, color = "#00ba38") +
-  stat_cor(aes(group=treatment,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
-  #scale_color_discrete(name = "Treatment", labels = c("Mixed", "Forb", "Grass")) 
+  stat_cor(aes(group=treatment,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
+  scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))
 
-ggarrange(p1, p2, ncol = 2, nrow = 1, 
-          common.legend = TRUE, legend = "right",
-          align = "v",labels = c("a)", "b)"))
+legend_comp <- get_legend(p1)
+legend_rain <- get_legend(p3)
+p1 <- p1 + theme(legend.position = "none")
+p3 <- p3 + theme(legend.position = "none")
+
+ggarrange(p1, p2, legend_comp, p3, p4, legend_rain, ncol = 3, nrow = 2, 
+          align = "v",labels = c("a)", "b)", "", "c)", "d)", ""), 
+          widths=c(1, 1, 0.3))
 
 #community RaoQ with ANPP and BNPP 
 fitB <- lm(weight_g_m ~ RaoQ, joined_rao%>%filter(subplot == "B")) 
