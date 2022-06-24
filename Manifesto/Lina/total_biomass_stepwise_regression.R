@@ -289,5 +289,16 @@ summary(SLA_forb) #not significant
 SLA_grass <- lm(weight_g_m ~ CWM.SLA, Joined%>%filter(subplot == "G"))
 summary(SLA_grass) #not significant
 
+#Table S3 Mixed model of ppt and comp effects on biomass 
+m_anpp <- lme(weight_g_m ~ treatment*subplot, random=~1|shelterBlock, Joined, na.action=na.exclude)
+anova(m_anpp)
+m_bnpp <-lme(agg_BNPP ~ treatment*subplot, random=~1|shelterBlock, Joined, na.action=na.exclude)
+anova(m_bnpp)
+m_total<- lme(total ~ treatment*subplot, random=~1|shelterBlock, Joined, na.action=na.exclude)
+anova(m_total)
 
+#Table S4 T-statisitcs and tukey of comp effect on biomass
+summary(lm(weight_g_m~treatment, Joined))
+summary(lm(agg_BNPP~treatment, Joined))
+summary(lm(total~treatment, Joined))
 

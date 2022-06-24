@@ -36,3 +36,12 @@ ggplot(veg_func2, aes(x = treatment, y = mean, col = func2))+
   geom_errorbar(aes(ymin = mean-se, ymax = mean+se), width = 0, position = position_dodge(0.5), size =1)+
   scale_color_manual( labels = c("Forb", "Grass", "Legume" ), values = c("seagreen3", "dodgerblue","mediumpurple"))+
   scale_x_discrete(labels = c("Control", "Spring", "Fall", "Consistent"))
+
+#Supplemental table max percent in any plot
+veg_max <- veg_all %>% 
+  filter(year == 2015) %>%
+  filter(subplot != "XC") %>%
+  filter(subplot != "C") %>%
+  group_by(species_name) %>%
+  summarise(max_cover = max(cover))
+  
