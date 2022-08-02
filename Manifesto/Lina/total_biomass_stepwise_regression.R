@@ -172,37 +172,37 @@ summary(Grass)
 library(ggpubr)
 p1 <- ggplot(Joined, aes(x = subplot, y = weight_g_m, fill = subplot)) +
   geom_boxplot() +
-  theme_bw() +
+  theme_classic() +
   annotate("text", x = 1, y = 800, label = "a", size = 4) +
   annotate("text", x = 2, y = 800, label = "b", size = 4) +
   annotate("text", x = 3, y = 800, label = "ab", size = 4) +
   labs(y = bquote('ANPP'~(g/m^2)), x = "") +
   ylim(120, 800)+
-  scale_fill_discrete(name = "Treatment", labels = c("Mixed", "Forb", "Grass")) +
+  scale_fill_manual(name = "Treatment", labels = c("Mixed", "Forb", "Grass"),  values= c("#fc8d62", "#66c2a5", "#8da0cb")) +
   scale_x_discrete(labels = c("Mixed", "Forb", "Grass"))
 
 p2 <- ggplot(Joined, aes(x = subplot, y = agg_BNPP, fill = subplot)) +
   geom_boxplot() +
-  theme_bw() +
+  theme_classic() +
   theme(legend.position = "none") +
   annotate("text", x = 1, y = 800, label = "a", size = 4) +
   annotate("text", x = 2, y = 800, label = "b", size = 4) +
   annotate("text", x = 3, y = 800, label = "b", size = 4) +
   labs(y = bquote('BNPP'~(g/m^2)), x = "Composition treatment") +
   ylim(120, 800)+
-  scale_fill_discrete(name = "Treatment", labels = c("Mixed", "Forb", "Grass")) +
+  scale_fill_manual(name = "Treatment", labels = c("Mixed", "Forb", "Grass"),  values= c("#fc8d62", "#66c2a5", "#8da0cb")) +
   scale_x_discrete(labels = c("Mixed", "Forb", "Grass"))
 
 pt_subplot <- ggplot(Joined, aes(x = subplot, y = total, fill = subplot)) +
   geom_boxplot() +
-  theme_bw() +
+  theme_classic() +
   theme(legend.position = "none") +
   annotate("text", x = 1, y = 1600, label = "a", size = 4) +
   annotate("text", x = 2, y = 1600, label = "b", size = 4) +
   annotate("text", x = 3, y = 1600, label = "b", size = 4) +
   labs(y = bquote('Total Biomass'~(g/m^2)), x = "") +
   #ylim(120, 800)+
-  scale_fill_discrete(name = "Treatment", labels = c("Mixed", "Forb", "Grass")) +
+  scale_fill_manual(name = "Treatment", labels = c("Mixed", "Forb", "Grass"),  values= c("#fc8d62", "#66c2a5", "#8da0cb")) +
   scale_x_discrete(labels = c("Mixed", "Forb", "Grass"))
 
 fitA <- aov(weight_g_m~subplot, Joined)
@@ -216,16 +216,16 @@ TukeyHSD(fitC)
 Joined$treatment <- factor(Joined$treatment, levels = c("controlRain",  "springDry", "fallDry","consistentDry"))
 p3 <- ggplot(Joined, aes(x = treatment, y = agg_BNPP, fill = treatment)) +
         geom_boxplot() +
-        theme_bw() +
+        theme_classic() +
         ylim(100, 700)+
         annotate("text", x = 2.5, y = 700, label = "NS", size = 4) +
-        labs(y = bquote('BNPP'~(g/m^2)), x = "Precipitation treatment", fill = "treatment") +
+        labs(y = bquote('BNPP'~(g/m^2)), x = "Rainfall treatment", fill = "treatment") +
         scale_fill_manual(name = "Treatment", labels = c("Control","Spring Dry", "Fall Dry", "Consistent Dry"), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23")) +
         scale_x_discrete(labels = c("Control", "Spring", "Fall", "Consistent"))
 
 p4 <- ggplot(Joined, aes(x = treatment, y = weight_g_m, fill = treatment)) +
         geom_boxplot() +
-        theme_bw() +
+        theme_classic() +
         theme(legend.position = "none") +
         ylim(100, 700)+
         annotate("text", x = 2.5, y = 700, label = "NS", size = 4) +
@@ -235,7 +235,7 @@ p4 <- ggplot(Joined, aes(x = treatment, y = weight_g_m, fill = treatment)) +
 
 pt_rain <- ggplot(Joined, aes(x = treatment, y = total, fill = treatment)) +
   geom_boxplot() +
-  theme_bw() +
+  theme_classic() +
   theme(legend.position = "none") +
   ylim(200, 1500)+
   annotate("text", x = 2.5, y = 1500, label = "NS", size = 4) +

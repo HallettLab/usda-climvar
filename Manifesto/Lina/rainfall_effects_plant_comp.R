@@ -31,10 +31,10 @@ veg_func2$subplot <- factor(veg_func2$subplot, levels = c("B", "F", "G"), labels
 ggplot(veg_func2, aes(x = treatment, y = mean, col = func2))+
   facet_wrap(~subplot)+
   geom_point(position = position_dodge(0.5), size = 2)+
-  theme_bw() +
+  theme_classic() +
   labs(y = "Cover", x = "Rainfall Treatment", color = "Functional Group") +
   geom_errorbar(aes(ymin = mean-se, ymax = mean+se), width = 0, position = position_dodge(0.5), size =1)+
-  scale_color_manual( labels = c("Forb", "Grass", "Legume" ), values = c("seagreen3", "dodgerblue","mediumpurple"))+
+  scale_color_manual( labels = c("Forb", "Grass", "Legume" ), values = c("#66C2A5", "#8DA0CB","#A6D854"))+
   scale_x_discrete(labels = c("Control", "Spring", "Fall", "Consistent"))
 
 #Supplemental table max percent in any plot

@@ -10,19 +10,19 @@ library(FD)
 #Species names must be in same order in both files
 veg_keys <- veg[,1:7]
 vegdat <- veg[,8:64]
-vegdat1 <- vegdat[, -c(6,10,12,15:16,20,22:25,28,31,32,34,36:39,41:44,46,53,57)] #remove all columns that we do not have trait data for and any species that has no cover in 2015
+vegdat1 <- vegdat[, -c(10,15:16,20,23:25,28,31,32,34,36:39,41:44,46,53,57)] #remove all columns that we do not have trait data for and any species that has no cover in 2015
 #group some species
 vegdat1$BRODIA <- vegdat1$Bromus.diandrus + vegdat1$Bromus.sterilis
 vegdat1$HORMUR <- vegdat1$Hordeum.marinum + vegdat1$Hordeum.murinum
-vegdat1$TRISP <- vegdat1$Trifolium.dubium + vegdat1$Trifolium.glomeratum + vegdat1$Trifolium.sp. + vegdat1$Trifolium.wildenovii
-vegdat2 <- vegdat1[ , -c(9,6,16,17,24,25,27,29)] #remove grouped columns 
-colnames(vegdat2) <- c("ACHMIL","ANAARV", "AVEBAR", "AVEFAT", "BRADIS", "BROHOR", "BROMAD", "CENSOL","CERGLO", 
-                       "CYNDAC", "CYNECH", "EROBOT", "EROMOS", "HYPGLA", "HYPRAD", 
-                       "LACSER", "LOLMUL","RUMPUL", "TAECAP", "TRIHIR", "TRISUB", "VICSAT", "VULBRO", "VULMYU",
+vegdat1$TRISP <- vegdat1$Trifolium.sp. + vegdat1$Trifolium.wildenovii
+vegdat2 <- vegdat1[ , -c(7,10,19,20,30,32)] #remove grouped columns 
+colnames(vegdat2) <- c("ACHMIL","ANAARV", "AVEBAR", "AVEFAT", "BRADIS", "BRIMIN", "BROHOR", "BROMAD","CARPYC", "CENSOL","CERGLO", 
+                       "CYNDAC", "CYNECH", "EROBOT", "EROMOS", "FILGAL", "HYPGLA", "HYPRAD", 
+                       "LACSER", "LOLMUL","RUMPUL", "TAECAP", "TRIDUB", "TRIGLO", "TRIHIR", "TRISUB", "VICSAT", "VULBRO", "VULMYU",
                        "BRODIA", "HORMUR", "TRISP") #rename columns
-vegdat3 <- vegdat2[c("ACHMIL","ANAARV", "AVEBAR", "AVEFAT", "BRADIS", "BRODIA","BROHOR", "BROMAD", "CENSOL","CERGLO", 
-                     "CYNDAC", "CYNECH", "EROBOT", "EROMOS",  "HORMUR","HYPGLA", "HYPRAD", 
-                     "LACSER", "LOLMUL","RUMPUL", "TAECAP", "TRIHIR", "TRISP", "TRISUB", "VICSAT", "VULBRO", "VULMYU"
+vegdat3 <- vegdat2[c("ACHMIL","ANAARV", "AVEBAR", "AVEFAT", "BRADIS","BRIMIN", "BRODIA","BROHOR", "BROMAD","CARPYC", "CENSOL","CERGLO", 
+                     "CYNDAC", "CYNECH", "EROBOT", "EROMOS",  "FILGAL", "HORMUR","HYPGLA", "HYPRAD", 
+                     "LACSER", "LOLMUL","RUMPUL", "TAECAP","TRIDUB", "TRIGLO", "TRIHIR", "TRISP", "TRISUB", "VICSAT", "VULBRO", "VULMYU"
                       )] #reorder columns
 dim(vegdat3) #check the dimension of veg data
 comp <- as.matrix(vegdat3[1:nrow(vegdat3), 1:ncol(vegdat3)])
@@ -30,44 +30,44 @@ comp <- as.matrix(vegdat3[1:nrow(vegdat3), 1:ncol(vegdat3)])
 traits$ID <- as.character(traits$ID) #set ID column as character
 traits$ID <- ifelse(traits$ID == "TRIREP", "TRISP", traits$ID) #use Trifolium repens traits for Trifolium sp. 
 all_traits <- traits %>%
-  filter(ID %in% c("ACHMIL","ANAARV", "AVEBAR", "AVEFAT", "BRADIS", "BRODIA","BROHOR", "BROMAD", "CENSOL","CERGLO", 
-                   "CYNDAC", "CYNECH", "EROBOT", "EROMOS",  "HORMUR","HYPGLA", "HYPRAD", 
-                   "LACSER", "LOLMUL","RUMPUL", "TAECAP", "TRIHIR", "TRISP", "TRISUB", "VICSAT", "VULBRO", "VULMYU")) %>%
+  filter(ID %in% c("ACHMIL","ANAARV", "AVEBAR", "AVEFAT", "BRADIS","BRIMIN", "BRODIA","BROHOR", "BROMAD","CARPYC", "CENSOL","CERGLO", 
+                   "CYNDAC", "CYNECH", "EROBOT", "EROMOS",  "FILGAL", "HORMUR","HYPGLA", "HYPRAD", 
+                   "LACSER", "LOLMUL","RUMPUL", "TAECAP","TRIDUB", "TRIGLO", "TRIHIR", "TRISP", "TRISUB", "VICSAT", "VULBRO", "VULMYU")) %>%
   dplyr::select(ID, SLA, LDMC, Ht, Dens, DiamC, SRLC, SRLF, PropF)
 dim(all_traits) #check the dimension of trait data
 tr <- as.matrix(all_traits[1:nrow(all_traits), 2:ncol(all_traits)])
 row.names(tr) <- all_traits$ID
 
 #Calculate ind RaoQ
-SLA_results <- dbFD(tr[,2], comp, corr = "cailliez")
+SLA_results <- dbFD(tr[,1], comp, corr = "cailliez")
 SLA_results <- as.data.frame(SLA_results) %>%
   tbl_df()
 
-LDMC_results <- dbFD(tr[,3], comp, corr = "cailliez")
+LDMC_results <- dbFD(tr[,2], comp, corr = "cailliez")
 LDMC_results <- as.data.frame(LDMC_results) %>%
   tbl_df()
 
-Ht_results <- dbFD(tr[,4], comp, corr = "cailliez")
+Ht_results <- dbFD(tr[,3], comp, corr = "cailliez")
 Ht_results <- as.data.frame(Ht_results) %>%
   tbl_df()
 
-Dens_results <- dbFD(tr[,5], comp, corr="cailliez")
+Dens_results <- dbFD(tr[,4], comp, corr="cailliez")
 Dens_results <- as.data.frame(Dens_results) %>%
   tbl_df()
 
-DiamC_results <- dbFD(tr[,6], comp, corr="cailliez")
+DiamC_results <- dbFD(tr[,5], comp, corr="cailliez")
 DiamC_results <- as.data.frame(DiamC_results) %>%
   tbl_df()
 
-SRLC_results <- dbFD(tr[,7], comp, corr="cailliez")
+SRLC_results <- dbFD(tr[,6], comp, corr="cailliez")
 SRLC_results <- as.data.frame(SRLC_results) %>%
   tbl_df()
 
-SRLF_results <- dbFD(tr[,8], comp, corr="cailliez")
+SRLF_results <- dbFD(tr[,7], comp, corr="cailliez")
 SRLF_results <- as.data.frame(SRLF_results) %>%
   tbl_df()
 
-PropF_results <- dbFD(tr[,9], comp, corr="cailliez")
+PropF_results <- dbFD(tr[,8], comp, corr="cailliez")
 PropF_results <- as.data.frame(PropF_results)%>%
   tbl_df()
 
@@ -139,44 +139,48 @@ summary(model13)
 library(ggplot2)
 library(ggpubr)
 #By functional composition treatment Fig 2
-p1 <- ggplot(joined_rao, aes(x = RaoQ, y = weight_g_m, color = subplot)) +
+p1 <- ggplot(joined_rao, aes(x = RaoQ, y = weight_g_m, color = subplot, linetype = subplot)) +
   geom_point() +
-  theme_bw() +
+  theme_classic() +
   ylim(50,900)+
   labs(y = bquote('ANPP'~(g/m^2)), x = "Rao's Q Aboveground Traits", color = "Treatment") +
   geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE) +
-  stat_cor(aes(group=subplot,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
-  scale_color_discrete(name = "Treatment", labels = c("Mixed", "Forb", "Grass")) 
+  #stat_cor(aes(group=subplot,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
+  scale_color_manual(name = "Treatment", labels = c("Mixed", "Forb", "Grass"), values= c("#fc8d62", "#66c2a5", "#8da0cb")) +
+  scale_linetype_manual( values = c("solid", "dashed", "dashed"), guide = "none")
 
-p2 <- ggplot(joined_rao, aes(x = RaoQ, y = agg_BNPP, color = subplot)) +
+p2 <- ggplot(joined_rao, aes(x = RaoQ, y = agg_BNPP, color = subplot, linetype = subplot)) +
   geom_point() +
-  theme_bw() +
+  theme_classic() +
   ylim(50, 900)+
   theme(legend.position = "none") +
   labs(y = bquote('BNPP'~(g/m^2)), x = "Rao's Q Belowground Traits", color = "Treatment") +
   geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE) +
-  stat_cor(aes(group=subplot,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
-  scale_color_discrete(name = "Treatment", labels = c("Mixed", "Forb", "Grass")) 
+  #stat_cor(aes(group=subplot,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
+  scale_color_manual(name = "Treatment", labels = c("Mixed", "Forb", "Grass"), values= c("#fc8d62", "#66c2a5", "#8da0cb")) +
+  scale_linetype_manual( values = c("dashed", "dashed", "dashed"), guide = "none")
 
 joined_rao$treatment <- factor(joined_rao$treatment, levels =c("controlRain",  "springDry", "fallDry","consistentDry"))
 
-p3 <- ggplot(joined_rao, aes(x = RaoQ, y = weight_g_m, color = treatment)) +
+p3 <- ggplot(joined_rao, aes(x = RaoQ, y = weight_g_m, color = treatment, linetype = treatment)) +
   geom_point() +
-  theme_bw() +
+  theme_classic() +
   ylim(50,900)+
   labs(y = bquote('ANPP'~(g/m^2)), x = "Rao's Q Aboveground Traits", color = "Treatment") +
   geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE) +
-  stat_cor(aes(group=treatment,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
-  scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))
-p4 <- ggplot(joined_rao, aes(x = RaoQ, y = agg_BNPP, color = treatment)) +
+  #stat_cor(aes(group=treatment,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
+  scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))+
+  scale_linetype_manual( values = c("dashed", "dashed", "dashed", "solid"), guide = "none")
+p4 <- ggplot(joined_rao, aes(x = RaoQ, y = agg_BNPP, color = treatment, linetype = treatment)) +
   geom_point() +
-  theme_bw() +
+  theme_classic() +
   ylim(50, 900)+
   theme(legend.position = "none") +
   labs(y = bquote('BNPP'~(g/m^2)), x = "Rao's Q Belowground Traits", color = "Treatment") +
   geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE) +
-  stat_cor(aes(group=treatment,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
-  scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))
+  #stat_cor(aes(group=treatment,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
+  scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))+
+  scale_linetype_manual( values = c("solid", "dashed", "dashed", "dashed"), guide = "none")
 
 legend_comp <- get_legend(p1)
 legend_rain <- get_legend(p3)
