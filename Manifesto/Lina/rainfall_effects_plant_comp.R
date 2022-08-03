@@ -35,7 +35,7 @@ ggplot(veg_func2, aes(x = treatment, y = mean, col = func2))+
   labs(y = "Cover", x = "Rainfall Treatment", color = "Functional Group") +
   geom_errorbar(aes(ymin = mean-se, ymax = mean+se), width = 0, position = position_dodge(0.5), size =1)+
   scale_color_manual( labels = c("Forb", "Grass", "Legume" ), values = c("#66C2A5", "#8DA0CB","#A6D854"))+
-  scale_x_discrete(labels = c("Control", "Spring", "Fall", "Consistent"))
+  scale_x_discrete(labels = c("Control\n", "Spring\n Dry\n", "Fall\n Dry\n", "Consistent\n Dry\n"))
 
 #Supplemental table max percent in any plot
 veg_max <- veg_all %>% 
