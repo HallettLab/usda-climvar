@@ -25,17 +25,23 @@ calcSE<-function(x){
 #trait.dat2$GF <- as.character(trait.dat2$GF)
 #trait.dat2$GF <- as.factor(trait.dat2$GF)
 
-# First a PCA for ALL TRAITS (ABOVE AND BELOW)
-# matrix for PCA
-traits <- as.matrix(abovetr15_fd3[,c(6:ncol(abovetr15_fd3))])
-#row.names(traits) <- all_trait2$ID
-all_trait_redo <- trait.dat1[-c(2,3,5,9,10,14,17,20,21,22,23,24,27,28,29,30,31,34,37,39,40,
-                                 41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,58), ]
-all_trait_redo <- all_trait_redo %>% dplyr::select( -RGR, -actual_area,-MD,-Total,-Area)
-traits <- as.matrix(all_trait_redo[,c(6:ncol(all_trait_redo))])
+# # First a PCA for ALL TRAITS (ABOVE AND BELOW)
+# # matrix for PCA
+# traits <- as.matrix(abovetr15_fd3[,c(6:ncol(abovetr15_fd3))])
+# #row.names(traits) <- all_trait2$ID
+# all_trait_redo <- trait.dat1[-c(2,3,5,9,10,14,17,20,21,22,23,24,27,28,29,30,31,34,37,39,40,
+#                                  41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,58), ]
+# all_trait_redo <- all_trait_redo %>% dplyr::select( -RGR, -actual_area,-MD,-Total,-Area)
+# traits <- as.matrix(all_trait_redo[,c(6:ncol(all_trait_redo))])
+
+# Lina updated trait data 8/4/2022 
+# Use all_traits and traits in Lina's "total_biomass_raoQ.R" 
+traits_only <- all_traits %>% select(-ID)
+all_trait_redo <- left_join(all_traits, traits) %>%
+  select( -RGR, -actual_area,-MD,-Total,-Area, -RMF)
 
 # run PCA
-myrda <- rda(na.omit(traits), scale = T)
+myrda <- rda(na.omit(traits_only), scale = T)
 
 # extract values
 siteout <- as.data.frame(scores(myrda, choices=c(1,2), display=c("sites")))
@@ -271,7 +277,7 @@ ggplot(data=siteout_fd, aes(x=CWM.PC1, y=(ANPPgm+agg_BNPP), group=subplot, color
 
 #############################################
 ##run PCA again but for aboveground traits only
-traits_above <- as.matrix(all_trait_redo[,c(6,7,8)])
+traits_above <- as.matrix(all_trait_redo[,c(2,3,4)])
 
 myrda2 <- rda(na.omit(traits_above), scale = TRUE)
 
@@ -296,7 +302,7 @@ a.pca<-ggplot(tog2, aes(x=PC1, y=PC2))+
   geom_vline(aes(xintercept=0), color="grey") +
   #geom_text(aes(label = name, color = GF), size = 5) +
   geom_point(aes(color=GF, shape=GF), size=4)+
-  scale_color_manual(values = c( "seagreen3","dodgerblue","mediumpurple"), labels=c("Forb","Grass", "Legume"), guide = guide_legend(title = "Functional Group:")) +
+  scale_color_manual(values = c( "#66c2a5", "#8da0cb","#66c2a5"), labels=c("Forb","Grass", "Legume"), guide = guide_legend(title = "Functional Group:")) +
   scale_shape_manual(values = c(15, 19,17), labels=c("Forb","Grass", "Legume"), guide = guide_legend(title = "Functional Group:")) +
   geom_segment(data = enviroout2,
                aes(x = 0, xend =  PC1,
@@ -307,7 +313,8 @@ a.pca<-ggplot(tog2, aes(x=PC1, y=PC2))+
                 label = name), #otherwise you could use hjust and vjust
             size = 6,
             hjust = 0.5, 
-            color="black") + 
+            color="black") +
+  xlim(-2.4, 1.8) +
   theme_bw() +theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),
                     text=element_text(size = 20), legend.position="none")+ 
   xlab(paste("Axis 1 (",sprintf("%.1f",myrda2$CA$eig["PC1"]/myrda2$tot.chi*100,3),"%)",sep="")) +
@@ -332,7 +339,7 @@ siteout2_fd<-dbFD (siteout2, cover15_fd3, w.abun = T, stand.x = F,
                   km.inf.gr = 2, km.sup.gr = nrow(x) - 1, km.iter = 100, calc.CWM = TRUE,
                   calc.FDiv = TRUE, print.pco = FALSE, messages = TRUE)
 siteout2_fd<-as.data.frame(siteout2_fd)
-
+#write.csv(siteout2, "./Repositories/usda-climvar/Manifesto/Lina/above_pcscores.csv")
 
 siteout2_fd$ANPPgm<-traits_2015_2$ANPPgm
 siteout2_fd$shelterBlock<-traits_2015_2$shelterBlock
@@ -436,7 +443,7 @@ t.2
 
 ##do again but for BELOWGROUND traits only
 # select belowground traits
-traits.below<-as.data.frame(traits) %>% dplyr::select(Dens, DiamC, SRLC,SRLF, PropF)
+traits.below<-as.data.frame(all_trait_redo) %>% dplyr::select(Dens, DiamC, SRLC,SRLF, PropF)
 
 # run PCA
 myrda.b <- rda(na.omit(traits.below), scale = TRUE)
@@ -463,13 +470,16 @@ tog3 <- left_join(all_trait_redo, siteout.b) %>%
 #pdf("TraitPCA.pdf", width = 9, height = 7.5)
 #pdf("TraitPCA_noLegumes.pdf", width = 9, height = 7.5)
 
+#write.csv(siteout.b, "./Repositories/usda-climvar/Manifesto/Lina/below_pcscores.csv")
+
+
 b.pca<-ggplot(tog3, aes(x=PC1, y=PC2))+ 
   ggtitle("b) PCA on belowground traits")+
   geom_hline(aes(yintercept=0), color="grey") + 
   geom_vline(aes(xintercept=0), color="grey") +
   geom_point(aes(color=GF, shape=GF), size=4)+
   #geom_text(aes(label = name, color = GF), size = 5) +
-  scale_color_manual(values = c("seagreen3", "dodgerblue","mediumpurple"), labels=c("Forb","Grass", "Legume"), guide = guide_legend(title = "Functional Group:")) +
+  scale_color_manual(values = c("#66c2a5", "#8da0cb","#66c2a5"), labels=c("Forb","Grass", "Legume"), guide = guide_legend(title = "Functional Group:")) +
   scale_shape_manual(values = c(15, 19,17), labels=c("Forb","Grass", "Legume"), guide = guide_legend(title = "Functional Group:")) +
   geom_segment(data = enviroout.b,
                aes(x = 0, xend =  PC1,
@@ -481,6 +491,7 @@ b.pca<-ggplot(tog3, aes(x=PC1, y=PC2))+
             size = 6,
             hjust = 0.5, 
             color="black") + 
+  xlim(-2.4, 2.2) +
   theme_bw() +theme(panel.grid.major=element_blank(),panel.grid.minor=element_blank(),
                     text=element_text(size = 20))+ 
   xlab(paste("Axis 1 (",sprintf("%.1f",myrda.b$CA$eig["PC1"]/myrda.b$tot.chi*100,3),"%)",sep="")) +
