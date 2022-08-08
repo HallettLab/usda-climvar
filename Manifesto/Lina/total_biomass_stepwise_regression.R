@@ -173,6 +173,7 @@ library(ggpubr)
 p1 <- ggplot(Joined, aes(x = subplot, y = weight_g_m, fill = subplot)) +
   geom_boxplot() +
   theme_classic() +
+  theme(legend.position = "none") +
   annotate("text", x = 1, y = 800, label = "a", size = 4) +
   annotate("text", x = 2, y = 800, label = "b", size = 4) +
   annotate("text", x = 3, y = 800, label = "ab", size = 4) +
@@ -256,12 +257,12 @@ legend_1 <- get_legend(p1)
 legend_2 <- get_legend(p3)
 p1 <- p1 + theme(legend.position = "none")
 p3 <- p3 + theme(legend.position = "none")
-ggarrange(p1, p2, pt_subplot, legend_1,
-          p4, p3, pt_rain, legend_2, 
-          ncol = 4, nrow = 2, 
-          align = "v",
-          labels = c("a)", "b)", "c)", "", "d)", "e)", "f)", ""), 
-          widths=c(1, 1 ,1, 0.5))
+ggarrange(p1, p2, pt_subplot, 
+          p4, p3, pt_rain, 
+          ncol = 3, nrow = 2, 
+          align = "v", common.legend = TRUE, legend = "right",
+          labels = c("a)", "b)", "c)",  "d)", "e)", "f)"), 
+          widths=c(1, 1 ,1))
 
 
 #Regression ANPP ~ CWM.Ht Table S5

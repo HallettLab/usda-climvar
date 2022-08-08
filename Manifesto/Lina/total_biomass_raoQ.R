@@ -43,7 +43,7 @@ SLA_results <- dbFD(tr[,1], comp, corr = "cailliez")
 SLA_results <- as.data.frame(SLA_results) %>%
   tbl_df()
 
-LDMC_results <- dbFD(tr[,2], comp, corr = "cailliez")
+LDMC_results <- dbFD(tr[,2], comp, corr = "cailliez", calc.CWM = TRUE)
 LDMC_results <- as.data.frame(LDMC_results) %>%
   tbl_df()
 
