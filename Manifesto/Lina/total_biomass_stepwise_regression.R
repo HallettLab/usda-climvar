@@ -25,20 +25,20 @@ ANPP1 <- ANPP %>%
   filter(subplot %in% c("B", "F", "G")) %>%
   dplyr::select(plot, subplot, treatment, shelterBlock, weight_g_m)
 
+#Standardize trait data
+library(vegan)
+stand_CWM_num <- decostand(CWM[,15:22], "standardize")
+stand_CWM <- cbind(CWM[,1:5], stand_CWM_num)
+
 #Join dataframes
+stand_Joined <- ANPP1 %>%
+  left_join(BNPP1, by = c("plot", "subplot", "treatment", "shelterBlock")) %>%
+  left_join(stand_CWM, by = c("plot", "subplot", "treatment", "shelterBlock")) %>%
+  mutate(total = weight_g_m + agg_BNPP)
 Joined <- ANPP1 %>%
   left_join(BNPP1, by = c("plot", "subplot", "treatment", "shelterBlock")) %>%
   left_join(CWM, by = c("plot", "subplot", "treatment", "shelterBlock")) %>%
   mutate(total = weight_g_m + agg_BNPP)
-Joined <- Joined[,-c(7:16)]
-#Standardize joined data
-library(vegan)
-stand_Joined_num <- decostand(Joined[,5:15], "standardize")
-stand_Joined <- cbind(Joined[,1:4], stand_Joined_num)
-#OR log transform joined data
-#log_Joined_num <- log(Joined[, 5:16])
-#log_Joined <- cbind(Joined[,1:4], log_Joined_num)
-
 ##Backwards stepwise regression
 library(MASS)
 model0 <- lm(total ~CWM.Ht + CWM.LDMC + CWM.SLA + CWM.Dens + CWM.DiamC + CWM.SRLC + CWM.SRLF + CWM.PropF, stand_Joined)
@@ -264,6 +264,101 @@ ggarrange(p1, p2, pt_subplot,
           labels = c("a)", "b)", "c)",  "d)", "e)", "f)"), 
           widths=c(1, 1 ,1))
 
+###Relationships bw CWM of three aboveground traits and ANPP
+p1a <- ggplot(data = Joined, aes(x = CWM.Ht, y = weight_g_m)) +
+  geom_point(aes(color = as.factor(subplot))) +
+  theme_classic() +
+  xlab("CWM Height") +
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black")+
+  labs(y= NULL) +
+  theme(legend.position="none") +
+  scale_color_manual(name = "treatment", labels = c("Mixed", "Forb", "Grass"), values = c("#fc8d62", "#66c2a5", "#8da0cb") )+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
+
+p2a <- ggplot(data = Joined, aes(x = CWM.SLA, y = weight_g_m)) +
+  geom_point(aes(color = as.factor(subplot))) +
+  theme_classic() +
+  xlab("CWM Specific Leaf Area") +
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black")+
+  labs(y= NULL) +
+  theme(legend.position= "none")+
+  scale_color_manual(name = "treatment", labels = c("Mixed", "Forb", "Grass"), values = c("#fc8d62", "#66c2a5", "#8da0cb") )+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
+
+p3a <- ggplot(data = Joined, aes(x = CWM.LDMC, y = weight_g_m)) +
+  geom_point(aes(color = as.factor(subplot))) +
+  theme_classic() +
+  xlab("CWM Leaf Dry Matter Content") +
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black")+
+  labs(y= NULL) +
+  theme(legend.position = "none")+
+  scale_color_manual(name = "treatment", labels = c("Mixed", "Forb", "Grass"), values = c("#fc8d62", "#66c2a5", "#8da0cb") )+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
+
+
+figurea <- ggarrange(p1a, p2a, p3a, 
+                    ncol =3, nrow =1, common.legend = TRUE, legend = "bottom",
+                    align = "v",labels = c("a)", "b)", "c)"))
+annotate_figure(figurea, 
+                left = text_grob("ANPP (g/m2)", rot = 90))
+
+###Relationships bw CWM of five root traits and BNPP
+p1 <- ggplot(data = Joined, aes(x = CWM.Dens, y = agg_BNPP)) +
+  geom_point(aes(color = as.factor(subplot))) +
+  theme_classic() +
+  xlab("CWM Root Density") +
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black")+
+  labs(y= NULL) +
+  theme(legend.position="none") +
+  scale_color_manual(name = "treatment", labels = c("Mixed", "Forb", "Grass"), values = c("#fc8d62", "#66c2a5", "#8da0cb") )+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
+
+p2 <- ggplot(data = Joined, aes(x = CWM.SRLF, y = agg_BNPP)) +
+  geom_point(aes(color = as.factor(subplot))) +
+  theme_classic() +
+  xlab("CWM SRLF") +
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black")+
+  labs(y= NULL) +
+  theme(legend.position= "none")+
+  scale_color_manual(name = "treatment", labels = c("Mixed", "Forb", "Grass"), values = c("#fc8d62", "#66c2a5", "#8da0cb") )+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
+
+p3 <- ggplot(data = Joined, aes(x = CWM.SRLC, y = agg_BNPP)) +
+  geom_point(aes(color = as.factor(subplot))) +
+  theme_classic() +
+  xlab("CWM SRLC") +
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black")+
+  labs(y= NULL) +
+  theme(legend.position = "none")+
+  scale_color_manual(name = "treatment", labels = c("Mixed", "Forb", "Grass"), values = c("#fc8d62", "#66c2a5", "#8da0cb") )+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
+
+p4 <- ggplot(data = Joined, aes(x = CWM.DiamC, y = agg_BNPP)) +
+  geom_point(aes(color = as.factor(subplot))) +
+  theme_classic() +
+  xlab("CWM Diameter Coarse") +
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black")+
+  labs(y= NULL) +
+  theme(legend.position = "none")+
+  scale_color_manual(name = "treatment", labels = c("Mixed", "Forb", "Grass"), values = c("#fc8d62", "#66c2a5", "#8da0cb") )+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
+
+p5 <- ggplot(data = Joined, aes(x = CWM.PropF, y = agg_BNPP)) +
+  geom_point(aes(color = as.factor(subplot))) +
+  theme_classic() +
+  xlab("CWM Proportion of Fine") +
+  labs(y= NULL) +
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black")+
+  theme(legend.position = "none")+
+  scale_color_manual(name = "treatment", labels = c("Mixed", "Forb", "Grass"), values = c("#fc8d62", "#66c2a5", "#8da0cb") )+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
+
+figure <- ggarrange(p1, p2, p3, p4, p5,
+                    ncol =3, nrow =2, common.legend = TRUE, legend = "bottom",
+                    align = "v",labels = c("a)", "b)", "c)", "d)", "e)"))
+annotate_figure(figure, 
+                left = text_grob("BNPP (g/m2) depth 0-30 cm", rot = 90))
+
 
 #Regression ANPP ~ CWM.Ht Table S5
 Ht_all <- lm(weight_g_m ~ CWM.Ht, Joined)
@@ -294,6 +389,56 @@ SLA_forb <- lm(weight_g_m ~ CWM.SLA, Joined%>%filter(subplot == "F"))
 summary(SLA_forb) #not significant
 SLA_grass <- lm(weight_g_m ~ CWM.SLA, Joined%>%filter(subplot == "G"))
 summary(SLA_grass) #not significant
+
+#Regression BNPP ~ CWM.Dens
+Dens_all <- lm(agg_BNPP ~ CWM.Dens, Joined)
+summary(Dens_all) #not significant
+Dens_both<- lm(agg_BNPP ~ CWM.Dens, Joined%>%filter(subplot == "B")) 
+summary(Dens_both) #not significant
+Dens_forb <- lm(agg_BNPP ~ CWM.Dens, Joined%>%filter(subplot == "F"))
+summary(Dens_forb) #not significant
+Dens_grass <- lm(agg_BNPP ~ CWM.Dens, Joined%>%filter(subplot == "G"))
+summary(Dens_grass) #not significant
+
+#Regression BNPP ~ CWM.SRLF
+SRLF_all <- lm(agg_BNPP ~ CWM.SRLF, Joined)
+summary(SRLF_all) #not significant
+SRLF_both<- lm(agg_BNPP ~ CWM.SRLF, Joined%>%filter(subplot == "B")) 
+summary(SRLF_both) #not significant
+SRLF_forb <- lm(agg_BNPP ~ CWM.SRLF, Joined%>%filter(subplot == "F"))
+summary(SRLF_forb) #not significant
+SRLF_grass <- lm(agg_BNPP ~ CWM.SRLF, Joined%>%filter(subplot == "G"))
+summary(SRLF_grass) #not significant
+
+#Regression BNPP ~ CWM.SRLC
+SRLC_all <- lm(agg_BNPP ~ CWM.SRLC, Joined)
+summary(SRLC_all) #not significant
+SRLC_both<- lm(agg_BNPP ~ CWM.SRLC, Joined%>%filter(subplot == "B")) 
+summary(SRLC_both) #not significant
+SRLC_forb <- lm(agg_BNPP ~ CWM.SRLC, Joined%>%filter(subplot == "F"))
+summary(SRLC_forb) #not significant
+SRLC_grass <- lm(agg_BNPP ~ CWM.SRLC, Joined%>%filter(subplot == "G"))
+summary(SRLC_grass) #not significant
+
+#Regression BNPP ~ CWM.DiamC
+DiamC_all <- lm(agg_BNPP ~ CWM.DiamC, Joined)
+summary(DiamC_all) #not significant
+DiamC_both<- lm(agg_BNPP ~ CWM.DiamC, Joined%>%filter(subplot == "B")) 
+summary(DiamC_both) #not significant
+DiamC_forb <- lm(agg_BNPP ~ CWM.DiamC, Joined%>%filter(subplot == "F"))
+summary(DiamC_forb) #not significant
+DiamC_grass <- lm(agg_BNPP ~ CWM.DiamC, Joined%>%filter(subplot == "G"))
+summary(DiamC_grass) #significant
+
+#Regression BNPP ~ CWM.PropF
+PropF_all <- lm(agg_BNPP ~ CWM.PropF, Joined)
+summary(PropF_all) #not significant
+PropF_both<- lm(agg_BNPP ~ CWM.PropF, Joined%>%filter(subplot == "B")) 
+summary(PropF_both) #not significant
+PropF_forb <- lm(agg_BNPP ~ CWM.PropF, Joined%>%filter(subplot == "F"))
+summary(PropF_forb) #not significant
+PropF_grass <- lm(agg_BNPP ~ CWM.PropF, Joined%>%filter(subplot == "G"))
+summary(PropF_grass) #not significant
 
 #Table S3 Mixed model of ppt and comp effects on biomass 
 m_anpp <- lme(weight_g_m ~ treatment*subplot, random=~1|shelterBlock, Joined, na.action=na.exclude)

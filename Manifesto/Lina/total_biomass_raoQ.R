@@ -5,6 +5,8 @@ ANPP <- read.csv("./Dropbox/ClimVar/DATA/Plant_composition_data/ANPP/ANPP_Cleane
 
 library(tidyverse)
 library(FD)
+library(vegan)
+
 
 ###Set up data for FD package###
 #Species names must be in same order in both files
@@ -99,14 +101,17 @@ BNPP1 <- BNPP %>%
   summarise(agg_BNPP = sum(bmass_g_m2)) %>% #sum BNPP
   dplyr::select(plot, subplot, treatment, agg_BNPP)
 
-joined_rao <- rao_table %>%
+#standardize ind RaoQ 
+stand_rao_num <- decostand(rao_table[,5:13], "standardize") 
+stand_rao <- as.data.frame(cbind(rao_table[,1:4], stand_rao_num))
+
+#Join RaoQ and biomass
+joined_rao <- stand_rao %>%
   left_join(ANPP1, by = c("plot", "subplot", "treatment")) %>%
   left_join(BNPP1, by = c("plot", "subplot", "treatment")) %>%
   mutate(total = weight_g_m + agg_BNPP)
 
-#standardize ind RaoQ and Biomass
-stand_joined_rao <- decostand(joined_rao[,5:16], "standardize") 
-stand_rao <- as.data.frame(cbind(joined_rao[,1:4], stand_joined_rao))
+
 
 #Stepwise regression of BNPP ~ Ind RaoQ
 rao_both <- stand_rao %>%
@@ -117,22 +122,22 @@ rao_grass <- stand_rao %>%
   filter(subplot == "G")
 
 library(MASS)
-model8 <- lm(total ~ SLARaoQ + LDMCRaoQ + HtRaoQ + DensRaoQ + DiamCRaoQ + SRLCRaoQ + SRLFRaoQ + PropFRaoQ, stand_rao)
-step_all <- stepAIC(model6, direction = "backward", trace = FALSE)
+model8 <- lm(total ~ SLARaoQ + LDMCRaoQ + HtRaoQ + DensRaoQ + DiamCRaoQ + SRLCRaoQ + SRLFRaoQ + PropFRaoQ, joined_rao)
+step_all <- stepAIC(model8, direction = "backward", trace = FALSE)
 step_all$anova
-model9 <- lm(total ~ DensRaoQ + DiamCRaoQ , stand_rao)
-summary(model7)
+model9 <- lm(total ~ SLARaoQ , joined_rao)
+summary(model9)
 
-model10 <- lm(weight_g_m ~ SLARaoQ + LDMCRaoQ + HtRaoQ , stand_rao)
+model10 <- lm(weight_g_m ~ SLARaoQ + LDMCRaoQ + HtRaoQ , joined_rao)
 step_all <- stepAIC(model10, direction = "backward", trace = FALSE)
 step_all$anova
-model11 <- lm(weight_g_m ~ SLARaoQ  , stand_rao)
+model11 <- lm(weight_g_m ~ SLARaoQ + LDMCRaoQ , joined_rao)
 summary(model11)
 
-model12 <- lm(agg_BNPP ~ DensRaoQ + DiamCRaoQ + SRLCRaoQ + SRLFRaoQ + PropFRaoQ, stand_rao)
+model12 <- lm(agg_BNPP ~ DensRaoQ + DiamCRaoQ + SRLCRaoQ + SRLFRaoQ + PropFRaoQ, joined_rao)
 step_all <- stepAIC(model12, direction = "backward", trace = FALSE)
 step_all$anova
-model13 <- lm(agg_BNPP ~ DensRaoQ , stand_rao)
+model13 <- lm(agg_BNPP ~ DiamCRaoQ , joined_rao)
 summary(model13)
 
 #plot ANPP BNPP by RaoQ 
@@ -192,6 +197,8 @@ ggarrange(p1, p2, legend_comp, p3, p4, legend_rain, ncol = 3, nrow = 2,
           widths=c(1, 1, 0.3))
 
 #community RaoQ with ANPP and BNPP 
+fitoverall <- lm(weight_g_m ~ RaoQ, joined_rao) 
+summary(fitoverall) 
 fitB <- lm(weight_g_m ~ RaoQ, joined_rao%>%filter(subplot == "B")) 
 summary(fitB) 
 fitF <- lm(weight_g_m ~ RaoQ, joined_rao%>%filter(subplot == "F"))
@@ -199,6 +206,8 @@ summary(fitF)
 fitG <- lm(weight_g_m ~ RaoQ, joined_rao%>%filter(subplot == "G"))
 summary(fitG)
 
+fitoverall <- lm(agg_BNPP ~ RaoQ, joined_rao) 
+summary(fitoverall)
 fitB <- lm(agg_BNPP ~ RaoQ, joined_rao%>%filter(subplot == "B")) 
 summary(fitB) 
 fitF <- lm(agg_BNPP ~ RaoQ, joined_rao%>%filter(subplot == "F"))
@@ -218,16 +227,16 @@ FDSLA_grass <- lm(weight_g_m ~ SLARaoQ, joined_rao%>%filter(subplot == "G"))
 summary(FDSLA_grass ) #not significant
 
 FDLDMC_all <- lm(weight_g_m ~ LDMCRaoQ, joined_rao)
-summary(FDLDMC_all) #not significant
+summary(FDLDMC_all) #significant
 FDLDMC_both<- lm(weight_g_m ~ LDMCRaoQ, joined_rao%>%filter(subplot == "B")) 
-summary(FDLDMC_both) #not significant
+summary(FDLDMC_both) #significant
 FDLDMC_forb <- lm(weight_g_m ~ LDMCRaoQ, joined_rao%>%filter(subplot == "F"))
 summary(FDLDMC_forb) #not significant
 FDLDMC_grass <- lm(weight_g_m ~ LDMCRaoQ, joined_rao%>%filter(subplot == "G"))
 summary(FDLDMC_grass ) #not significant
 
 FDHt_all <- lm(weight_g_m ~ HtRaoQ, joined_rao)
-summary(FDHt_all) #significant
+summary(FDHt_all) #not significant
 FDHt_both<- lm(weight_g_m ~ HtRaoQ, joined_rao%>%filter(subplot == "B")) 
 summary(FDHt_both) #not significant
 FDHt_forb <- lm(weight_g_m ~ HtRaoQ, joined_rao%>%filter(subplot == "F"))
@@ -298,3 +307,98 @@ RaoBNPP_forb <- lm(agg_BNPP ~ RaoQ, joined_rao%>%filter(subplot == "F"))
 summary(RaoBNPP_forb)
 RaoBNPP_grass <- lm(agg_BNPP ~ RaoQ, joined_rao%>%filter(subplot == "G"))
 summary(RaoBNPP_grass)
+
+###Relationships bw RaoQ of three aboveground traits and ANPP
+p1ar <- ggplot(data = joined_rao, aes(x = HtRaoQ, y = weight_g_m)) +
+  geom_point(aes(color = as.factor(subplot))) +
+  theme_classic() +
+  xlab("Rao's Q Height") +
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black")+
+  labs(y= NULL) +
+  theme(legend.position="none") +
+  scale_color_manual(name = "treatment", labels = c("Mixed", "Forb", "Grass"), values = c("#fc8d62", "#66c2a5", "#8da0cb") )+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
+
+p2ar <- ggplot(data = joined_rao, aes(x = SLARaoQ, y = weight_g_m)) +
+  geom_point(aes(color = as.factor(subplot))) +
+  theme_classic() +
+  xlab("Rao's Q Specific Leaf Area") +
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black")+
+  labs(y= NULL) +
+  theme(legend.position= "none")+
+  scale_color_manual(name = "treatment", labels = c("Mixed", "Forb", "Grass"), values = c("#fc8d62", "#66c2a5", "#8da0cb") )+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
+
+p3ar <- ggplot(data = joined_rao, aes(x = LDMCRaoQ, y = weight_g_m)) +
+  geom_point(aes(color = as.factor(subplot))) +
+  theme_classic() +
+  xlab("Rao's Q Leaf Dry Matter Content") +
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black")+
+  labs(y= NULL) +
+  theme(legend.position = "none")+
+  scale_color_manual(name = "treatment", labels = c("Mixed", "Forb", "Grass"), values = c("#fc8d62", "#66c2a5", "#8da0cb") )+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
+
+
+figurear <- ggarrange(p1ar, p2ar, p3ar, 
+                     ncol =3, nrow =1, common.legend = TRUE, legend = "bottom",
+                     align = "v",labels = c("a)", "b)", "c)"))
+annotate_figure(figurear, 
+                left = text_grob("ANPP (g/m2)", rot = 90))
+
+###Relationships bw RaoQ of five root traits and BNPP
+p1br <- ggplot(data = joined_rao, aes(x = DensRaoQ, y = agg_BNPP)) +
+  geom_point(aes(color = as.factor(subplot))) +
+  theme_classic() +
+  xlab("Rao's Q Root Density") +
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black")+
+  labs(y= NULL) +
+  theme(legend.position="none") +
+  scale_color_manual(name = "treatment", labels = c("Mixed", "Forb", "Grass"), values = c("#fc8d62", "#66c2a5", "#8da0cb") )+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
+
+p2br <- ggplot(data = joined_rao, aes(x = SRLFRaoQ, y = agg_BNPP)) +
+  geom_point(aes(color = as.factor(subplot))) +
+  theme_classic() +
+  xlab("Rao's Q SRLF") +
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black")+
+  labs(y= NULL) +
+  theme(legend.position= "none")+
+  scale_color_manual(name = "treatment", labels = c("Mixed", "Forb", "Grass"), values = c("#fc8d62", "#66c2a5", "#8da0cb") )+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
+
+p3br <- ggplot(data = joined_rao, aes(x = SRLCRaoQ, y = agg_BNPP)) +
+  geom_point(aes(color = as.factor(subplot))) +
+  theme_classic() +
+  xlab("Rao's Q SRLC") +
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black")+
+  labs(y= NULL) +
+  theme(legend.position = "none")+
+  scale_color_manual(name = "treatment", labels = c("Mixed", "Forb", "Grass"), values = c("#fc8d62", "#66c2a5", "#8da0cb") )+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
+
+p4br <- ggplot(data = joined_rao, aes(x = DiamCRaoQ, y = agg_BNPP)) +
+  geom_point(aes(color = as.factor(subplot))) +
+  theme_classic() +
+  xlab("Rao's Q Diameter Coarse") +
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black")+
+  labs(y= NULL) +
+  theme(legend.position = "none")+
+  scale_color_manual(name = "treatment", labels = c("Mixed", "Forb", "Grass"), values = c("#fc8d62", "#66c2a5", "#8da0cb") )+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
+
+p5br <- ggplot(data = joined_rao, aes(x = PropFRaoQ, y = agg_BNPP)) +
+  geom_point(aes(color = as.factor(subplot))) +
+  theme_classic() +
+  xlab("Rao's Q Proportion of Fine") +
+  labs(y= NULL) +
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black")+
+  theme(legend.position = "none")+
+  scale_color_manual(name = "treatment", labels = c("Mixed", "Forb", "Grass"), values = c("#fc8d62", "#66c2a5", "#8da0cb") )+
+  stat_cor(aes(label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
+
+figurebr <- ggarrange(p1br, p2br, p3br, p4br, p5br,
+                    ncol =3, nrow =2, common.legend = TRUE, legend = "bottom",
+                    align = "v",labels = c("a)", "b)", "c)", "d)", "e)"))
+annotate_figure(figurebr, 
+                left = text_grob("BNPP (g/m2) depth 0-30 cm", rot = 90))

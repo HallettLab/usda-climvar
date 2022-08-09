@@ -81,7 +81,7 @@ stand_joined <- stand_Div %>%
   inner_join(stand_BNPP, by = c("plot", "subplot", "treatment", "shelterBlock"))
 
 ###Regression BNPP by Rao's Q
-ggplot(data = joined, aes(x=RaoQ, y = agg_BNPP, col = subplot)) +
+ggplot(data = Joined, aes(x=RaoQ, y = agg_BNPP, col = subplot)) +
   geom_point() +
   geom_smooth(method = lm, size = 1, se = FALSE, fullrange = TRUE)+
   theme_bw() +
@@ -105,7 +105,7 @@ fit4 <- lm(agg_BNPP ~ RaoQ, grass)
 summary(fit4)
 
 ###Regression BNPP by FDiv (functional divergence)
-ggplot(data = joined, aes(x=FDiv, y = agg_BNPP, col = subplot)) +
+ggplot(data = Joined, aes(x=FDiv, y = agg_BNPP, col = subplot)) +
   geom_point() +
   geom_smooth(method = lm, size = 1, se = FALSE, fullrange = TRUE)+
   theme_classic()
@@ -118,7 +118,7 @@ fit7 <- lm(agg_BNPP ~ FDiv, grass)
 summary(fit7)
 
 ###Regression BNPP by FRic (functional richness)
-ggplot(data = joined, aes(x=FRic, y = agg_BNPP, col = subplot)) +
+ggplot(data = Joined, aes(x=FRic, y = agg_BNPP, col = subplot)) +
   geom_point() +
   geom_smooth(method = lm, size = 1, se = FALSE, fullrange = TRUE)+
   theme_classic()
@@ -132,14 +132,8 @@ summary(fit7)
 
 ###Relationships bw CWM of five root traits and BNPP
 library(ggpubr)
-lbl1 <- expression("y = 656.3 - 6142.1 x," ~ r^2 ~ "= 0.03")
-lbl2 <- expression("y = 33.6 + 0.004 x," ~ r^2 ~ "= 0.02")
-lbl3 <- expression("y = 129 + 0.03 x," ~ r^2 ~ "= 0.04")
-lbl4 <- expression("y = 306.9 - 75.4 x," ~ r^2 ~ "= 0.03")
-lbl5 <- expression("y = 10291 - 10181 x," ~ r^2 ~ "= 0.07")
 
-
-p1 <- ggplot(data = joined, aes(x = CWM.Dens, y = agg_BNPP)) +
+p1 <- ggplot(data = Joined, aes(x = CWM.Dens, y = agg_BNPP)) +
   geom_point(aes(color = as.factor(subplot))) +
   theme_bw() +
   xlab("CWM Root Density") +
