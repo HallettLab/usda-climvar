@@ -270,7 +270,8 @@ ggplot(gf2_graph_2015, aes(fill=genus, y=cover, x=treatment, color=func2)) +
   scale_fill_manual(values = c("orange", "orangered", "firebrick","indianred4","indianred", "green4", "lightblue", "skyblue2", "skyblue4", "dodgerblue3", "royalblue3","navy"))+
   geom_bar( stat="identity", position='stack')+
   theme(axis.text.x = element_text(angle = 90, hjust = 1))+
-  facet_wrap(~shelterBlock)
+  facet_wrap(~shelterBlock)+
+  labs(x = "Rainfall Treatment", y = "Relative Cover (%)")
 
 ggplot(gf2_graph_2015, aes(fill=genus, y=cover, x=shelterBlock)) +
   geom_bar( stat="identity")+
@@ -301,7 +302,9 @@ ggplot(gf5_graph_2015, aes(fill=genus, colour=func2,  y=cover, x=treatment)) +
   facet_wrap(~subplot)+
   scale_fill_manual(values = c("goldenrod","orange", "darkorange2", "firebrick","indianred4","indianred", "saddlebrown", "palegreen", "green4", "lightblue", "skyblue2", "skyblue4", "dodgerblue3", "royalblue3","navy", "black"))+
   geom_bar( stat="identity", position='stack')+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  guides(color = FALSE)+
+  labs(x = "Rainfall Treatment", y = "Relative Cover (%)")
 
 gf6_graph_2015 <- gf6_graph_2015 %>% arrange(func2, genus) %>% filter(cover>0.01) %>% filter(genus!="NA", genus!="Unknown")
 levels(gf6_graph_2015$genus)
