@@ -173,7 +173,7 @@ library(ggpubr)
 p1 <- ggplot(Joined, aes(x = subplot, y = weight_g_m, fill = subplot)) +
   geom_boxplot() +
   theme_classic() +
-  theme(legend.position = "none") +
+  #theme(legend.position = "none") +
   annotate("text", x = 1, y = 800, label = "a", size = 4) +
   annotate("text", x = 2, y = 800, label = "b", size = 4) +
   annotate("text", x = 3, y = 800, label = "ab", size = 4) +
@@ -215,38 +215,39 @@ TukeyHSD(fitC)
 
 #Biomass by rain treatment 
 Joined$treatment <- factor(Joined$treatment, levels = c("controlRain",  "springDry", "fallDry","consistentDry"))
-p3 <- ggplot(Joined, aes(x = treatment, y = agg_BNPP)) +
+p3 <- ggplot(Joined, aes(x = treatment, y = agg_BNPP, fill = treatment)) +
         geom_boxplot() +
-        geom_jitter(aes(x = treatment, y = agg_BNPP, color = subplot)) +
+        #geom_jitter(aes(x = treatment, y = agg_BNPP, color = subplot)) +
         theme_classic() +
         ylim(100, 700)+
         annotate("text", x = 2.5, y = 700, label = "NS", size = 4) +
         labs(y = bquote('BNPP'~(g/m^2)), x = "Rainfall treatment", fill = "treatment") +
-        scale_color_manual( name = "Treatment", labels = c("Mixed", "Forb", "Grass"),  values= c("#fc8d62", "#66c2a5", "#8da0cb")) +
+        scale_fill_manual(name = "Treatment", labels = c("Control","Spring Dry", "Fall Dry", "Consistent Dry"), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23")) +
+        #scale_color_manual( name = "Treatment", labels = c("Mixed", "Forb", "Grass"),  values= c("#fc8d62", "#66c2a5", "#8da0cb")) +
         scale_x_discrete(labels = c("Control\n", "Spring\n Dry\n", "Fall\n Dry\n", "Consistent\n Dry\n"))
 
-p4 <- ggplot(Joined, aes(x = treatment, y = weight_g_m)) +
+p4 <- ggplot(Joined, aes(x = treatment, y = weight_g_m, fill = treatment)) +
         geom_boxplot() +
-        geom_jitter(aes(x = treatment, y = weight_g_m, color = subplot)) +
+        #geom_jitter(aes(x = treatment, y = weight_g_m, color = subplot)) +
         theme_classic() +
         theme(legend.position = "none") +
         ylim(100, 700)+
         annotate("text", x = 2.5, y = 700, label = "NS", size = 4) +
         labs(y = bquote('ANPP'~(g/m^2)), x = "", fill = "treatment") +
-        scale_color_manual( values= c("#fc8d62", "#66c2a5", "#8da0cb")) +
-        #scale_fill_manual(name = "Treatment", labels = c("Control","Spring Dry", "Fall Dry", "Consistent Dry"), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23")) +
+        #scale_color_manual( values= c("#fc8d62", "#66c2a5", "#8da0cb")) +
+        scale_fill_manual(name = "Treatment", labels = c("Control","Spring Dry", "Fall Dry", "Consistent Dry"), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23")) +
         scale_x_discrete(labels = c("Control\n", "Spring\n Dry\n", "Fall\n Dry\n", "Consistent\n Dry\n"))
 
-pt_rain <- ggplot(Joined, aes(x = treatment, y = total)) +
+pt_rain <- ggplot(Joined, aes(x = treatment, y = total, fill = treatment)) +
   geom_boxplot() +
   theme_classic() +
-  geom_jitter(aes(x = treatment, y = total, color = subplot)) +
+  #geom_jitter(aes(x = treatment, y = total, color = subplot)) +
   theme(legend.position = "none") +
   ylim(200, 1500)+
   annotate("text", x = 2.5, y = 1500, label = "NS", size = 4) +
   labs(y = bquote('Total Biomass'~(g/m^2)), x = "", fill = "treatment") +
-  scale_color_manual( values= c("#fc8d62", "#66c2a5", "#8da0cb")) +
-  #scale_fill_manual(name = "Treatment", labels = c("Control","Spring Dry", "Fall Dry", "Consistent Dry"), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23")) +
+  #scale_color_manual( values= c("#fc8d62", "#66c2a5", "#8da0cb")) +
+  scale_fill_manual(name = "Treatment", labels = c("Control","Spring Dry", "Fall Dry", "Consistent Dry"), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23")) +
   scale_x_discrete(labels = c("Control\n", "Spring\n Dry\n", "Fall\n Dry\n", "Consistent\n Dry\n"))
 
 fit1 <- aov(weight_g_m~treatment, Joined)
@@ -257,12 +258,12 @@ legend_1 <- get_legend(p1)
 legend_2 <- get_legend(p3)
 p1 <- p1 + theme(legend.position = "none")
 p3 <- p3 + theme(legend.position = "none")
-ggarrange(p1, p2, pt_subplot, 
-          p4, p3, pt_rain, 
-          ncol = 3, nrow = 2, 
-          align = "v", common.legend = TRUE, legend = "right",
-          labels = c("a)", "b)", "c)",  "d)", "e)", "f)"), 
-          widths=c(1, 1 ,1))
+ggarrange(p1, p2, pt_subplot, legend_1,
+          p4, p3, pt_rain, legend_2,
+          ncol = 4, nrow = 2, 
+          align = "v", 
+          labels = c("a)", "b)", "c)", "", "d)", "e)", "f)", ""), 
+          widths=c(1, 1 ,1, 0.4))
 
 ###Relationships bw CWM of three aboveground traits and ANPP
 p1a <- ggplot(data = Joined, aes(x = CWM.Ht, y = weight_g_m)) +

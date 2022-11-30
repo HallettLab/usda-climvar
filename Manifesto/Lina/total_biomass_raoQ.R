@@ -6,7 +6,9 @@ ANPP <- read.csv("./Dropbox/ClimVar/DATA/Plant_composition_data/ANPP/ANPP_Cleane
 library(tidyverse)
 library(FD)
 library(vegan)
-
+library(ggplot2)
+library(ggpubr)
+library(MASS)
 
 ###Set up data for FD package###
 #Species names must be in same order in both files
@@ -40,7 +42,25 @@ dim(all_traits) #check the dimension of trait data
 tr <- as.matrix(all_traits[1:nrow(all_traits), 2:ncol(all_traits)])
 row.names(tr) <- all_traits$ID
 
-#Calculate ind RaoQ
+above_traits <- traits %>%
+  filter(ID %in% c("ACHMIL","ANAARV", "AVEBAR", "AVEFAT", "BRADIS","BRIMIN", "BRODIA","BROHOR", "BROMAD","CARPYC", "CENSOL","CERGLO", 
+                   "CYNDAC", "CYNECH", "EROBOT", "EROMOS",  "FILGAL", "HORMUR","HYPGLA", "HYPRAD", 
+                   "LACSER", "LOLMUL","RUMPUL", "TAECAP","TRIDUB", "TRIGLO", "TRIHIR", "TRISP", "TRISUB", "VICSAT", "VULBRO", "VULMYU")) %>%
+  dplyr::select(ID, SLA, LDMC, Ht)
+dim(above_traits) #check the dimension of trait data
+above_tr <- as.matrix(above_traits[1:nrow(above_traits), 2:ncol(above_traits)])
+row.names(above_tr) <- above_traits$ID
+
+below_traits <- traits %>%
+  filter(ID %in% c("ACHMIL","ANAARV", "AVEBAR", "AVEFAT", "BRADIS","BRIMIN", "BRODIA","BROHOR", "BROMAD","CARPYC", "CENSOL","CERGLO", 
+                   "CYNDAC", "CYNECH", "EROBOT", "EROMOS",  "FILGAL", "HORMUR","HYPGLA", "HYPRAD", 
+                   "LACSER", "LOLMUL","RUMPUL", "TAECAP","TRIDUB", "TRIGLO", "TRIHIR", "TRISP", "TRISUB", "VICSAT", "VULBRO", "VULMYU")) %>%
+  dplyr::select(ID, Dens, DiamC, SRLC, SRLF, PropF)
+dim(below_traits) #check the dimension of trait data
+below_tr <- as.matrix(below_traits[1:nrow(below_traits), 2:ncol(below_traits)])
+row.names(below_tr) <- below_traits$ID
+
+#Calculate ind RaoQ and ind FEve
 SLA_results <- dbFD(tr[,1], comp, corr = "cailliez")
 SLA_results <- as.data.frame(SLA_results) %>%
   tbl_df()
@@ -77,12 +97,37 @@ overall_rao <- dbFD(tr, comp, corr="cailliez")
 overall_rao <- as.data.frame(overall_rao) %>%
   tbl_df()
 
-##Join ind RaoQ with biomass
+#Above- and belowground trait RaoQ and FEve
+above_fd <- dbFD(above_tr, comp, corr="cailliez")
+above_fd <- as.data.frame(above_fd) %>%
+  tbl_df()
+
+below_fd <- dbFD(below_tr, comp, corr="cailliez")
+below_fd <- as.data.frame(below_fd) %>%
+  tbl_df()
+
+##Join ind RaoQ 
 rao_table <- as.data.frame(cbind(veg_keys[,2:5],SLA_results[,7], LDMC_results[,7],
                                  Ht_results[,7], Dens_results[,7], DiamC_results[,7],
                                  SRLC_results[,7], SRLF_results[,7], PropF_results[,7], overall_rao[,8]))
 colnames(rao_table) <- c("plot", "subplot", "year", "treatment", "SLARaoQ", "LDMCRaoQ", "HtRaoQ", "DensRaoQ", 
                           "DiamCRaoQ", "SRLCRaoQ", "SRLFRaoQ", "PropFRaoQ", "RaoQ")
+
+##Join ind FEve
+FEve_table <- as.data.frame(cbind(veg_keys[,2:5],SLA_results[,5], LDMC_results[,5],
+                                 Ht_results[,5], Dens_results[,5], DiamC_results[,5],
+                                 SRLC_results[,5], SRLF_results[,5], PropF_results[,5], overall_rao[,5],
+                                 overall_rao[,9:16]))
+colnames(FEve_table) <- c("plot", "subplot", "year", "treatment", "SLAFEve", "LDMCFEve", "HtFEve", "DensFEve", 
+                         "DiamCFEve", "SRLCFEve", "SRLFFEve", "PropFFEve", "FEve", "CWM.SLA", "CWM.LDMC", "CWM.Ht",
+                         "CWM.Dens", "CWM.DiamC", "CWM.SRLC", "CWM.SRLF", "CWM.PropF")
+
+#Join Above- and belowground trait RaoQ and FEve
+FD_above_below <- as.data.frame(cbind(veg_keys[,2:5],above_fd[,3], above_fd[,5:8], below_fd[,3], below_fd[,5:8]))
+colnames(FD_above_below) <- c("plot", "subplot", "year", "treatment",  
+                              "aboveFRic", "aboveFEve", "aboveFDiv", "aboveFDis", "aboveRaoQ",
+                              "belowFRic", "belowFEve", "belowFDiv", "belowFDis", "belowRaoQ")
+
 #Filter 2015 ANPP
 ANPP1 <- ANPP %>%
   filter(year == 2015) %>%
@@ -105,44 +150,181 @@ BNPP1 <- BNPP %>%
 stand_rao_num <- decostand(rao_table[,5:13], "standardize") 
 stand_rao <- as.data.frame(cbind(rao_table[,1:4], stand_rao_num))
 
+#isolate CENSOL and TAECAP
+CENSOL <- vegdat3$CENSOL
+TAECAP <- vegdat3$TAECAP
+
 #Join RaoQ and biomass
 joined_rao <- stand_rao %>%
   left_join(ANPP1, by = c("plot", "subplot", "treatment")) %>%
   left_join(BNPP1, by = c("plot", "subplot", "treatment")) %>%
-  mutate(total = weight_g_m + agg_BNPP)
+  mutate(total = weight_g_m + agg_BNPP) %>%
+  cbind(CENSOL) %>%
+  cbind(TAECAP) 
 
+#Join FEve and biomass
+joined_FEve <- FEve_table %>%
+  left_join(ANPP1, by = c("plot", "subplot", "treatment")) %>%
+  left_join(BNPP1, by = c("plot", "subplot", "treatment")) %>%
+  mutate(total = weight_g_m + agg_BNPP) %>%
+  cbind(CENSOL) %>%
+  cbind(TAECAP) 
 
+#Join community FD metrics and biomass
+FD_table <- as.data.frame(cbind(veg_keys[,2:5], overall_rao))
+joined_FD <- FD_table %>%
+  left_join(ANPP1, by = c("plot", "subplot", "treatment")) %>%
+  left_join(BNPP1, by = c("plot", "subplot", "treatment")) %>%
+  mutate(total = weight_g_m + agg_BNPP)%>%
+  cbind(CENSOL) %>%
+  cbind(TAECAP) 
 
-#Stepwise regression of BNPP ~ Ind RaoQ
-rao_both <- stand_rao %>%
-  filter(subplot == "B")
-rao_forb <- stand_rao %>%
-  filter(subplot == "F")
-rao_grass <- stand_rao %>%
-  filter(subplot == "G")
+#Join community FD metrics and biomass
+joined_FD_above_below <- FD_above_below %>%
+  left_join(ANPP1, by = c("plot", "subplot", "treatment")) %>%
+  left_join(BNPP1, by = c("plot", "subplot", "treatment")) %>%
+  mutate(total = weight_g_m + agg_BNPP)%>%
+  cbind(CENSOL) %>%
+  cbind(TAECAP) 
 
-library(MASS)
-model8 <- lm(total ~ SLARaoQ + LDMCRaoQ + HtRaoQ + DensRaoQ + DiamCRaoQ + SRLCRaoQ + SRLFRaoQ + PropFRaoQ, joined_rao)
-step_all <- stepAIC(model8, direction = "backward", trace = FALSE)
+#Correlation FD indices and CWM traits
+pairs(~FRic + FEve + FDis + RaoQ , data = FD_table)
+pairs(~FEve + CWM.SLA + CWM.LDMC + CWM.Ht + CWM.Dens + CWM.DiamC + CWM.SRLC + CWM.SRLF + CWM.PropF, data = FD_table)
+pairs(~RaoQ + CWM.SLA + CWM.LDMC + CWM.Ht + CWM.Dens + CWM.DiamC + CWM.SRLC + CWM.SRLF + CWM.PropF, data = FD_table)
+
+#Heatmap of productivity in FEve and RaoQ space
+f_heat_below <- ggplot(joined_FD_above_below, aes(x = belowRaoQ, y = belowFEve))+
+  geom_point(aes(size = agg_BNPP, col = agg_BNPP))+
+  theme_classic()+
+  stat_density_2d()+
+  xlab("Belowground RaoQ")+
+  ylab("Belowground FEve")+
+  guides( size = "none")+
+  labs(col = "BNPP g/m2")
+  
+f_heat_above <- ggplot(joined_FD_above_below, aes(x = aboveRaoQ, y = aboveFEve))+
+  geom_point(aes(col = weight_g_m, size = weight_g_m))+
+  theme_classic()+
+  stat_density_2d()+
+  xlab("Aboveground RaoQ")+
+  ylab("Aboveground FEve")+
+  guides( size = "none")+
+  labs(col = "ANPP g/m2")
+
+f_heat_map <- ggarrange(f_heat_above, f_heat_below)
+
+#Fig 2: ANPP and BNPP ~ FEve and RaoQ
+p_FEve_above <- ggplot(joined_FD_above_below, aes(x = aboveFEve, y = weight_g_m)) +
+  geom_point(aes(color = subplot)) +
+  theme_classic() +
+  #ylim(50,900)+
+  labs(y = bquote('ANPP'~(g/m^2)), x = "Aboveground FEve", color = "Treatment") +
+  #geom_smooth(aes(color = subplot, linetype = subplot), method = lm, size = 1, se = FALSE, fullrange = FALSE) +
+  #stat_cor(aes(group=subplot,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
+  scale_color_manual(name = "Treatment", labels = c("Mixed", "Forb", "Grass"), values= c("#fc8d62", "#66c2a5", "#8da0cb")) +
+  #scale_linetype_manual( values = c("solid", "dashed", "dashed"), guide = "none")+
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black", linetype = "solid") 
+p_FEve_below <- ggplot(joined_FD_above_below, aes(x = belowFEve, y = agg_BNPP)) +
+  geom_point(aes(color = subplot)) +
+  theme_classic() +
+  #ylim(50,900)+
+  labs(y = bquote('BNPP'~(g/m^2)), x = "Belowground FEve", color = "Treatment") +
+  #geom_smooth(aes(color = subplot, linetype = subplot), method = lm, size = 1, se = FALSE, fullrange = FALSE) +
+  #stat_cor(aes(group=subplot,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
+  scale_color_manual(name = "Treatment", labels = c("Mixed", "Forb", "Grass"), values= c("#fc8d62", "#66c2a5", "#8da0cb")) +
+  #scale_linetype_manual( values = c("solid", "dashed", "dashed"), guide = "none")+
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black", linetype = "solid") 
+p_RaoQ_above <- ggplot(joined_FD_above_below, aes(x = aboveRaoQ, y = weight_g_m)) +
+  geom_point(aes(color = subplot)) +
+  theme_classic() +
+  #ylim(50,900)+
+  labs(y = bquote('ANPP'~(g/m^2)), x = "Aboveground Rao's Q", color = "Treatment") +
+  #geom_smooth(aes(color = subplot, linetype = subplot), method = lm, size = 1, se = FALSE, fullrange = FALSE) +
+  #stat_cor(aes(group=subplot,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
+  scale_color_manual(name = "Treatment", labels = c("Mixed", "Forb", "Grass"), values= c("#fc8d62", "#66c2a5", "#8da0cb")) +
+  #scale_linetype_manual( values = c("solid", "dashed", "dashed"), guide = "none")+
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black", linetype = "solid")
+p_RaoQ_below <- ggplot(joined_FD_above_below, aes(x = belowRaoQ, y = agg_BNPP)) +
+  geom_point(aes(color = subplot)) +
+  theme_classic() +
+  #ylim(50,900)+
+  labs(y = bquote('BNPP'~(g/m^2)), x = "Belowground Rao's Q", color = "Treatment") +
+  #geom_smooth(aes(color = subplot, linetype = subplot), method = lm, size = 1, se = FALSE, fullrange = FALSE) +
+  #stat_cor(aes(group=subplot,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
+  scale_color_manual(name = "Treatment", labels = c("Mixed", "Forb", "Grass"), values= c("#fc8d62", "#66c2a5", "#8da0cb")) +
+  #scale_linetype_manual( values = c("solid", "dashed", "dashed"), guide = "none")+
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black", linetype = "solid")
+
+ggarrange(p_FEve_above, p_FEve_below, p_RaoQ_above, p_RaoQ_below, ncol = 2, nrow = 2, common.legend = TRUE, legend = "right", labels = c("a)", "b)", "c)", "d)"))
+# #Stepwise regression of BNPP ~ Ind RaoQ
+# model8 <- lm(total ~ CENSOL + TAECAP + SLARaoQ + LDMCRaoQ + HtRaoQ + DensRaoQ + DiamCRaoQ + SRLCRaoQ + SRLFRaoQ + PropFRaoQ, joined_rao)
+# step_all <- stepAIC(model8, direction = "backward", trace = FALSE)
+# step_all$anova
+# model9 <- lm(total ~ SLARaoQ , joined_rao)
+# summary(model9)
+# 
+# model10 <- lm(weight_g_m ~ CENSOL + TAECAP +SLARaoQ + LDMCRaoQ + HtRaoQ , joined_rao)
+# step_all <- stepAIC(model10, direction = "backward", trace = FALSE)
+# step_all$anova
+# model11 <- lm(weight_g_m ~ SLARaoQ + LDMCRaoQ , joined_rao)
+# summary(model11)
+# 
+# model12 <- lm(agg_BNPP ~ CENSOL + TAECAP +DensRaoQ + DiamCRaoQ + SRLCRaoQ + SRLFRaoQ + PropFRaoQ, joined_rao)
+# step_all <- stepAIC(model12, direction = "backward", trace = FALSE)
+# step_all$anova
+# model13 <- lm(agg_BNPP ~ DiamCRaoQ , joined_rao)
+# summary(model13)
+
+#Stepwise regression of BNPP ~ Ind FEve
+model14 <- lm(total ~ SLAFEve + LDMCFEve + HtFEve + DensFEve + DiamCFEve + SRLCFEve + SRLFFEve + PropFFEve, joined_FEve)
+summary(model14)
+model15 <- lm(total ~ CWM.SLA + CWM.LDMC + CWM.Ht + CWM.Dens + CWM.DiamC + CWM.SRLC + CWM.SRLF + CWM.PropF, joined_FEve)
+summary(model15)
+model16 <- lm(total ~ CENSOL + TAECAP, joined_FEve)
+summary(model16)
+model17 <- lm(total ~ SLAFEve + LDMCFEve + HtFEve + DensFEve + DiamCFEve + SRLCFEve + SRLFFEve + PropFFEve + CWM.SLA + CWM.LDMC + CWM.Ht + CWM.Dens + CWM.DiamC + CWM.SRLC + CWM.SRLF + CWM.PropF + TAECAP + CENSOL, joined_FEve)
+step_all <- stepAIC(model17, direction = "backward", trace = FALSE)
 step_all$anova
-model9 <- lm(total ~ SLARaoQ , joined_rao)
-summary(model9)
-
-model10 <- lm(weight_g_m ~ SLARaoQ + LDMCRaoQ + HtRaoQ , joined_rao)
-step_all <- stepAIC(model10, direction = "backward", trace = FALSE)
+model_total <- lm(total ~ SLAFEve + CWM.SLA + CWM.Ht + CWM.DiamC + CENSOL, joined_FEve)
+model18 <- lm(total ~ CWM.SRLC + CWM.SRLF, joined_FEve)
+step_all <- stepAIC(model18, direction = "backward", trace = FALSE)
 step_all$anova
-model11 <- lm(weight_g_m ~ SLARaoQ + LDMCRaoQ , joined_rao)
-summary(model11)
+summary(model_total)
 
-model12 <- lm(agg_BNPP ~ DensRaoQ + DiamCRaoQ + SRLCRaoQ + SRLFRaoQ + PropFRaoQ, joined_rao)
-step_all <- stepAIC(model12, direction = "backward", trace = FALSE)
+model14 <- lm(weight_g_m ~ SLAFEve + LDMCFEve + HtFEve + DensFEve + DiamCFEve + SRLCFEve + SRLFFEve + PropFFEve, joined_FEve)
+summary(model14)
+model15 <- lm(weight_g_m ~ CWM.SLA + CWM.LDMC + CWM.Ht + CWM.Dens + CWM.DiamC + CWM.SRLC + CWM.SRLF + CWM.PropF, joined_FEve)
+summary(model15)
+model16 <- lm(weight_g_m ~ CENSOL + TAECAP, joined_FEve)
+summary(model16)
+model17 <- lm(weight_g_m ~ DiamCFEve +  PropFFEve + CWM.SRLF, joined_FEve)
+step_all <- stepAIC(model17, direction = "backward", trace = FALSE)
 step_all$anova
+
+
 model13 <- lm(agg_BNPP ~ DiamCRaoQ , joined_rao)
 summary(model13)
 
+#community RaoQ with ANPP and BNPP 
+fitoverall <- lm(weight_g_m ~ RaoQ, joined_rao) 
+summary(fitoverall) 
+fitB <- lm(weight_g_m ~ RaoQ, joined_rao%>%filter(subplot == "B")) 
+summary(fitB) 
+fitF <- lm(weight_g_m ~ RaoQ, joined_rao%>%filter(subplot == "F"))
+summary(fitF)
+fitG <- lm(weight_g_m ~ RaoQ, joined_rao%>%filter(subplot == "G"))
+summary(fitG)
+
+fitoverall <- lm(agg_BNPP ~ RaoQ, joined_rao) 
+summary(fitoverall)
+fitB <- lm(agg_BNPP ~ RaoQ, joined_rao%>%filter(subplot == "B")) 
+summary(fitB) 
+fitF <- lm(agg_BNPP ~ RaoQ, joined_rao%>%filter(subplot == "F"))
+summary(fitF)
+fitG <- lm(agg_BNPP ~ RaoQ, joined_rao%>%filter(subplot == "G"))
+summary(fitG)
+
 #plot ANPP BNPP by RaoQ 
-library(ggplot2)
-library(ggpubr)
 #By functional composition treatment Fig 2
 p1 <- ggplot(joined_rao, aes(x = RaoQ, y = weight_g_m, color = subplot, linetype = subplot)) +
   geom_point() +
@@ -196,24 +378,365 @@ ggarrange(p1, p2, legend_comp, p3, p4, legend_rain, ncol = 3, nrow = 2,
           align = "v",labels = c("a)", "b)", "", "c)", "d)", ""), 
           widths=c(1, 1, 0.3))
 
-#community RaoQ with ANPP and BNPP 
-fitoverall <- lm(weight_g_m ~ RaoQ, joined_rao) 
+#community FEve with ANPP and BNPP 
+fitoverall <- lm(weight_g_m ~ FEve, joined_FEve) 
 summary(fitoverall) 
-fitB <- lm(weight_g_m ~ RaoQ, joined_rao%>%filter(subplot == "B")) 
+fitB <- lm(weight_g_m ~ FEve, joined_FEve%>%filter(subplot == "B")) 
 summary(fitB) 
-fitF <- lm(weight_g_m ~ RaoQ, joined_rao%>%filter(subplot == "F"))
+fitF <- lm(weight_g_m ~ FEve, joined_FEve%>%filter(subplot == "F"))
 summary(fitF)
-fitG <- lm(weight_g_m ~ RaoQ, joined_rao%>%filter(subplot == "G"))
+fitG <- lm(weight_g_m ~ FEve, joined_FEve%>%filter(subplot == "G"))
 summary(fitG)
 
-fitoverall <- lm(agg_BNPP ~ RaoQ, joined_rao) 
+fitoverall <- lm(agg_BNPP ~ FEve, joined_FEve) 
 summary(fitoverall)
-fitB <- lm(agg_BNPP ~ RaoQ, joined_rao%>%filter(subplot == "B")) 
+fitB <- lm(agg_BNPP ~ FEve, joined_FEve%>%filter(subplot == "B")) 
 summary(fitB) 
-fitF <- lm(agg_BNPP ~ RaoQ, joined_rao%>%filter(subplot == "F"))
+fitF <- lm(agg_BNPP ~ FEve, joined_FEve%>%filter(subplot == "F"))
 summary(fitF)
-fitG <- lm(agg_BNPP ~ RaoQ, joined_rao%>%filter(subplot == "G"))
+fitG <- lm(agg_BNPP ~ FEve, joined_FEve%>%filter(subplot == "G"))
 summary(fitG)
+
+fitconstDry <- lm(weight_g_m ~ FEve, joined_FEve%>%filter(treatment == "consistentDry")) 
+summary(fitconstDry) 
+fitcontrol <- lm(weight_g_m ~ FEve, joined_FEve%>%filter(treatment == "controlRain"))
+summary(fitcontrol)
+fitfallDry <- lm(weight_g_m ~ FEve, joined_FEve%>%filter(treatment == "fallDry"))
+summary(fitfallDry)
+fitspringDry <- lm(weight_g_m ~ FEve, joined_FEve%>%filter(treatment == "springDry"))
+summary(fitspringDry)
+
+fitconstDry <- lm(agg_BNPP ~ FEve, joined_FEve%>%filter(treatment == "consistentDry")) 
+summary(fitconstDry)
+fitcontrol <- lm(agg_BNPP ~ FEve, joined_FEve%>%filter(treatment == "controlRain")) 
+summary(fitcontrol) 
+fitfallDry  <- lm(agg_BNPP ~ FEve, joined_FEve%>%filter(treatment == "fallDry"))
+summary(fitfallDry)
+fitspringDry <- lm(agg_BNPP ~ FEve, joined_FEve%>%filter(treatment == "springDry"))
+summary(fitspringDry)
+
+#plot ANPP BNPP by FEve 
+#By functional composition treatment Fig 2 revision
+p1_FEve <- ggplot(joined_FEve, aes(x = FEve, y = weight_g_m, color = subplot, linetype = subplot)) +
+  geom_point() +
+  theme_classic() +
+  ylim(50,900)+
+  labs(y = bquote('ANPP'~(g/m^2)), x = "Functional Evenness", color = "Treatment") +
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE) +
+  #stat_cor(aes(group=subplot,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
+  scale_color_manual(name = "Treatment", labels = c("Mixed", "Forb", "Grass"), values= c("#fc8d62", "#66c2a5", "#8da0cb")) +
+  scale_linetype_manual( values = c("dashed", "dashed", "dashed"), guide = "none")
+
+p2_FEve <- ggplot(joined_FEve, aes(x = FEve, y = agg_BNPP, color = subplot, linetype = subplot)) +
+  geom_point() +
+  theme_classic() +
+  ylim(50, 900)+
+  theme(legend.position = "none") +
+  labs(y = bquote('BNPP'~(g/m^2)), x = "Functional Evenness", color = "Treatment") +
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE) +
+  #stat_cor(aes(group=subplot,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
+  scale_color_manual(name = "Treatment", labels = c("Mixed", "Forb", "Grass"), values= c("#fc8d62", "#66c2a5", "#8da0cb")) +
+  scale_linetype_manual( values = c("dashed", "dashed", "dashed"), guide = "none")
+
+joined_FEve$treatment <- factor(joined_FEve$treatment, levels =c("controlRain",  "springDry", "fallDry","consistentDry"))
+
+p3_FEve <- ggplot(joined_FEve, aes(x = FEve, y = weight_g_m, color = treatment, linetype = treatment)) +
+  geom_point() +
+  theme_classic() +
+  ylim(50,900)+
+  labs(y = bquote('ANPP'~(g/m^2)), x = "Functional Evenness", color = "Treatment") +
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE) +
+  #stat_cor(aes(group=treatment,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
+  scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))+
+  scale_linetype_manual( values = c("dashed", "dashed", "dashed", "dashed"), guide = "none")
+p4_FEve <- ggplot(joined_FEve, aes(x = FEve, y = agg_BNPP, color = treatment, linetype = treatment)) +
+  geom_point() +
+  theme_classic() +
+  ylim(50, 900)+
+  theme(legend.position = "none") +
+  labs(y = bquote('BNPP'~(g/m^2)), x = "Functional Evenness", color = "Treatment") +
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE) +
+  #stat_cor(aes(group=treatment,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
+  scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))+
+  scale_linetype_manual( values = c("dashed", "dashed", "dashed", "dashed"), guide = "none")
+
+legend_comp_FEve <- get_legend(p1_FEve)
+legend_rain_FEve <- get_legend(p3_FEve)
+p1_FEve <- p1_FEve + theme(legend.position = "none")
+p3_FEve <- p3_FEve + theme(legend.position = "none")
+
+ggarrange(p1_FEve, p2_FEve, legend_comp_FEve, p3_FEve, p4_FEve, legend_rain_FEve, ncol = 3, nrow = 2, 
+          align = "v",labels = c("a)", "b)", "", "c)", "d)", ""), 
+          widths=c(1, 1, 0.3))
+
+#Fig2 revision Total biomass and FD metrics
+fitoverall <- lm(total ~ FRic, joined_FD) 
+summary(fitoverall) 
+fitB <- lm(total ~ FRic, joined_FD%>%filter(subplot == "B")) 
+summary(fitB) 
+fitF <- lm(total ~ FRic, joined_FD%>%filter(subplot == "F"))
+summary(fitF)
+fitG <- lm(total ~ FRic, joined_FD%>%filter(subplot == "G"))
+summary(fitG)
+p_FRic <- ggplot(joined_FD, aes(x = FRic, y = total)) +
+  geom_point(aes(color = subplot)) +
+  theme_classic() +
+  #ylim(50,900)+
+  labs(y = bquote('Total Biomass'~(g/m^2)), x = "FRic", color = "Treatment") +
+  geom_smooth(aes(color = subplot, linetype = subplot), method = lm, size = 1, se = FALSE, fullrange = FALSE) +
+  #stat_cor(aes(group=subplot,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
+  scale_color_manual(name = "Treatment", labels = c("Mixed", "Forb", "Grass"), values= c("#fc8d62", "#66c2a5", "#8da0cb")) +
+  scale_linetype_manual( values = c("solid", "dashed", "dashed"), guide = "none")+
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black", linetype = "dashed") 
+
+fitoverall <- lm(total ~ FEve, joined_FD) 
+summary(fitoverall) 
+fitB <- lm(total ~ FEve, joined_FD%>%filter(subplot == "B")) 
+summary(fitB) 
+fitF <- lm(total ~ FEve, joined_FD%>%filter(subplot == "F"))
+summary(fitF)
+fitG <- lm(total ~ FEve, joined_FD%>%filter(subplot == "G"))
+summary(fitG)
+p_FEve <- ggplot(joined_FD, aes(x = FEve, y = total)) +
+  geom_point(aes(color = subplot)) +
+  theme_classic() +
+  #ylim(50,900)+
+  theme(legend.position = "none") +
+  labs(y = "", x = "FEve", color = "Treatment") +
+  geom_smooth(aes(color = subplot, linetype = subplot), method = lm, size = 1, se = FALSE, fullrange = FALSE) +
+  #stat_cor(aes(group=subplot,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
+  scale_color_manual(name = "Treatment", labels = c("Mixed", "Forb", "Grass"), values= c("#fc8d62", "#66c2a5", "#8da0cb")) +
+  scale_linetype_manual( values = c("dashed", "dashed", "dashed"), guide = "none")+
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black", linetype = "dashed") 
+
+fitoverall <- lm(total ~ FDiv, joined_FD) 
+summary(fitoverall) 
+fitB <- lm(total ~ FDiv, joined_FD%>%filter(subplot == "B")) 
+summary(fitB) 
+fitF <- lm(total ~ FDiv, joined_FD%>%filter(subplot == "F"))
+summary(fitF)
+fitG <- lm(total ~ FDiv, joined_FD%>%filter(subplot == "G"))
+summary(fitG)
+p_FDiv <- ggplot(joined_FD, aes(x = FDiv, y = total)) +
+  geom_point(aes(color = subplot)) +
+  theme_classic() +
+  #ylim(50,900)+
+  theme(legend.position = "none") +
+  labs(y = "", x = "FDiv", color = "Treatment") +
+  geom_smooth(aes(color = subplot, linetype = subplot), method = lm, size = 1, se = FALSE, fullrange = FALSE) +
+  #stat_cor(aes(group=subplot,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
+  scale_color_manual(name = "Treatment", labels = c("Mixed", "Forb", "Grass"), values= c("#fc8d62", "#66c2a5", "#8da0cb")) +
+  scale_linetype_manual( values = c("dashed", "dashed", "dashed"), guide = "none")+
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black", linetype = "dashed") 
+
+fitoverall <- lm(total ~ RaoQ, joined_FD) 
+summary(fitoverall) 
+fitB <- lm(total ~ RaoQ, joined_FD%>%filter(subplot == "B")) 
+summary(fitB) 
+fitF <- lm(total ~ RaoQ, joined_FD%>%filter(subplot == "F"))
+summary(fitF)
+fitG <- lm(total ~ RaoQ, joined_FD%>%filter(subplot == "G"))
+summary(fitG)
+p_raoQ <- ggplot(joined_FD, aes(x = RaoQ, y = total)) +
+  geom_point(aes(color = subplot)) +
+  theme_classic() +
+  #ylim(50,900)+
+  theme(legend.position = "none") +
+  labs(y = "", x = "Rao's Q", color = "Treatment") +
+  geom_smooth(aes(color = subplot, linetype = subplot), method = lm, size = 1, se = FALSE, fullrange = FALSE) +
+  #stat_cor(aes(group=subplot,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
+  scale_color_manual(name = "Treatment", labels = c("Mixed", "Forb", "Grass"), values= c("#fc8d62", "#66c2a5", "#8da0cb")) +
+  scale_linetype_manual( values = c("solid", "dashed", "dashed"), guide = "none")+
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black")
+
+joined_FD$treatment <- factor(joined_FD$treatment, levels =c("controlRain",  "springDry", "fallDry","consistentDry"))
+
+fitconstDry <- lm(total ~ FRic, joined_FD%>%filter(treatment == "consistentDry")) 
+summary(fitconstDry) 
+fitcontrol <- lm(total ~ FRic, joined_FD%>%filter(treatment == "controlRain"))
+summary(fitcontrol)
+fitfallDry <- lm(total ~ FRic, joined_FD%>%filter(treatment == "fallDry"))
+summary(fitfallDry)
+fitspringDry <- lm(total ~ FRic, joined_FD%>%filter(treatment == "springDry"))
+summary(fitspringDry)
+p_FRic_PPT <- ggplot(joined_FD, aes(x = FRic, y = total)) +
+  geom_point(aes(color = treatment)) +
+  theme_classic() +
+  #ylim(50,900)+
+  labs(y = bquote('Total Biomass'~(g/m^2)), x = "FRic", color = "Treatment") +
+  geom_smooth(aes(color = treatment, linetype = treatment), method = lm, size = 1, se = FALSE, fullrange = FALSE) +
+  #stat_cor(aes(group=subplot,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
+  scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23")) +
+  scale_linetype_manual( values = c("dashed", "dashed", "dashed", "dashed"), guide = "none")+
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black", linetype = "dashed") 
+
+fitconstDry <- lm(total ~ FEve, joined_FD%>%filter(treatment == "consistentDry")) 
+summary(fitconstDry) 
+fitcontrol <- lm(total ~ FEve, joined_FD%>%filter(treatment == "controlRain"))
+summary(fitcontrol)
+fitfallDry <- lm(total ~ FEve, joined_FD%>%filter(treatment == "fallDry"))
+summary(fitfallDry)
+fitspringDry <- lm(total ~ FEve, joined_FD%>%filter(treatment == "springDry"))
+summary(fitspringDry)
+p_FEve_PPT <- ggplot(joined_FD, aes(x = FEve, y = total)) +
+  geom_point(aes(color = treatment)) +
+  theme_classic() +
+  #ylim(50,900)+
+  theme(legend.position = "none") +
+  labs(y = "", x = "FEve", color = "Treatment") +
+  geom_smooth(aes(color = treatment, linetype = treatment), method = lm, size = 1, se = FALSE, fullrange = FALSE) +
+  #stat_cor(aes(group=subplot,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
+  scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23")) +
+  scale_linetype_manual( values = c("dashed", "dashed", "dashed", "dashed"), guide = "none")+
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black", linetype = "dashed") 
+
+fitconstDry <- lm(total ~ FDiv, joined_FD%>%filter(treatment == "consistentDry")) 
+summary(fitconstDry) 
+fitcontrol <- lm(total ~ FDiv, joined_FD%>%filter(treatment == "controlRain"))
+summary(fitcontrol)
+fitfallDry <- lm(total ~ FDiv, joined_FD%>%filter(treatment == "fallDry"))
+summary(fitfallDry)
+fitspringDry <- lm(total ~ FDiv, joined_FD%>%filter(treatment == "springDry"))
+summary(fitspringDry)
+p_FDiv_PPT <- ggplot(joined_FD, aes(x = FDiv, y = total)) +
+  geom_point(aes(color = treatment)) +
+  theme_classic() +
+  #ylim(50,900)+
+  theme(legend.position = "none") +
+  labs(y = "", x = "FDiv", color = "Treatment") +
+  geom_smooth(aes(color = treatment, linetype = treatment), method = lm, size = 1, se = FALSE, fullrange = FALSE) +
+  #stat_cor(aes(group=subplot,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
+  scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23")) +
+  scale_linetype_manual( values = c("dashed", "dashed", "dashed", "dashed"), guide = "none")+
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black", linetype = "dashed") 
+
+fitconstDry <- lm(total ~ RaoQ, joined_FD%>%filter(treatment == "consistentDry")) 
+summary(fitconstDry) 
+fitcontrol <- lm(total ~ RaoQ, joined_FD%>%filter(treatment == "controlRain"))
+summary(fitcontrol)
+fitfallDry <- lm(total ~ RaoQ, joined_FD%>%filter(treatment == "fallDry"))
+summary(fitfallDry)
+fitspringDry <- lm(total ~ RaoQ, joined_FD%>%filter(treatment == "springDry"))
+summary(fitspringDry)
+p_RaoQ_PPT <- ggplot(joined_FD, aes(x = RaoQ, y = total)) +
+  geom_point(aes(color = treatment)) +
+  theme_classic() +
+  #ylim(50,900)+
+  theme(legend.position = "none") +
+  labs(y = "", x = "RaoQ", color = "Treatment") +
+  geom_smooth(aes(color = treatment, linetype = treatment), method = lm, size = 1, se = FALSE, fullrange = FALSE) +
+  #stat_cor(aes(group=subplot,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
+  scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23")) +
+  scale_linetype_manual( values = c("dashed", "solid", "dashed", "dashed"), guide = "none")+
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black", linetype = "solid") 
+
+legend_comp_FD <- get_legend(p_FRic)
+legend_rain_FD <- get_legend(p_FRic_PPT)
+p_FRic <- p_FRic + theme(legend.position = "none")
+p_FRic_PPT <- p_FRic_PPT + theme(legend.position = "none")
+
+panel1 <- ggarrange(p_FRic, p_FEve, p_FDiv, p_raoQ,  ncol = 4, nrow = 1, 
+          align = "v",labels = c("a)", "b)", "c)", "d)"), common.legend = FALSE)
+
+panel2 <- ggarrange(p_FRic_PPT, p_FEve_PPT, p_FDiv_PPT, p_RaoQ_PPT,  ncol = 4, nrow = 1, 
+          align = "v",labels = c("e)", "f)", "g)", "h)"), common.legend = FALSE)
+
+ggarrange(panel1, legend_comp_FD, panel2,legend_rain_FD, ncol = 2, nrow = 2, widths=c(1,0.1))
+
+# CENSOL and TAECAP vs biomass
+ggplot(joined_FD, aes(x = log(CENSOL), y = agg_BNPP)) +
+  geom_point(aes(color = subplot)) +
+  theme_classic() +
+  ylim(50, 900)+
+  #theme(legend.position = "none") +
+  labs(y = bquote('BNPP'~(g/m^2)), x = "CENSOL", color = "Treatment") +
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black") +
+  #stat_cor(aes(group=treatment,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
+  scale_color_manual(name = "Treatment", labels = c("Mixed", "Forb", "Grass"), values= c("#fc8d62", "#66c2a5", "#8da0cb")) 
+  #scale_linetype_manual( values = c("dashed", "dashed", "dashed", "dashed"), guide = "none")
+ggplot(joined_FD, aes(x = log(CENSOL), y = total)) +
+  geom_point(aes(color = subplot)) +
+  theme_classic() +
+  ylim(50, 900)+
+  #theme(legend.position = "none") +
+  labs(y = bquote('Total Biomass'~(g/m^2)), x = "CENSOL", color = "Treatment") +
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black") +
+  #stat_cor(aes(group=treatment,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
+  scale_color_manual(name = "Treatment", labels = c("Mixed", "Forb", "Grass"), values= c("#fc8d62", "#66c2a5", "#8da0cb")) 
+  #scale_linetype_manual( values = c("dashed", "dashed", "dashed", "dashed"), guide = "none")
+ggplot(joined_FD, aes(x = log(CENSOL), y = weight_g_m)) +
+  geom_point(aes(color = subplot)) +
+  theme_classic() +
+  ylim(50, 900)+
+  #theme(legend.position = "none") +
+  labs(y = bquote('ANPP'~(g/m^2)), x = "CENSOL", color = "Treatment") +
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black") +
+  #stat_cor(aes(group=treatment,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
+  scale_color_manual(name = "Treatment", labels = c("Mixed", "Forb", "Grass"), values= c("#fc8d62", "#66c2a5", "#8da0cb")) 
+  #scale_linetype_manual( values = c("dashed", "dashed", "dashed", "dashed"), guide = "none")
+
+ggplot(joined_FD, aes(x = log(TAECAP), y = agg_BNPP, color = treatment, linetype = treatment)) +
+  geom_point() +
+  theme_classic() +
+  ylim(50, 900)+
+  #theme(legend.position = "none") +
+  labs(y = bquote('BNPP'~(g/m^2)), x = "TAECAP", color = "Treatment") +
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE) +
+  #stat_cor(aes(group=treatment,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
+  scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))+
+  scale_linetype_manual( values = c("dashed", "dashed", "dashed", "dashed"), guide = "none")
+ggplot(joined_FD, aes(x = log(TAECAP), y = total, color = treatment, linetype = treatment)) +
+  geom_point() +
+  theme_classic() +
+  ylim(50, 900)+
+  #theme(legend.position = "none") +
+  labs(y = bquote('Total Biomass'~(g/m^2)), x = "TAECAP", color = "Treatment") +
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE) +
+  #stat_cor(aes(group=treatment,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
+  scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))+
+  scale_linetype_manual( values = c("dashed", "dashed", "dashed", "dashed"), guide = "none")
+ggplot(joined_FD, aes(x = log(TAECAP), y = weight_g_m, color = treatment, linetype = treatment)) +
+  geom_point() +
+  theme_classic() +
+  ylim(50, 900)+
+  #theme(legend.position = "none") +
+  labs(y = bquote('ANPP'~(g/m^2)), x = "TAECAP", color = "Treatment") +
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE) +
+  #stat_cor(aes(group=treatment,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
+  scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))+
+  scale_linetype_manual( values = c("dashed", "dashed", "dashed", "dashed"), guide = "none")
+
+ggplot(joined_FD, aes(x = log(AVEBAR), y = agg_BNPP, color = treatment, linetype = treatment)) +
+  geom_point() +
+  theme_classic() +
+  ylim(50, 900)+
+  #theme(legend.position = "none") +
+  labs(y = bquote('BNPP'~(g/m^2)), x = "AVEBAR", color = "Treatment") +
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE) +
+  #stat_cor(aes(group=treatment,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
+  scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))+
+  scale_linetype_manual( values = c("dashed", "dashed", "dashed", "dashed"), guide = "none")
+ggplot(joined_FD, aes(x = log(AVEBAR), y = total, color = treatment, linetype = treatment)) +
+  geom_point() +
+  theme_classic() +
+  ylim(50, 900)+
+  #theme(legend.position = "none") +
+  labs(y = bquote('Total Biomass'~(g/m^2)), x = "AVEBAR", color = "Treatment") +
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE) +
+  #stat_cor(aes(group=treatment,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
+  scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))+
+  scale_linetype_manual( values = c("dashed", "dashed", "dashed", "dashed"), guide = "none")
+ggplot(joined_FD, aes(x = log(AVEBAR), y = weight_g_m, color = treatment, linetype = treatment)) +
+  geom_point() +
+  theme_classic() +
+  ylim(50, 900)+
+  #theme(legend.position = "none") +
+  labs(y = bquote('ANPP'~(g/m^2)), x = "TAECAP", color = "Treatment") +
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE) +
+  #stat_cor(aes(group=treatment,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
+  scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))+
+  scale_linetype_manual( values = c("dashed", "dashed", "dashed", "dashed"), guide = "none")
+
 
 #ind trait RaoQ with ANPP and BNPP Table S6
 #Regression BNPP ~ Rao's Q for each trait

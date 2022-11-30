@@ -85,7 +85,11 @@ ggplot(tog, aes(x=PC1, y=PC2))+
  #dev.off()
 
 #keep species that we have trait data for
-#cover15_fd3 <- cover15_fd2 %>% dplyr::select(ACHMIL, AVEFAT, BRADIS, BRODIA, BROHOR, BROMAD, CENSOL, CYNDAC, CYNECH, EROBOT, HORMUR, LACSER, LOLMUL, TAECAP,TRIHIR,VULMYU)
+#"ACHMIL","ANAARV", "AVEBAR", "AVEFAT", "BRADIS","BRIMIN", "BRODIA","BROHOR", "BROMAD","CARPYC", "CENSOL","CERGLO", 
+#"CYNDAC", "CYNECH", "EROBOT", "EROMOS",  "FILGAL", "HORMUR","HYPGLA", "HYPRAD", 
+#"LACSER", "LOLMUL","RUMPUL", "TAECAP","TRIDUB", "TRIGLO", "TRIHIR", "TRISP", "TRISUB", "VICSAT", "VULBRO", "VULMYU"
+cover15_fd3 <- cover15_fd2 %>% dplyr::select(ACHMIL,ANAARV, AVEFAT, BRADIS, BRODIA, BROHOR, BROMAD, CENSOL, CYNDAC, CYNECH, EROBOT, HORMUR, LACSER, LOLMUL, TAECAP,TRIHIR,VULMYU)
+
 cover15_fd3<-data.matrix(cover15_fd3)
 
 siteout<- siteout %>% dplyr::select(-ID, -name) 
@@ -107,8 +111,11 @@ siteout_fd$shelterBlock<-traits_2015_2$shelterBlock
 siteout_fd$subplot<-traits_2015_2$subplot
 siteout_fd$treatment<-traits_2015_2$treatment
 
-ggplot(data=siteout_fd, aes(x=CWM.PC1, y=ANPPgm, group=subplot, color=subplot))+
-  stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) +
+siteout_fd <- siteout_fd %>%
+  left_join(ANPP1, by = c("plot", "subplot", "treatment")) 
+
+f_pca1_ANPP <- ggplot(data=siteout_fd, aes(x=CWM.PC1, y=weight_g_m, group=subplot, color=subplot))+
+  #stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) +
   geom_point()+
   theme_bw()+
   scale_color_manual(values=c("tomato", "green3", "dodgerblue"), guide = guide_legend(title = "Treatment"), #change legend title
@@ -119,8 +126,8 @@ ggplot(data=siteout_fd, aes(x=CWM.PC1, y=ANPPgm, group=subplot, color=subplot))+
   #ylim(0,100)
   geom_smooth(method="lm", formula= y ~ x, se=FALSE, color="black", aes(group=1))
 
-ggplot(data=siteout_fd, aes(x=CWM.PC1, y=ANPPgm, group=treatment, color=treatment))+
-  stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=treatment)) +
+ggplot(data=siteout_fd, aes(x=CWM.PC1, y=weight_g_m, group=treatment, color=treatment))+
+  #stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=treatment)) +
   geom_point()+
   theme_bw()+
 #  scale_color_manual(values=c("tomato", "green3", "dodgerblue"), guide = guide_legend(title = "Treatment"), #change legend title
@@ -131,8 +138,8 @@ ggplot(data=siteout_fd, aes(x=CWM.PC1, y=ANPPgm, group=treatment, color=treatmen
   #ylim(0,100)
   geom_smooth(method="lm", formula= y ~ x, se=FALSE,  aes(group=treatment))
 
-ggplot(data=siteout_fd, aes(x=CWM.PC2, y=ANPPgm, group=subplot, color=subplot))+
-  stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) +
+f_pca2_ANPP <- ggplot(data=siteout_fd, aes(x=CWM.PC2, y=weight_g_m, group=subplot, color=subplot))+
+  #stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) +
   geom_point()+
   theme_bw()+
   xlab("Community Weighted Means of PC2 Scores")+
@@ -141,8 +148,8 @@ ggplot(data=siteout_fd, aes(x=CWM.PC2, y=ANPPgm, group=subplot, color=subplot))+
   #ylim(0,100)
   geom_smooth(method="lm", formula= y ~ x, se=FALSE, color="black", aes(group=1))
 
-ggplot(data=siteout_fd, aes(x=CWM.PC2, y=ANPPgm, group=treatment, color=treatment))+
-  stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=treatment)) +
+ggplot(data=siteout_fd, aes(x=CWM.PC2, y=weight_g_m, group=treatment, color=treatment))+
+  #stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=treatment)) +
   geom_point()+
   theme_bw()+
   #  scale_color_manual(values=c("tomato", "green3", "dodgerblue"), guide = guide_legend(title = "Treatment"), #change legend title
@@ -155,17 +162,30 @@ ggplot(data=siteout_fd, aes(x=CWM.PC2, y=ANPPgm, group=treatment, color=treatmen
 
 siteout_fd<-merge(siteout_fd, BNPP1)
 
-ggplot(data=siteout_fd, aes(x=CWM.PC2, y=(ANPPgm+agg_BNPP), group=subplot, color=subplot))+
-  stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) +
+f_pca1_BNPP <- ggplot(data=siteout_fd, aes(x=CWM.PC1, y=(agg_BNPP), group=subplot, color=subplot))+
+  #stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) +
   geom_point()+
   theme_bw()+
   scale_color_manual(values=c("tomato", "green3", "dodgerblue"), guide = guide_legend(title = "Treatment"), #change legend title
                      labels=c("Mixed", "Forb", "Grass"))+ #change labels in the legend)+
   xlab("Community Weighted Means of PC1 Scores")+
-  ylab("ANPP g/m2")+
+  ylab("BNPP g/m2")+
   #xlim(40,100)+
   #ylim(0,100)
   geom_smooth(method="lm", formula= y ~ x, se=FALSE, color="black", aes(group=1))
+f_pca2_BNPP <- ggplot(data=siteout_fd, aes(x=CWM.PC2, y=(agg_BNPP), group=subplot, color=subplot))+
+  #stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) +
+  geom_point()+
+  theme_bw()+
+  scale_color_manual(values=c("tomato", "green3", "dodgerblue"), guide = guide_legend(title = "Treatment"), #change legend title
+                     labels=c("Mixed", "Forb", "Grass"))+ #change labels in the legend)+
+  xlab("Community Weighted Means of PC2 Scores")+
+  ylab("BNPP g/m2")+
+  #xlim(40,100)+
+  #ylim(0,100)
+  geom_smooth(method="lm", formula= y ~ x, se=FALSE, color="black", aes(group=1))
+
+ggarrange(f_pca1_ANPP, f_pca2_ANPP, f_pca1_BNPP, f_pca2_BNPP, ncol = 2, nrow = 2, common.legend = TRUE)
 
 ## Rao Q of PCA
 Rb<-ggplot(data=siteout_fd, aes(x=RaoQ, y=agg_BNPP, group=subplot, color=subplot))+
