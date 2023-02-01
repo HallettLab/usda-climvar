@@ -215,47 +215,47 @@ f_heat_map <- ggarrange(f_heat_above, f_heat_below)
 
 #Fig 2: ANPP and BNPP ~ FEve and RaoQ
 p_FEve_above <- ggplot(joined_FD_above_below, aes(x = aboveFEve, y = weight_g_m)) +
-  geom_point(aes(color = subplot)) +
+  geom_point(aes(color = treatment)) +
   theme_classic() +
   #ylim(50,900)+
   labs(y = bquote('ANPP'~(g/m^2)), x = "Aboveground FEve", color = "Treatment") +
   #geom_smooth(aes(color = subplot, linetype = subplot), method = lm, size = 1, se = FALSE, fullrange = FALSE) +
-  #stat_cor(aes(group=subplot,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
-  scale_color_manual(name = "Treatment", labels = c("Mixed", "Forb", "Grass"), values= c("#fc8d62", "#66c2a5", "#8da0cb")) +
+  stat_cor(aes(group=1,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), show.legend = FALSE)+
+  scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))+
   #scale_linetype_manual( values = c("solid", "dashed", "dashed"), guide = "none")+
   geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black", linetype = "solid") 
 p_FEve_below <- ggplot(joined_FD_above_below, aes(x = belowFEve, y = agg_BNPP)) +
-  geom_point(aes(color = subplot)) +
+  geom_point(aes(color = treatment)) +
   theme_classic() +
   #ylim(50,900)+
   labs(y = bquote('BNPP'~(g/m^2)), x = "Belowground FEve", color = "Treatment") +
   #geom_smooth(aes(color = subplot, linetype = subplot), method = lm, size = 1, se = FALSE, fullrange = FALSE) +
-  #stat_cor(aes(group=subplot,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
-  scale_color_manual(name = "Treatment", labels = c("Mixed", "Forb", "Grass"), values= c("#fc8d62", "#66c2a5", "#8da0cb")) +
+  stat_cor(aes(group=1,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), show.legend = FALSE)+
+  scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))+
   #scale_linetype_manual( values = c("solid", "dashed", "dashed"), guide = "none")+
   geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black", linetype = "solid") 
 p_RaoQ_above <- ggplot(joined_FD_above_below, aes(x = aboveRaoQ, y = weight_g_m)) +
-  geom_point(aes(color = subplot)) +
+  geom_point(aes(color = treatment)) +
   theme_classic() +
   #ylim(50,900)+
   labs(y = bquote('ANPP'~(g/m^2)), x = "Aboveground Rao's Q", color = "Treatment") +
   #geom_smooth(aes(color = subplot, linetype = subplot), method = lm, size = 1, se = FALSE, fullrange = FALSE) +
-  #stat_cor(aes(group=subplot,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
-  scale_color_manual(name = "Treatment", labels = c("Mixed", "Forb", "Grass"), values= c("#fc8d62", "#66c2a5", "#8da0cb")) +
+  stat_cor(aes(group=1,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), show.legend = FALSE)+
+  scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))+
   #scale_linetype_manual( values = c("solid", "dashed", "dashed"), guide = "none")+
   geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black", linetype = "solid")
 p_RaoQ_below <- ggplot(joined_FD_above_below, aes(x = belowRaoQ, y = agg_BNPP)) +
-  geom_point(aes(color = subplot)) +
+  geom_point(aes(color = treatment)) +
   theme_classic() +
   #ylim(50,900)+
   labs(y = bquote('BNPP'~(g/m^2)), x = "Belowground Rao's Q", color = "Treatment") +
   #geom_smooth(aes(color = subplot, linetype = subplot), method = lm, size = 1, se = FALSE, fullrange = FALSE) +
-  #stat_cor(aes(group=subplot,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
-  scale_color_manual(name = "Treatment", labels = c("Mixed", "Forb", "Grass"), values= c("#fc8d62", "#66c2a5", "#8da0cb")) +
+  stat_cor(aes(group=1,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), show.legend = FALSE)+
+  scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))+
   #scale_linetype_manual( values = c("solid", "dashed", "dashed"), guide = "none")+
   geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black", linetype = "solid")
 
-ggarrange(p_FEve_above, p_FEve_below, p_RaoQ_above, p_RaoQ_below, ncol = 2, nrow = 2, common.legend = TRUE, legend = "right", labels = c("a)", "b)", "c)", "d)"))
+Figure2 <- ggarrange(p_FEve_above, p_FEve_below, p_RaoQ_above, p_RaoQ_below, ncol = 2, nrow = 2, common.legend = TRUE, legend = "bottom", labels = c("a)", "b)", "c)", "d)"))
 # #Stepwise regression of BNPP ~ Ind RaoQ
 # model8 <- lm(total ~ CENSOL + TAECAP + SLARaoQ + LDMCRaoQ + HtRaoQ + DensRaoQ + DiamCRaoQ + SRLCRaoQ + SRLFRaoQ + PropFRaoQ, joined_rao)
 # step_all <- stepAIC(model8, direction = "backward", trace = FALSE)
