@@ -361,8 +361,10 @@ siteout2_fd<-dbFD (siteout2, comp, w.abun = T, stand.x = F,
 siteout2_fd<-as.data.frame(siteout2_fd)
 #write.csv(siteout2, "./Repositories/usda-climvar/Manifesto/Lina/above_pcscores.csv")
 
-siteout2_fd_biomass <- cbind(siteout2_fd, ANPP1)
+siteout2_fd_biomass <- cbind(siteout2_fd, ANPP1) %>% 
+  mutate(subplot = recode(subplot, B = "Mixed", F = "Forb", G = "Grass"))
 siteout2_fd_biomass$treatment <- factor(siteout2_fd_biomass$treatment, levels =c("controlRain",  "springDry", "fallDry","consistentDry"))
+siteout2_fd_biomass$subplot <- factor(siteout2_fd_biomass$subplot, levels =c("Mixed",  "Forb", "Grass"))
 # siteout2_fd$ANPPgm<-traits_2015_2$ANPPgm
 # siteout2_fd$shelterBlock<-traits_2015_2$shelterBlock
 # siteout2_fd$subplot<-traits_2015_2$subplot
@@ -383,16 +385,15 @@ siteout2_fd_biomass$treatment <- factor(siteout2_fd_biomass$treatment, levels =c
 #   geom_smooth(method="lm", formula= y ~ x, se=FALSE, color="black", aes(group=1))
 # a.1
 
-
-a.t1<-ggplot(data=siteout2_fd_biomass, aes(x=CWM.PC1, y=weight_g_m, group=treatment, color=treatment))+
+a.t1<-ggplot(data=siteout2_fd_biomass, aes(x=CWM.PC1, y=weight_g_m, group=treatment, color=treatment, shape = subplot))+
   #stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=treatment)) +
   stat_cor(aes(group=1,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), show.legend = FALSE)+
   #ggtitle("a)")+
   geom_point()+
   theme_classic()+
 #  theme(legend.position="none")+
-  scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))+
-  labs(x=expression(atop("High LDMC" %<->% "High SLA","(CWM Aboveground PC1 Scores)")), y = expression(paste("ANPP ", (g/m^{2}))))+
+  scale_color_manual(name = "Rainfall Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))+
+  labs(x=expression(atop("High LDMC" %<->% "High SLA","(CWM Aboveground PC1 Scores)")), y = expression(paste("ANPP ", (g/m^{2}))), shape = "Composition Treatment")+
   #xlim(40,100)+
   #ylim(0,100)
   geom_smooth(method="lm", formula= y ~ x, se=FALSE, color="black", aes(group=1))
@@ -413,7 +414,7 @@ a.t1
 #   geom_smooth(method="lm", formula= y ~ x, se=FALSE, color="black", aes(group=1))
 # a.2
 
-a.t2<-ggplot(data=siteout2_fd_biomass, aes(x=CWM.PC2, y=weight_g_m, group=treatment, color=treatment))+
+a.t2<-ggplot(data=siteout2_fd_biomass, aes(x=CWM.PC2, y=weight_g_m, group=treatment, color=treatment, shape = subplot))+
   #stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=treatment)) +
   stat_cor(aes(group=1,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), show.legend = FALSE)+
   #ggtitle("a)")+
@@ -588,7 +589,7 @@ siteout_fd.b_BNPP$treatment <- factor(siteout_fd.b_BNPP$treatment, levels =c("co
 #   theme(legend.position="none")
 # b.1
 
-bt.1<-ggplot(data=siteout_fd.b_BNPP, aes(x=CWM.PC1, y=agg_BNPP, group=treatment, color=treatment))+
+bt.1<-ggplot(data=siteout_fd.b_BNPP, aes(x=CWM.PC1, y=agg_BNPP, group=treatment, color=treatment, shape = subplot))+
   #stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) +
   scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))+
   labs(x=expression(atop("Coarse roots" %<->% "Dense, More fine roots","(CWM Belowground PC1 Scores)")), y = expression(paste("BNPP ", (g/m^{2}))))+
@@ -650,7 +651,7 @@ bt.1
 #   theme(legend.position="none")
 # b.2
 
-bt.2<-ggplot(data=siteout_fd.b_BNPP, aes(x=CWM.PC2, y=agg_BNPP, group=treatment, color=treatment))+
+bt.2<-ggplot(data=siteout_fd.b_BNPP, aes(x=CWM.PC2, y=agg_BNPP, group=treatment, color=treatment, shape = subplot))+
   #stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) +
   scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))+
   labs(x=expression(atop("Long roots" %<->% "Short roots","(CWM Belowground PC2 Scores)")), y = expression(paste("BNPP ", (g/m^{2}))))+
@@ -664,7 +665,7 @@ bt.2<-ggplot(data=siteout_fd.b_BNPP, aes(x=CWM.PC2, y=agg_BNPP, group=treatment,
   theme(legend.position="none")
 bt.2
 
-Figure4 <- ggarrange(a.t1,bt.1, a.t2,  bt.2, ncol = 2, nrow =2, common.legend = TRUE, labels = c("a)", "b)", "c)", "d)"), legend = "bottom")
+Figure4 <- ggarrange(a.t1,bt.1, a.t2,  bt.2, ncol = 2, nrow =2, common.legend = TRUE, labels = c("a)", "b)", "c)", "d)"), legend = "right")
 # b.3<-ggplot(data=siteout_fd, aes(x=CWM.PC2, y=agg_BNPP, group=subplot, color=subplot))+
 #   #stat_smooth_func(geom="text",method="lm",hjust=0,parse=TRUE, aes(group=1)) +
 #   scale_color_manual(values=c("tomato", "green3", "dodgerblue"), guide = guide_legend(title = "Treatment:"), #change legend title
@@ -820,6 +821,12 @@ TukeyHSD(aov(fit_below_b))
 fit_below_d <- aov(CWM.PC2~treatment, siteout_fd.b_BNPP)
 TukeyHSD(aov(fit_below_d))
 
+#no interaction effects
+summary(aov(CWM.PC1~subplot*treatment, siteout2_fd_biomass))
+summary(aov(CWM.PC2~subplot*treatment, siteout2_fd_biomass))
+summary(aov(CWM.PC1~subplot*treatment, siteout_fd.b_BNPP))
+summary(aov(CWM.PC2~subplot*treatment, siteout_fd.b_BNPP))
+
 F5a<-ggplot(data=subset(above_rainfall_tr), aes(x=treatment, y=CWM.PC1.m, col = treatment))+
   geom_point(position=position_dodge(0.9),size=4)+
   labs(y=expression(atop("High LDMC" %<->% "High SLA","(CWM Aboveground PC1 Scores)")), color = "Rain treatment")+
@@ -860,7 +867,7 @@ F5c
 
 F5b<-ggplot(data=subset(below_rainfall_tr), aes(x=treatment, y=CWM.PC1.m, col = treatment))+
   geom_point(position=position_dodge(0.9),size=4)+
-  labs(y=expression(atop("Coarse roots" %<->% "Dense, fine roots","(CWM Belowground PC1 Scores)")), x="")+
+  labs(y=expression(atop("Coarse roots" %<->% "Dense, fine roots","(CWM Belowground PC1 Scores)")))+
   scale_x_discrete(labels = c("Control\n ","Spring\n Dry\n", "Fall\n Dry\n", "Consistent\n Dry\n"))+
   scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))+
   geom_errorbar(aes(ymin = CWM.PC1.m-se.PC1, ymax = CWM.PC1.m+se.PC1), size = 0.5, width = 0,position=position_dodge(0.9))+
@@ -879,7 +886,7 @@ F5b
 
 F5d<-ggplot(data=subset(below_rainfall_tr), aes(x=treatment, y=CWM.PC2.m, col = treatment))+
   geom_point(position=position_dodge(0.9), size=4)+
-  labs(y=expression(atop("Long roots" %<->% "Short roots","(CWM Belowground PC2 Scores)")),  x="")+
+  labs(y=expression(atop("Long roots" %<->% "Short roots","(CWM Belowground PC2 Scores)")))+
   scale_x_discrete(labels = c("Control\n ","Spring\n Dry\n", "Fall\n Dry\n", "Consistent\n Dry\n"))+
   scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))+
   geom_errorbar(aes(ymin = CWM.PC2.m-se.PC2, ymax = CWM.PC2.m+se.PC2), size = 0.5, width = 0,position=position_dodge(0.9))+
@@ -898,7 +905,7 @@ F5d
 
 figure5 <- ggarrange(F5a, F5b, F5c, F5d,
                       ncol =2, nrow =2, 
-                      align = "v",labels = c("a)", "b)", "c)", "d)"), common.legend = TRUE, legend = "bottom")
+                      align = "v",labels = c("e)", "f)", "g)", "h)"), common.legend = TRUE, legend = "top")
 figure5
 #annotate_figure(figure5, bottom = text_grob("Rainfall treatment", color = "black", size = 14))
 
@@ -1001,7 +1008,7 @@ S9c
 
 S9b<-ggplot(data=subset(below_seeding_tr), aes(x=subplot, y=CWM.PC1.m, col = as.factor(subplot)))+
   geom_point(position=position_dodge(0.9),size=4)+
-  labs(y=expression(atop("Coarse roots" %<->% "Dense, fine roots","(CWM Belowground PC1 Scores)")), x="")+
+  labs(y=expression(atop("Coarse roots" %<->% "Dense, fine roots","(CWM Belowground PC1 Scores)")))+
   scale_x_discrete(labels = c("Mixed","Forb", "Grass"))+
   scale_color_manual(labels = c("Mixed","Forb", "Grass"),  values = c("#fc8d62", "#66c2a5", "#8da0cb"))+
   geom_errorbar(aes(ymin = CWM.PC1.m-se.PC1, ymax = CWM.PC1.m+se.PC1), size = 0.5, width = 0,position=position_dodge(0.9))+
@@ -1019,7 +1026,7 @@ S9b
 
 S9d<-ggplot(data=subset(below_seeding_tr), aes(x=subplot, y=CWM.PC2.m, col = as.factor(subplot)))+
   geom_point(position=position_dodge(0.9), size=4)+
-  labs(y=expression(atop("Long roots" %<->% "Short roots","(CWM Belowground PC2 Scores)")),  x="")+
+  labs(y=expression(atop("Long roots" %<->% "Short roots","(CWM Belowground PC2 Scores)")))+
   scale_x_discrete(labels = c("Mixed","Forb", "Grass"))+
   scale_color_manual(labels = c("Mixed","Forb", "Grass"),  values = c("#fc8d62", "#66c2a5", "#8da0cb"))+
   geom_errorbar(aes(ymin = CWM.PC2.m-se.PC2, ymax = CWM.PC2.m+se.PC2), size = 0.5, width = 0,position=position_dodge(0.9))+
@@ -1037,12 +1044,11 @@ S9d
 
 figureS9 <- ggarrange(S9a, S9b, S9c, S9d,
                      ncol =2, nrow =2, 
-                     align = "v",labels = c("a)", "b)", "c)", "d)"), common.legend = TRUE, legend = "bottom")
+                     align = "v",labels = c("a)", "b)", "c)", "d)"), common.legend = TRUE, legend = "top")
 figureS9
 
-
-#annotate_figure(figureS9, bottom = text_grob("Seeding treatment", color = "black", size = 14))
-
+#put Fig 5 and fig S9 together
+ggarrange(figureS9, figure5, ncol = 1, nrow = 2)
 ##soil moisture plot
 source("./Manifesto/Ashley/ClimVar_Decagon_cleaning.R")
 library(lubridate)

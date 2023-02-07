@@ -185,7 +185,8 @@ joined_FD_above_below <- FD_above_below %>%
   left_join(BNPP1, by = c("plot", "subplot", "treatment")) %>%
   mutate(total = weight_g_m + agg_BNPP)%>%
   cbind(CENSOL) %>%
-  cbind(TAECAP) 
+  cbind(TAECAP)
+levels(joined_FD_above_below$subplot) <- list(Mixed = "B", Forb = "F", Grass = "G")
 
 #Correlation FD indices and CWM traits
 pairs(~FRic + FEve + FDis + RaoQ , data = FD_table)
@@ -215,47 +216,244 @@ f_heat_map <- ggarrange(f_heat_above, f_heat_below)
 
 #Fig 2: ANPP and BNPP ~ FEve and RaoQ
 p_FEve_above <- ggplot(joined_FD_above_below, aes(x = aboveFEve, y = weight_g_m)) +
-  geom_point(aes(color = treatment)) +
+  geom_point(aes(color = treatment, shape = subplot)) +
   theme_classic() +
   #ylim(50,900)+
-  labs(y = bquote('ANPP'~(g/m^2)), x = "Aboveground FEve", color = "Treatment") +
+  labs(y = bquote('ANPP'~(g/m^2)), x = "Aboveground FEve", color = "Rainfall Treatment", shape = "Composition Treatment") +
   #geom_smooth(aes(color = subplot, linetype = subplot), method = lm, size = 1, se = FALSE, fullrange = FALSE) +
   stat_cor(aes(group=1,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), show.legend = FALSE)+
-  scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))+
+  scale_color_manual(name = "Rainfall Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))+
   #scale_linetype_manual( values = c("solid", "dashed", "dashed"), guide = "none")+
   geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black", linetype = "solid") 
 p_FEve_below <- ggplot(joined_FD_above_below, aes(x = belowFEve, y = agg_BNPP)) +
-  geom_point(aes(color = treatment)) +
+  geom_point(aes(color = treatment, shape = subplot)) +
   theme_classic() +
   #ylim(50,900)+
-  labs(y = bquote('BNPP'~(g/m^2)), x = "Belowground FEve", color = "Treatment") +
+  labs(y = bquote('BNPP'~(g/m^2)), x = "Belowground FEve", color = "Rainfall Treatment", shape = "Composition Treatment") +
   #geom_smooth(aes(color = subplot, linetype = subplot), method = lm, size = 1, se = FALSE, fullrange = FALSE) +
   stat_cor(aes(group=1,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), show.legend = FALSE)+
-  scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))+
+  scale_color_manual(name = "Rainfall Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))+
   #scale_linetype_manual( values = c("solid", "dashed", "dashed"), guide = "none")+
   geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black", linetype = "solid") 
 p_RaoQ_above <- ggplot(joined_FD_above_below, aes(x = aboveRaoQ, y = weight_g_m)) +
-  geom_point(aes(color = treatment)) +
+  geom_point(aes(color = treatment, shape = subplot)) +
   theme_classic() +
   #ylim(50,900)+
-  labs(y = bquote('ANPP'~(g/m^2)), x = "Aboveground Rao's Q", color = "Treatment") +
+  labs(y = bquote('ANPP'~(g/m^2)), x = "Aboveground Rao's Q", color = "Rainfall Treatment", shape = "Composition Treatment") +
   #geom_smooth(aes(color = subplot, linetype = subplot), method = lm, size = 1, se = FALSE, fullrange = FALSE) +
   stat_cor(aes(group=1,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), show.legend = FALSE)+
-  scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))+
-  #scale_linetype_manual( values = c("solid", "dashed", "dashed"), guide = "none")+
+  scale_color_manual(name = "Rainfall Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))+
   geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black", linetype = "solid")
 p_RaoQ_below <- ggplot(joined_FD_above_below, aes(x = belowRaoQ, y = agg_BNPP)) +
-  geom_point(aes(color = treatment)) +
+  geom_point(aes(color = treatment, shape = subplot)) +
   theme_classic() +
   #ylim(50,900)+
-  labs(y = bquote('BNPP'~(g/m^2)), x = "Belowground Rao's Q", color = "Treatment") +
+  labs(y = bquote('BNPP'~(g/m^2)), x = "Belowground Rao's Q", color = "Rainfall Treatment", shape = "Composition Treatment") +
   #geom_smooth(aes(color = subplot, linetype = subplot), method = lm, size = 1, se = FALSE, fullrange = FALSE) +
   stat_cor(aes(group=1,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), show.legend = FALSE)+
-  scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))+
+  scale_color_manual(name = "Rainfall Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))+
   #scale_linetype_manual( values = c("solid", "dashed", "dashed"), guide = "none")+
   geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black", linetype = "solid")
 
-Figure2 <- ggarrange(p_FEve_above, p_FEve_below, p_RaoQ_above, p_RaoQ_below, ncol = 2, nrow = 2, common.legend = TRUE, legend = "bottom", labels = c("a)", "b)", "c)", "d)"))
+Figure2 <- ggarrange(p_FEve_above, p_FEve_below, p_RaoQ_above, p_RaoQ_below, ncol = 2, nrow = 2, common.legend = TRUE, legend = "right", labels = c("a)", "b)", "c)", "d)"))
+
+#Treatment effects on FD
+FD_seeding_tr <- joined_FD_above_below %>% 
+  group_by(subplot) %>% 
+  summarize(aboveRaoQ.m=mean(aboveRaoQ), belowRaoQ.m=mean(belowRaoQ), 
+            se.aboveRaoQ=calcSE(aboveRaoQ),se.belowRaoQ=calcSE(belowRaoQ),
+            aboveFEve.m=mean(aboveFEve), belowFEve.m=mean(belowFEve),
+            se.aboveFEve=calcSE(aboveFEve), se.belowFEve=calcSE(belowFEve))
+
+FD_rain_tr <- joined_FD_above_below %>% 
+  group_by(treatment) %>% 
+  summarize(aboveRaoQ.m=mean(aboveRaoQ), belowRaoQ.m=mean(belowRaoQ), 
+            se.aboveRaoQ=calcSE(aboveRaoQ),se.belowRaoQ=calcSE(belowRaoQ),
+            aboveFEve.m=mean(aboveFEve), belowFEve.m=mean(belowFEve),
+            se.aboveFEve=calcSE(aboveFEve), se.belowFEve=calcSE(belowFEve))
+
+fit_seeding_a <- aov(aboveFEve~subplot, joined_FD_above_below)
+TukeyHSD(aov(fit_seeding_a))
+fit_seeding_b <- aov(belowFEve~subplot, joined_FD_above_below)
+TukeyHSD(aov(fit_seeding_b))
+fit_seeding_c <- aov(aboveRaoQ~subplot, joined_FD_above_below)
+TukeyHSD(aov(fit_seeding_c))
+fit_seeding_d <- aov(belowRaoQ~subplot, joined_FD_above_below)
+TukeyHSD(aov(fit_seeding_d))
+
+fit_rain_a <- aov(aboveFEve~treatment, joined_FD_above_below)
+TukeyHSD(aov(fit_rain_a))
+fit_rain_b <- aov(belowFEve~treatment, joined_FD_above_below)
+TukeyHSD(aov(fit_rain_b))
+fit_rain_c <- aov(aboveRaoQ~treatment, joined_FD_above_below)
+TukeyHSD(aov(fit_rain_c))
+fit_rain_d <- aov(belowRaoQ~treatment, joined_FD_above_below)
+TukeyHSD(aov(fit_rain_d))
+
+summary(aov(aboveFEve~subplot*treatment, joined_FD_above_below))
+summary(aov(belowFEve~subplot*treatment, joined_FD_above_below))
+summary(aov(aboveRaoQ~subplot*treatment, joined_FD_above_below))
+summary(aov(belowRaoQ~subplot*treatment, joined_FD_above_below))
+
+f_fd_a<-ggplot(data=FD_seeding_tr, aes(x=subplot, y=aboveFEve.m, col = as.factor(subplot)))+
+     geom_point(position=position_dodge(0.9),size=4)+
+     labs(y=expression(atop("Aboveground FEve")), color = "Treatment")+
+     theme(axis.title.x=element_blank(),
+                     text = element_text(size=14),
+                     panel.grid.major = element_blank(),
+                     panel.grid.minor = element_blank(),
+                     panel.background = element_blank(),
+                     axis.line = element_line(colour = "black"),
+                     panel.border = element_rect(colour = "black", fill = NA, size = 1.2))+
+     scale_x_discrete(labels = c("Mixed","Forb", "Grass"))+
+     scale_color_manual(labels = c("Mixed","Forb", "Grass"),  values = c("#fc8d62", "#66c2a5", "#8da0cb"))+
+     geom_errorbar(aes(ymin = aboveFEve.m-se.aboveFEve, ymax = aboveFEve.m+se.aboveFEve), size = 0.5, width = 0,position=position_dodge(0.9))+
+     annotate("text", x = 1, y = 0.6, label = "a", size = 6) +
+     annotate("text", x = 2, y = 0.6, label = "a", size = 6) +
+     annotate("text", x = 3, y = 0.6, label = "b", size = 6)
+f_fd_b<-ggplot(data=FD_seeding_tr, aes(x=subplot, y=belowFEve.m, col = as.factor(subplot)))+
+  geom_point(position=position_dodge(0.9),size=4)+
+  labs(y=expression(atop("Belowground FEve")), color = "Treatment")+
+  theme(axis.title.x=element_blank(),
+                 text = element_text(size=14),
+                 panel.grid.major = element_blank(),
+                 panel.grid.minor = element_blank(),
+                 panel.background = element_blank(),
+                 axis.line = element_line(colour = "black"),
+                 panel.border = element_rect(colour = "black", fill = NA, size = 1.2))+
+  scale_x_discrete(labels = c("Mixed","Forb", "Grass"))+
+  scale_color_manual(labels = c("Mixed","Forb", "Grass"),  values = c("#fc8d62", "#66c2a5", "#8da0cb"))+
+  geom_errorbar(aes(ymin = belowFEve.m-se.belowFEve, ymax = belowFEve.m+se.belowFEve), size = 0.5, width = 0,position=position_dodge(0.9))+
+  annotate("text", x = 1, y = 0.55, label = "ab", size = 6) +
+  annotate("text", x = 2, y = 0.55, label = "a", size = 6) +
+  annotate("text", x = 3, y = 0.55, label = "b", size = 6)
+f_fd_c<-ggplot(data=FD_seeding_tr, aes(x=subplot, y=aboveRaoQ.m, col = as.factor(subplot)))+
+  geom_point(position=position_dodge(0.9),size=4)+
+  labs(y=expression(atop("Aboveground Rao's Q")), color = "Treatment")+
+  theme(axis.title.x=element_blank(),
+        text = element_text(size=14),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.line = element_line(colour = "black"),
+        panel.border = element_rect(colour = "black", fill = NA, size = 1.2))+
+  scale_x_discrete(labels = c("Mixed","Forb", "Grass"))+
+  scale_color_manual(labels = c("Mixed","Forb", "Grass"),  values = c("#fc8d62", "#66c2a5", "#8da0cb"))+
+  geom_errorbar(aes(ymin = aboveRaoQ.m-se.aboveRaoQ, ymax = aboveRaoQ.m+se.aboveRaoQ), size = 0.5, width = 0,position=position_dodge(0.9))+
+  annotate("text", x = 1, y = 1.8, label = "b", size = 6) +
+  annotate("text", x = 2, y = 1.8, label = "a", size = 6) +
+  annotate("text", x = 3, y = 1.8, label = "b", size = 6)
+f_fd_d<-ggplot(data=FD_seeding_tr, aes(x=subplot, y=belowRaoQ.m, col = as.factor(subplot)))+
+  geom_point(position=position_dodge(0.9),size=4)+
+  labs(y=expression(atop("Belowground Rao's Q")), color = "Treatment")+
+  theme(axis.title.x=element_blank(),
+        text = element_text(size=14),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.line = element_line(colour = "black"),
+        panel.border = element_rect(colour = "black", fill = NA, size = 1.2))+
+  scale_x_discrete(labels = c("Mixed","Forb", "Grass"))+
+  scale_color_manual(labels = c("Mixed","Forb", "Grass"),  values = c("#fc8d62", "#66c2a5", "#8da0cb"))+
+  geom_errorbar(aes(ymin = belowRaoQ.m-se.belowRaoQ, ymax = belowRaoQ.m+se.belowRaoQ), size = 0.5, width = 0,position=position_dodge(0.9))+
+  annotate("text", x = 1, y = 3.1, label = "b", size = 6) +
+  annotate("text", x = 2, y = 3.1, label = "a", size = 6) +
+  annotate("text", x = 3, y = 3.1, label = "b", size = 6)
+f_fd_e<-ggplot(data=FD_rain_tr, aes(x=treatment, y=aboveFEve.m, col = treatment))+
+  geom_point(position=position_dodge(0.9), size=4)+
+  labs(y=expression(atop("Aboveground FEve")))+
+  scale_x_discrete(labels = c("Control\n ","Spring\n Dry\n", "Fall\n Dry\n", "Consistent\n Dry\n"))+
+  scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))+
+  geom_errorbar(aes(ymin = aboveFEve.m-se.aboveFEve, ymax = aboveFEve.m+se.aboveFEve), size = 0.5, width = 0,position=position_dodge(0.9))+
+  theme(axis.title.x=element_blank(),
+        text = element_text(size=14),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.line = element_line(colour = "black"),
+        panel.border = element_rect(colour = "black", fill = NA, size = 1.2))+
+  annotate("text", x = 1, y = 0.6, label = "a", size = 6) +
+  annotate("text", x = 2, y = 0.6, label = "a", size = 6) +
+  annotate("text", x = 3, y = 0.6, label = "a", size = 6) +
+  annotate("text", x = 4, y = 0.6, label = "a", size = 6)
+
+f_fd_e<-ggplot(data=FD_rain_tr, aes(x=treatment, y=aboveFEve.m, col = treatment))+
+  geom_point(position=position_dodge(0.9), size=4)+
+  labs(y=expression(atop("Aboveground FEve")))+
+  scale_x_discrete(labels = c("Control\n ","Spring\n Dry\n", "Fall\n Dry\n", "Consistent\n Dry\n"))+
+  scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))+
+  geom_errorbar(aes(ymin = aboveFEve.m-se.aboveFEve, ymax = aboveFEve.m+se.aboveFEve), size = 0.5, width = 0,position=position_dodge(0.9))+
+  theme(axis.title.x=element_blank(),
+        text = element_text(size=14),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.line = element_line(colour = "black"),
+        panel.border = element_rect(colour = "black", fill = NA, size = 1.2))+
+  annotate("text", x = 1, y = 0.6, label = "a", size = 6) +
+  annotate("text", x = 2, y = 0.6, label = "a", size = 6) +
+  annotate("text", x = 3, y = 0.6, label = "a", size = 6) +
+  annotate("text", x = 4, y = 0.6, label = "a", size = 6)
+f_fd_f<-ggplot(data=FD_rain_tr, aes(x=treatment, y=belowFEve.m, col = treatment))+
+  geom_point(position=position_dodge(0.9), size=4)+
+  labs(y=expression(atop("Belowground FEve")))+
+  scale_x_discrete(labels = c("Control\n ","Spring\n Dry\n", "Fall\n Dry\n", "Consistent\n Dry\n"))+
+  scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))+
+  geom_errorbar(aes(ymin = belowFEve.m-se.belowFEve, ymax = belowFEve.m+se.belowFEve), size = 0.5, width = 0,position=position_dodge(0.9))+
+  theme(axis.title.x=element_blank(),
+        text = element_text(size=14),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.line = element_line(colour = "black"),
+        panel.border = element_rect(colour = "black", fill = NA, size = 1.2))+
+  annotate("text", x = 1, y = 0.53, label = "a", size = 6) +
+  annotate("text", x = 2, y = 0.53, label = "a", size = 6) +
+  annotate("text", x = 3, y = 0.53, label = "a", size = 6) +
+  annotate("text", x = 4, y = 0.53, label = "a", size = 6)
+f_fd_g<-ggplot(data=FD_rain_tr, aes(x=treatment, y=aboveRaoQ.m, col = treatment))+
+  geom_point(position=position_dodge(0.9), size=4)+
+  labs(y=expression(atop("Aboveground Rao's Q")))+
+  scale_x_discrete(labels = c("Control\n ","Spring\n Dry\n", "Fall\n Dry\n", "Consistent\n Dry\n"))+
+  scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))+
+  geom_errorbar(aes(ymin = aboveRaoQ.m-se.aboveRaoQ, ymax = aboveRaoQ.m+se.aboveRaoQ), size = 0.5, width = 0,position=position_dodge(0.9))+
+  theme(axis.title.x=element_blank(),
+        text = element_text(size=14),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.line = element_line(colour = "black"),
+        panel.border = element_rect(colour = "black", fill = NA, size = 1.2))+
+  annotate("text", x = 1, y = 1.4, label = "a", size = 6) +
+  annotate("text", x = 2, y = 1.4, label = "a", size = 6) +
+  annotate("text", x = 3, y = 1.4, label = "a", size = 6) +
+  annotate("text", x = 4, y = 1.4, label = "a", size = 6)
+f_fd_h<-ggplot(data=FD_rain_tr, aes(x=treatment, y=belowRaoQ.m, col = treatment))+
+  geom_point(position=position_dodge(0.9), size=4)+
+  labs(y=expression(atop("Belowground Rao's Q")))+
+  scale_x_discrete(labels = c("Control\n ","Spring\n Dry\n", "Fall\n Dry\n", "Consistent\n Dry\n"))+
+  scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23"))+
+  geom_errorbar(aes(ymin = belowRaoQ.m-se.belowRaoQ, ymax = belowRaoQ.m+se.belowRaoQ), size = 0.5, width = 0,position=position_dodge(0.9))+
+  theme(axis.title.x=element_blank(),
+        text = element_text(size=14),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.line = element_line(colour = "black"),
+        panel.border = element_rect(colour = "black", fill = NA, size = 1.2))+
+  annotate("text", x = 1, y = 2.2, label = "a", size = 6) +
+  annotate("text", x = 2, y = 2.2, label = "a", size = 6) +
+  annotate("text", x = 3, y = 2.2, label = "a", size = 6) +
+  annotate("text", x = 4, y = 2.2, label = "a", size = 6)
+
+fig_FD_subplot <- ggarrange(f_fd_a, f_fd_b, f_fd_c, f_fd_d,
+                       ncol =2, nrow =2, 
+                       align = "v",labels = c("a)", "b)", "c)", "d)"), common.legend = TRUE, legend = "top")
+fig_FD_tr <- ggarrange(f_fd_e, f_fd_f, f_fd_g, f_fd_h,
+                     ncol =2, nrow =2, 
+                     align = "v",labels = c("e)", "f)", "g)", "h)"), common.legend = TRUE, legend = "top")
+ggarrange(fig_FD_subplot, fig_FD_tr, ncol = 1, nrow = 2, heights = c(1, 1.2))
+
 # #Stepwise regression of BNPP ~ Ind RaoQ
 # model8 <- lm(total ~ CENSOL + TAECAP + SLARaoQ + LDMCRaoQ + HtRaoQ + DensRaoQ + DiamCRaoQ + SRLCRaoQ + SRLFRaoQ + PropFRaoQ, joined_rao)
 # step_all <- stepAIC(model8, direction = "backward", trace = FALSE)
