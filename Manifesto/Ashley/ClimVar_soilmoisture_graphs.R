@@ -67,11 +67,11 @@ dat4 <- dat3 %>%
   summarize(sm = mean(sm, na.rm=T)) 
 
 
-ggplot(dat4, aes(x=complete_date, y=sm, color = treatment2))  + geom_line(lwd = 1.5) +
+ggplot(dat4, aes(x=complete_date, y=sm, color = treatment2))  + geom_line(lwd = 1.2) +
   theme_bw() + 
   theme(legend.position = "none", strip.background = element_blank(), 
-        text = element_text(size = 20), 
-        strip.text.x = element_text(size = 16, face = "italic"), strip.text.y = element_text(size = 16),
+        text = element_text(size = 16), 
+        strip.text.x = element_text(size = 14, face = "italic"), strip.text.y = element_text(size = 14),
         panel.grid.major = element_blank(), panel.grid.minor = element_blank()) + 
   labs(y = expression(paste("Soil moisture (m"^3, " m"^-3,")")), x = "Day of 2016-2017 growing season") +
   scale_color_manual(values = c( "dodgerblue4",  "indianred"))
