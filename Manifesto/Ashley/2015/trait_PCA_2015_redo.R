@@ -741,12 +741,28 @@ Figure4 <- ggarrange(a.t1,bt.1, a.t2,  bt.2, ncol = 2, nrow =2, common.legend = 
 #                      align = "v",labels = c("a)", "b)", "c)", "d)"))
 # figures7
 
-##Table Backwards stepwise regression
+#Predictive models
 unique_sp_cover <- cover15 %>%
   dplyr::select(plot, subplot, treatment, Centaurea_solstitialis, Taeniatherum_caput_medusae)
 siteout_fd.b_BNPP_unique <- left_join(siteout_fd.b_BNPP, unique_sp_cover)
 siteout2_fd_biomass_unique <- left_join(siteout2_fd_biomass, unique_sp_cover)
 
+#Following Diaz et al. method
+summary(lm(weight_g_m ~ CWM.PC1, siteout2_fd_biomass_unique)) #sig
+summary(lm(weight_g_m ~ CWM.PC2, siteout2_fd_biomass_unique))
+summary(lm(weight_g_m ~ FEve, siteout2_fd_biomass_unique))
+summary(lm(weight_g_m ~ RaoQ, siteout2_fd_biomass_unique))
+summary(lm(weight_g_m ~ Centaurea_solstitialis, siteout2_fd_biomass_unique))
+summary(lm(weight_g_m ~ Taeniatherum_caput_medusae, siteout2_fd_biomass_unique))
+
+summary(lm(agg_BNPP ~ CWM.PC1, siteout_fd.b_BNPP_unique))
+summary(lm(agg_BNPP ~ CWM.PC2, siteout_fd.b_BNPP_unique))
+summary(lm(agg_BNPP ~ FEve, siteout_fd.b_BNPP_unique))
+summary(lm(agg_BNPP ~ RaoQ, siteout_fd.b_BNPP_unique))
+summary(lm(agg_BNPP ~ Centaurea_solstitialis, siteout_fd.b_BNPP_unique))
+summary(lm(agg_BNPP ~ Taeniatherum_caput_medusae, siteout_fd.b_BNPP_unique))
+
+##Table Backwards stepwise regression
 fullmodel_ANPP <- lm(weight_g_m ~ FEve + RaoQ + CWM.PC1 + CWM.PC2 +Centaurea_solstitialis+Taeniatherum_caput_medusae, siteout2_fd_biomass_unique)
 step_fullmodel_ANPP  <- stepAIC(fullmodel_ANPP, direction = "backward", trace = FALSE)
 step_fullmodel_ANPP$anova
