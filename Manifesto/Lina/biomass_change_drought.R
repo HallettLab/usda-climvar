@@ -31,6 +31,8 @@ summary_change_ANPP <- change_ANPP %>%
             se_change_ANPP = calcSE(change_ANPP))
 summary_change_ANPP$treatment <- factor(summary_change_ANPP$treatment, levels = c( "springDry", "fallDry","consistentDry"),
                                         labels = c("Spring\n Dry", "Fall\n Dry", "Consistent\n Dry"))
+summary_change_ANPP$subplot <- factor(summary_change_ANPP$subplot, levels = c( "B", "F","G"),
+                                        labels = c("Mixed", "Forb", "Grass"))
 
 change_BNPP <- left_join(BNPP1, avg_control_BNPP) %>%
   group_by(subplot, treatment) %>%
@@ -42,13 +44,14 @@ summary_change_BNPP <- change_BNPP %>%
             se_change_BNPP = calcSE(change_BNPP))
 summary_change_BNPP$treatment <- factor(summary_change_BNPP$treatment, levels = c( "springDry", "fallDry","consistentDry"), 
                                         labels = c("Spring\n Dry", "Fall\n Dry", "Consistent\n Dry"))
-
+summary_change_BNPP$subplot <- factor(summary_change_BNPP$subplot, levels = c( "B", "F","G"),
+                                      labels = c("Mixed", "Forb", "Grass"))
     
 #plot drought treatment effects on ANPP and BNPP 
-Fig_drought_ANPP <- ggplot(summary_change_ANPP, aes(x = subplot, y = mean_change_ANPP, col = subplot))+
+Fig_drought_ANPP <- ggplot(summary_change_ANPP, aes(x = treatment, y = mean_change_ANPP, col = treatment))+
                           geom_point(size=4)+
                           labs(y=bquote("Relative change ANPP\n compared to control"), color = "Treatment")+
-                          facet_grid(~treatment)+
+                          facet_grid(~subplot)+
                           geom_hline(aes(yintercept=0), color="grey") +
                           theme(axis.title.x=element_blank(),
                                 text = element_text(size=14),
@@ -59,13 +62,13 @@ Fig_drought_ANPP <- ggplot(summary_change_ANPP, aes(x = subplot, y = mean_change
                                 panel.border = element_rect(colour = "black", fill = NA, size = 1.2))+
                           geom_errorbar(aes(ymin = mean_change_ANPP-se_change_ANPP, ymax = mean_change_ANPP+se_change_ANPP), size = 0.5, 
                                         width = 0,position=position_dodge(0.9))+
-                          scale_x_discrete(labels = c("Mixed","Forb", "Grass"))+
-                          scale_color_manual(labels = c("Mixed","Forb", "Grass"),  values = c("#fc8d62", "#66c2a5", "#8da0cb"))
+                          scale_x_discrete(labels = c("Spring\n Dry", "Fall\n Dry", "Consistent\n Dry"))+
+                          scale_color_manual(name = "Treatment", labels = c("Spring Dry", "Fall Dry","Consistent Dry" ), values= c( "#b2c7e4", "#fccaaf", "#c85b23"))
 
-Fig_drought_BNPP <- ggplot(summary_change_BNPP, aes(x = subplot, y = mean_change_BNPP, col = subplot))+
+Fig_drought_BNPP <- ggplot(summary_change_BNPP, aes(x = treatment, y = mean_change_BNPP, col = treatment))+
                           geom_point(size=4)+
                           labs(y=bquote("Relative change BNPP\n compared to control"), color = "Treatment")+
-                          facet_grid(~treatment)+
+                          facet_grid(~subplot)+
                           geom_hline(aes(yintercept=0), color="grey") +
                           theme(axis.title.x=element_blank(),
                                 text = element_text(size=14),
@@ -76,7 +79,8 @@ Fig_drought_BNPP <- ggplot(summary_change_BNPP, aes(x = subplot, y = mean_change
                                 panel.border = element_rect(colour = "black", fill = NA, size = 1.2))+
                           geom_errorbar(aes(ymin = mean_change_BNPP-se_change_BNPP, ymax = mean_change_BNPP+se_change_BNPP), size = 0.5, 
                                         width = 0,position=position_dodge(0.9))+
-                          scale_x_discrete(labels = c("Mixed","Forb", "Grass"))+
-                          scale_color_manual(labels = c("Mixed","Forb", "Grass"),  values = c("#fc8d62", "#66c2a5", "#8da0cb"))
+                          scale_x_discrete(labels = c("Spring\n Dry", "Fall\n Dry", "Consistent\n Dry"))+
+                          scale_color_manual(name = "Treatment", labels = c("Spring Dry", "Fall Dry","Consistent Dry" ), values= c( "#b2c7e4", "#fccaaf", "#c85b23"))
+
 
 ggarrange(Fig_drought_ANPP, Fig_drought_BNPP, nrow = 2, common.legend = TRUE, legend = "right")
