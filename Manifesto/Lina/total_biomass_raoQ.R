@@ -6,7 +6,7 @@ ANPP <- read.csv("./Dropbox/ClimVar/DATA/Plant_composition_data/ANPP/ANPP_Cleane
 library(tidyverse)
 library(FD)
 library(vegan)
-library(ggplot2)
+  library(ggplot2)
 library(ggpubr)
 library(MASS)
 
@@ -257,7 +257,7 @@ p_RaoQ_below <- ggplot(joined_FD_above_below, aes(x = belowRaoQ, y = agg_BNPP)) 
 
 Figure2 <- ggarrange(p_FEve_above, p_FEve_below, p_RaoQ_above, p_RaoQ_below, ncol = 2, nrow = 2, common.legend = TRUE, legend = "right", labels = c("a)", "b)", "c)", "d)"))
 
-#Treatment effects on FD
+#Treatment effects on FD Supplemental Fig
 FD_seeding_tr <- joined_FD_above_below %>% 
   group_by(subplot) %>% 
   summarize(aboveRaoQ.m=mean(aboveRaoQ), belowRaoQ.m=mean(belowRaoQ), 
@@ -840,6 +840,38 @@ panel2 <- ggarrange(p_FRic_PPT, p_FEve_PPT, p_FDiv_PPT, p_RaoQ_PPT,  ncol = 4, n
           align = "v",labels = c("e)", "f)", "g)", "h)"), common.legend = FALSE)
 
 ggarrange(panel1, legend_comp_FD, panel2,legend_rain_FD, ncol = 2, nrow = 2, widths=c(1,0.1))
+
+# Figure 5 total biomass ~ Rao's Q
+p_RaoQ_PPT_modified <- ggplot(joined_FD, aes(x = RaoQ, y = total)) +
+  geom_point(aes(color = treatment)) +
+  theme_classic() +
+  #ylim(50,900)+
+  #theme(legend.position = "none") +
+  labs(y = "ANPP + BNPP (g/m2)", x = "RaoQ", color = "Treatment") +
+  geom_smooth(aes(color = treatment, linetype = treatment), method = lm, size = 1, se = FALSE, fullrange = FALSE) +
+  #stat_cor(aes(group=subplot,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
+  scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23")) +
+  scale_linetype_manual( values = c("solid", "solid", "solid", "solid"), guide = "none")
+  #stat_cor(aes(group=treatment,color = treatment, label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
+
+summary(lm(total~RaoQ, joined_FD%>%filter(treatment == "controlRain")))
+summary(lm(total~RaoQ, joined_FD%>%filter(treatment == "springDry")))
+summary(lm(total~RaoQ, joined_FD%>%filter(treatment == "fallDry")))
+summary(lm(total~RaoQ, joined_FD%>%filter(treatment == "consistentDry")))
+
+#facet by composition groups
+ggplot(joined_FD, aes(x = RaoQ, y = total)) +
+  geom_point(aes(color = treatment)) +
+  theme_classic() +
+  #ylim(50,900)+
+  facet_wrap(~subplot)+
+  #theme(legend.position = "none") +
+  labs(y = "", x = "RaoQ", color = "Treatment") +
+  geom_smooth(aes(color = treatment, linetype = treatment), method = lm, size = 1, se = FALSE, fullrange = FALSE) +
+  #stat_cor(aes(group=subplot,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
+  scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23")) +
+  scale_linetype_manual( values = c("dashed", "solid", "dashed", "dashed"), guide = "none")+
+  geom_smooth(method = lm, size = 1, se = FALSE, fullrange = FALSE, color = "black", linetype = "solid") 
 
 # CENSOL and TAECAP vs biomass
 ggplot(joined_FD, aes(x = log(CENSOL), y = agg_BNPP)) +
