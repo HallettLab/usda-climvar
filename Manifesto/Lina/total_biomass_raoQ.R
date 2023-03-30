@@ -6,9 +6,12 @@ ANPP <- read.csv("./Dropbox/ClimVar/DATA/Plant_composition_data/ANPP/ANPP_Cleane
 library(tidyverse)
 library(FD)
 library(vegan)
-  library(ggplot2)
+library(ggplot2)
 library(ggpubr)
 library(MASS)
+library(nlme)
+library(MuMln)
+library(lsmeans)
 
 ###Set up data for FD package###
 #Species names must be in same order in both files
@@ -858,6 +861,17 @@ summary(lm(total~RaoQ, joined_FD%>%filter(treatment == "controlRain")))
 summary(lm(total~RaoQ, joined_FD%>%filter(treatment == "springDry")))
 summary(lm(total~RaoQ, joined_FD%>%filter(treatment == "fallDry")))
 summary(lm(total~RaoQ, joined_FD%>%filter(treatment == "consistentDry")))
+
+joined_FD_block <- merge(x = joined_FD, y = cover15[ , c("plot", "subplot", "shelterBlock")], by = c("plot", "subplot"), all.x=TRUE)
+model_totalRao<-lme(total ~RaoQ*treatment, random=~1|shelterBlock, joined_FD_block , na.action=na.exclude)
+summary(model_totalRao)
+anova(model_totalRao) #interaction of Rao and treatment is not significant
+#r.squaredGLMM(model_totalRao) 
+qqnorm(residuals(model_totalRao))
+qqline(residuals(model_totalRao))
+shapiro.test(residuals(model_totalRao))
+lstrr<-lsmeans(model_totalRao, ~treatment)
+contrast(lstrr, "pairwise")
 
 #facet by composition groups
 ggplot(joined_FD, aes(x = RaoQ, y = total)) +
