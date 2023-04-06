@@ -52,6 +52,9 @@ larson_seedwgt <- read_excel(paste0(dropbox_path, "Recruitment/Data/Recruitment_
 str(seed_prep)
 #remove unneeded cols
 seed_prep <- seed_prep[!colnames(seed_prep) %in% c("X__1", "X__2", "X__3", "X__4", "X__5")]
+# ctw 2023-04-06: next line added to remove junk columns
+# > something in read_excel changed since 2019, colnames for extra cols are different now "...8" instead of "X__1" 
+seed_prep <- seed_prep[!grepl("[...][0-9]", colnames(seed_prep))]
 #review note for AVFA, ERO, and TACA:
 seed_prep$Experiment[48]
 
@@ -99,7 +102,7 @@ field_seeds %>%
         axis.title.x = element_blank()) +
   facet_grid(species ~ var, scales = "free_y")
 
-# ctw calculated seed masses for AVFA, ERBO and TACA.. close to Julie's, will keep Julie's weights since same methods and intrumentation with other species seed weights
+# ctw calculated seed masses for AVFA, ERBO and TACA.. close to Julie's, will keep Julie's weights since same methods and instrumentation with other species seed weights
 # ctw's weights are slightly greater than Julie's
 field_seed_means <- field_seeds %>%
   group_by(species) %>%
