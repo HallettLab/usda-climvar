@@ -850,12 +850,12 @@ p_RaoQ_PPT_modified <- ggplot(joined_FD, aes(x = RaoQ, y = total)) +
   theme_classic() +
   #ylim(50,900)+
   #theme(legend.position = "none") +
-  labs(y = "ANPP + BNPP (g/m2)", x = "RaoQ", color = "Treatment") +
+  labs(y = "ANPP + BNPP (g/m2)", x = "Functional diversity (Rao's Q)", color = "Treatment") +
   geom_smooth(aes(color = treatment, linetype = treatment), method = lm, size = 1, se = FALSE, fullrange = FALSE) +
   #stat_cor(aes(group=subplot,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
   scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23")) +
-  scale_linetype_manual( values = c("solid", "solid", "solid", "solid"), guide = "none")
-  #stat_cor(aes(group=treatment,color = treatment, label = paste(..rr.label.., ..p.label.., sep = "~`,`~")))
+  scale_linetype_manual( values = c("solid", "dashed", "solid", "solid"), guide = "none")+
+  stat_cor(aes(group=treatment,color = treatment, label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), show.legend = F)
 
 summary(lm(total~RaoQ, joined_FD%>%filter(treatment == "controlRain")))
 summary(lm(total~RaoQ, joined_FD%>%filter(treatment == "springDry")))
@@ -870,8 +870,38 @@ anova(model_totalRao) #interaction of Rao and treatment is not significant
 qqnorm(residuals(model_totalRao))
 qqline(residuals(model_totalRao))
 shapiro.test(residuals(model_totalRao))
-lstrr<-lsmeans(model_totalRao, ~treatment)
-contrast(lstrr, "pairwise")
+fit_total_rao <- aov(total~RaoQ*treatment, joined_FD_block)
+TukeyHSD(aov(fit_total_rao))
+
+# Figure S6 total biomass ~ FEve
+p_FEve_PPT_modified <- ggplot(joined_FD, aes(x = FEve, y = total)) +
+  geom_point(aes(color = treatment)) +
+  theme_classic() +
+  #ylim(50,900)+
+  #theme(legend.position = "none") +
+  labs(y = "ANPP + BNPP (g/m2)", x = "Functional diversity (FEve)", color = "Treatment") +
+  geom_smooth(aes(color = treatment, linetype = treatment), method = lm, size = 1, se = FALSE, fullrange = FALSE) +
+  #stat_cor(aes(group=subplot,label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), label.x.npc = 0.5)+
+  scale_color_manual(name = "Treatment", labels = c("Control", "Spring Dry", "Fall Dry","Consistent Dry" ), values= c("#0070b8", "#b2c7e4", "#fccaaf", "#c85b23")) +
+  scale_linetype_manual( values = c("dashed", "dashed", "dashed", "dashed"), guide = "none")+
+  stat_cor(aes(group=treatment,color = treatment, label = paste(..rr.label.., ..p.label.., sep = "~`,`~")), show.legend = F)
+
+
+summary(lm(total~FEve, joined_FD%>%filter(treatment == "controlRain")))
+summary(lm(total~FEve, joined_FD%>%filter(treatment == "springDry")))
+summary(lm(total~FEve, joined_FD%>%filter(treatment == "fallDry")))
+summary(lm(total~FEve, joined_FD%>%filter(treatment == "consistentDry")))
+
+model_totalRao_FEve<-lme(total ~FEve*treatment, random=~1|shelterBlock, joined_FD_block , na.action=na.exclude)
+summary(model_totalRao_FEve)
+anova(model_totalRao_FEve) #interaction of Rao and treatment is not significant
+#r.squaredGLMM(model_totalRao) 
+qqnorm(residuals(model_totalRao_FEve))
+qqline(residuals(model_totalRao_FEve))
+shapiro.test(residuals(model_totalRao_FEve))
+fit_total_FEve <- aov(total~FEve*treatment, joined_FD_block)
+TukeyHSD(aov(fit_total_FEve))
+
 
 #facet by composition groups
 ggplot(joined_FD, aes(x = RaoQ, y = total)) +
