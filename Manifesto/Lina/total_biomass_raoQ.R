@@ -298,6 +298,13 @@ summary(aov(belowFEve~subplot*treatment, joined_FD_above_below))
 summary(aov(aboveRaoQ~subplot*treatment, joined_FD_above_below))
 summary(aov(belowRaoQ~subplot*treatment, joined_FD_above_below))
 
+#belowground RaoQ interaction effect
+summary(aov(belowRaoQ~treatment, joined_FD_above_below %>%filter(subplot == "Grass"))) # control higher RaoQ than drought plots
+summary(aov(belowRaoQ~treatment, joined_FD_above_below %>%filter(subplot == "Forb"))) # no diff
+summary(aov(belowRaoQ~treatment, joined_FD_above_below %>%filter(subplot == "Mixed"))) # no diff
+ggplot(joined_FD_above_below, aes(x = subplot, y = belowRaoQ, col = as.factor(treatment)))+
+  geom_boxplot()
+
 f_fd_a<-ggplot(data=FD_seeding_tr, aes(x=subplot, y=aboveFEve.m, col = as.factor(subplot)))+
      geom_point(position=position_dodge(0.9),size=4)+
      labs(y=expression(atop("Aboveground FEve")), color = "Treatment")+
