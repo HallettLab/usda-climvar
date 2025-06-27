@@ -6,10 +6,10 @@ library(lubridate)
 # set pathway to climvar dropbox competition data folder
 
 # specify dropbox pathway (varies by user -- tweak when share with Caitlin)
-if(file.exists("~/Dropbox/Shared/ClimVar/Competition/Data/")){
+if(file.exists("~/University of Oregon Dropbox/Lauren Hallett/ClimVar/Competition/Data")){
   # LGS
-  datpath <- "~/Dropbox/Shared/ClimVar/Competition/Data/"
-  # LMH
+  datpath <- "~/University of Oregon Dropbox/Lauren Hallett/ClimVar/Competition/Data/"
+  # LMH - made it for Lauren, this was LGS but I don't think she needs anymore: "~/Dropbox/Shared/ClimVar/Competition/Data/"
 }else{
   datpath <- "~/Dropbox/ClimVar/Competition/Data/"
 }
