@@ -44,6 +44,13 @@ rainsummary <- rainsummary %>%
          raintype = ifelse(Late < quantile(rainsummary$Late, .5), "fallWet", raintype),
          raintype = ifelse(Total < quantile(rainsummary$Total, .5), "fallDry", raintype)) 
 
+rainfrequence <- rainsummary %>%
+  filter(year%in%c(1967:2016)) %>%
+  group_by(raintype) %>%
+  count() %>%
+  ungroup() %>%
+  mutate(total = sum(n),
+         prop = n/total)
 
 ## Visualize the rainfall scenarios
 #pdf("Rainfal history.pdf", width = 10, height = 8)
